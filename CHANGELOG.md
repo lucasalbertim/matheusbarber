@@ -25,7 +25,27 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Resolução de warnings de ESLint
 - Correção de ícones não disponíveis
 
-## [1.0.0] - 2024-12-19
+## [1.1.1] - 2024-12-19
+
+### Fixed
+- **Proxy Error Resolvido**: Corrigido erro de proxy que causava falha no carregamento do manifest.json
+- **Manifest.json**: Arquivo agora é servido corretamente pelo frontend
+- **Proxy Seletivo**: Implementado proxy apenas para rotas da API, não para arquivos estáticos
+- **CORS**: Configuração corrigida para desenvolvimento e produção
+- **Integração Backend-Frontend**: Melhorada a comunicação entre os serviços
+
+### Added
+- **setupProxy.js**: Configuração de proxy seletivo para desenvolvimento
+- **http-proxy-middleware**: Dependência para proxy inteligente
+- **Arquivo .env**: Configuração de ambiente para URL da API
+- **Rota /health**: Endpoint para verificar status da API
+
+### Changed
+- **package.json**: Removido proxy global, implementado proxy seletivo
+- **Backend**: Configurado para servir apenas arquivos necessários
+- **Docker**: Configuração atualizada para integração frontend-backend
+
+## [1.1.0] - 2024-12-19
 
 ### Added
 - Sistema completo de barbearia Metheus Barber
