@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -14,7 +13,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [client, setClient] = useState(null);
   const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Verificar se há dados salvos no localStorage
@@ -25,6 +24,7 @@ export const AuthProvider = ({ children }) => {
       try {
         setClient(JSON.parse(savedClient));
       } catch (error) {
+        console.error('Erro ao carregar dados do cliente:', error);
         localStorage.removeItem('metheus_client');
       }
     }
@@ -33,60 +33,104 @@ export const AuthProvider = ({ children }) => {
       try {
         setAdmin(JSON.parse(savedAdmin));
       } catch (error) {
+        console.error('Erro ao carregar dados do admin:', error);
         localStorage.removeItem('metheus_admin');
       }
     }
     
-    setLoading(false);
+    setIsLoading(false);
   }, []);
 
-  const loginClient = (clientData) => {
-    setClient(clientData);
-    localStorage.setItem('metheus_client', JSON.stringify(clientData));
-    toast.success(`Bem-vindo, ${clientData.name}!`);
+  const loginClient = async (cpf, phone) => {
+    try {
+      // Buscar dados do cliente no backend
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/clients/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cpf, phone }),
+      });
+
+      if (response.ok) {
+        const clientData = await response.json();
+        setClient(clientData);
+        localStorage.setItem('metheus_client', JSON.stringify(clientData));
+        return clientData;
+      } else {
+        throw new Error('Credenciais inválidas');
+      }
+    } catch (error) {
+      console.error('Erro no login do cliente:', error);
+      throw error;
+    }
+  };
+
+  const loginAdmin = async (username, password) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/admins/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        const adminData = await response.json();
+        setAdmin(adminData);
+        localStorage.setItem('metheus_admin', JSON.stringify(adminData));
+        return adminData;
+      } else {
+        throw new Error('Credenciais inválidas');
+      }
+    } catch (error) {
+      console.error('Erro no login do admin:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    setClient(null);
+    setAdmin(null);
+    localStorage.removeItem('metheus_client');
+    localStorage.removeItem('metheus_admin');
   };
 
   const logoutClient = () => {
     setClient(null);
     localStorage.removeItem('metheus_client');
-    toast.info('Logout realizado com sucesso');
-  };
-
-  const loginAdmin = (adminData, token) => {
-    const adminWithToken = { ...adminData, token };
-    setAdmin(adminWithToken);
-    localStorage.setItem('metheus_admin', JSON.stringify(adminWithToken));
-    toast.success(`Bem-vindo, ${adminData.name}!`);
   };
 
   const logoutAdmin = () => {
     setAdmin(null);
     localStorage.removeItem('metheus_admin');
-    toast.info('Logout realizado com sucesso');
   };
 
-  const updateClient = (updatedClient) => {
-    setClient(updatedClient);
-    localStorage.setItem('metheus_client', JSON.stringify(updatedClient));
+  const isAuthenticated = () => {
+    return !!(client || admin);
   };
 
-  const updateAdmin = (updatedAdmin) => {
-    setAdmin(updatedAdmin);
-    localStorage.setItem('metheus_admin', JSON.stringify(updatedAdmin));
+  const isClient = () => {
+    return !!client;
+  };
+
+  const isAdmin = () => {
+    return !!admin;
   };
 
   const value = {
     client,
     admin,
-    loading,
+    isLoading,
     loginClient,
-    logoutClient,
     loginAdmin,
+    logout,
+    logoutClient,
     logoutAdmin,
-    updateClient,
-    updateAdmin,
-    isClientAuthenticated: !!client,
-    isAdminAuthenticated: !!admin,
+    isAuthenticated,
+    isClient,
+    isAdmin,
   };
 
   return (

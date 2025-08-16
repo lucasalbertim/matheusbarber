@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import api from '../services/api';
+import { FaUserTie, FaLock, FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
+import styled from 'styled-components';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -15,7 +14,7 @@ const PageContainer = styled.div`
   padding: 20px;
 `;
 
-const ContentCard = styled.div`
+const Container = styled.div`
   background: var(--surface);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -25,7 +24,7 @@ const ContentCard = styled.div`
   position: relative;
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.button`
   position: absolute;
   top: 20px;
   left: 20px;
@@ -39,6 +38,8 @@ const BackButton = styled(Link)`
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
   
   &:hover {
     background: var(--primary);
@@ -78,90 +79,199 @@ const Header = styled.div`
   }
 `;
 
-const Form = styled.form`
-  .form-group {
-    margin-bottom: 20px;
+const FormCard = styled.div`
+  form {
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .input-container {
+      position: relative;
+      
+      .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        padding-right: 50px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        background: var(--surface);
+        
+        &:focus {
+          outline: none;
+          border-color: var(--secondary);
+          box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+        
+        &.error {
+          border-color: var(--error);
+        }
+      }
+      
+      .password-toggle {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: color 0.2s ease;
+        
+        &:hover {
+          color: var(--primary);
+        }
+      }
+    }
+    
+    .form-error {
+      color: var(--error);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--primary);
+      color: var(--accent);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 20px;
+      
+      &:hover:not(:disabled) {
+        background: #000000;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(26, 26, 26, 0.3);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
   }
-  
-  .form-label {
-    display: block;
+`;
+
+const FormGroup = styled.div`
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 8px;
     font-weight: 500;
     color: var(--text-primary);
+    font-size: 1rem;
   }
-  
-  .input-container {
-    position: relative;
-    
-    .form-input {
-      width: 100%;
-      padding: 14px 16px;
-      padding-right: 50px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 16px;
-      transition: all 0.2s ease;
-      background: var(--surface);
-      
-      &:focus {
-        outline: none;
-        border-color: var(--secondary);
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-      }
-      
-      &.error {
-        border-color: var(--error);
-      }
-    }
-    
-    .password-toggle {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      transition: color 0.2s ease;
-      
-      &:hover {
-        color: var(--primary);
-      }
-    }
-  }
-  
-  .form-error {
-    color: var(--error);
-    font-size: 14px;
-    margin-top: 4px;
-  }
-  
-  .submit-btn {
+
+  input {
     width: 100%;
-    padding: 16px;
-    background: var(--primary);
-    color: var(--accent);
-    border: none;
+    padding: 14px 16px;
+    padding-right: 50px;
+    border: 2px solid var(--border);
     border-radius: 10px;
     font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
     transition: all 0.2s ease;
-    margin-top: 20px;
+    background: var(--surface);
     
-    &:hover:not(:disabled) {
-      background: #000000;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(26, 26, 26, 0.3);
+    &:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
     }
     
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    &.error {
+      border-color: var(--error);
     }
+  }
+`;
+
+const PasswordInputContainer = styled.div`
+  position: relative;
+
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    padding-right: 50px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    
+    &:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+    
+    &.error {
+      border-color: var(--error);
+    }
+  }
+`;
+
+const PasswordToggleButton = styled.button`
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: var(--primary);
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: var(--error);
+  font-size: 14px;
+  margin-top: 4px;
+`;
+
+const SubmitButton = styled.button`
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: var(--accent);
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 20px;
+  
+  &:hover:not(:disabled) {
+    background: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 26, 26, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
@@ -180,24 +290,24 @@ const LoadingSpinner = styled.div`
 `;
 
 const AdminLoginPage = () => {
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { loginAdmin } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
-  
-  const { loginAdmin } = useAuth();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
+
     // Limpar erro do campo
     if (errors[name]) {
       setErrors(prev => ({
@@ -209,14 +319,15 @@ const AdminLoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.username.trim()) {
-      newErrors.username = 'Username é obrigatório';
+      newErrors.username = 'Usuário é obrigatório';
     }
+
     if (!formData.password.trim()) {
       newErrors.password = 'Senha é obrigatória';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -224,90 +335,106 @@ const AdminLoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
-    setLoading(true);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
     
     try {
-      const response = await api.post('/admins/login', formData);
-      const { access_token, admin } = response.data;
+      await loginAdmin(formData.username, formData.password);
       
-      loginAdmin(admin, access_token);
+      toast.success('Login realizado com sucesso!');
+      
+      // Redirecionar para dashboard
       navigate('/admin/dashboard');
     } catch (error) {
-      const message = error.response?.data?.detail || 'Erro ao fazer login';
-      toast.error(message);
+      console.error('Erro no login:', error);
+      
+      if (error.message === 'Credenciais inválidas') {
+        toast.error('Usuário ou senha incorretos');
+      } else {
+        toast.error('Erro ao fazer login. Tente novamente.');
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const handleBackClick = () => {
+    navigate('/');
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <PageContainer>
-      <ContentCard>
-        <BackButton to="/">
-          <FaArrowLeft />
-          Voltar
-        </BackButton>
-        
+      <Container>
         <Header>
-          <div className="logo">M</div>
-          <h1>Matheus Barber</h1>
-          <p>Área Administrativa</p>
+          <BackButton onClick={handleBackClick}>
+            <FaArrowLeft />
+            Voltar
+          </BackButton>
+          <h1>Login do Administrador</h1>
         </Header>
-        
-        <Form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Username</label>
-            <input
-              type="text"
-              name="username"
-              className={`form-input ${errors.username ? 'error' : ''}`}
-              value={formData.username}
-              onChange={handleInputChange}
-              placeholder="Digite seu username"
-            />
-            {errors.username && <div className="form-error">{errors.username}</div>}
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Senha</label>
-            <div className="input-container">
+
+        <FormCard>
+          <form onSubmit={handleSubmit}>
+            <FormGroup>
+              <label>
+                <FaUserTie className="icon" />
+                Usuário
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                className={`form-input ${errors.password ? 'error' : ''}`}
-                value={formData.password}
+                type="text"
+                name="username"
+                value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Digite sua senha"
+                placeholder="Digite seu usuário"
+                className={errors.username ? 'error' : ''}
               />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-            {errors.password && <div className="form-error">{errors.password}</div>}
-          </div>
-          
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <LoadingSpinner />
-                Entrando...
-              </>
-            ) : (
-              'Entrar'
-            )}
-          </button>
-        </Form>
-      </ContentCard>
+              {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <label>
+                <FaLock className="icon" />
+                Senha
+              </label>
+              <PasswordInputContainer>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Digite sua senha"
+                  className={errors.password ? 'error' : ''}
+                />
+                <PasswordToggleButton
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </PasswordToggleButton>
+              </PasswordInputContainer>
+              {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+            </FormGroup>
+
+            <SubmitButton type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <LoadingSpinner />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
+            </SubmitButton>
+          </form>
+        </FormCard>
+      </Container>
     </PageContainer>
   );
 };

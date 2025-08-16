@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaUser, FaUserPlus, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
 import api from '../services/api';
+import { toast } from 'react-toastify';
+import { cpfMask, phoneMask, validateCPF, validatePhone } from '../utils/masks';
+import { FaIdCard, FaPhone, FaArrowLeft } from 'react-icons/fa';
+import styled from 'styled-components';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -15,7 +16,7 @@ const PageContainer = styled.div`
   padding: 20px;
 `;
 
-const ContentCard = styled.div`
+const Container = styled.div`
   background: var(--surface);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -25,7 +26,7 @@ const ContentCard = styled.div`
   position: relative;
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.button`
   position: absolute;
   top: 20px;
   left: 20px;
@@ -39,6 +40,8 @@ const BackButton = styled(Link)`
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
   
   &:hover {
     background: var(--primary);
@@ -78,35 +81,9 @@ const Header = styled.div`
   }
 `;
 
-const TabContainer = styled.div`
-  display: flex;
-  background: var(--background);
-  border-radius: 12px;
-  padding: 4px;
-  margin-bottom: 30px;
-`;
 
-const Tab = styled.button`
-  flex: 1;
-  padding: 12px 20px;
-  border: none;
-  background: ${props => props.active ? 'var(--surface)' : 'transparent'};
-  color: ${props => props.active ? 'var(--primary)' : 'var(--text-secondary)'};
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  
-  &:hover {
-    color: var(--primary);
-  }
-`;
 
-const Form = styled.form`
+const FormCard = styled.div`
   .form-group {
     margin-bottom: 20px;
   }
@@ -170,41 +147,126 @@ const Form = styled.form`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: var(--accent);
-  animation: spin 1s ease-in-out infinite;
+
+
+const ErrorMessage = styled.div`
+  color: var(--error);
+  font-size: 14px;
+  margin-top: 4px;
+`;
+
+const SubmitButton = styled.button`
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: var(--accent);
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 20px;
   
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  &:hover:not(:disabled) {
+    background: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 26, 26, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const RegisterLink = styled.div`
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+
+  button {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+`;
+
+const FormGroup = styled.div`
+  position: relative;
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon {
+    font-size: 20px;
+    color: var(--secondary);
+  }
+
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    
+    &:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+    
+    &.error {
+      border-color: var(--error);
+    }
   }
 `;
 
 const ClientLoginPage = () => {
-  const [activeTab, setActiveTab] = useState('login');
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { loginClient } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
     cpf: '',
-    phone: '',
-    email: ''
+    phone: ''
   });
   const [errors, setErrors] = useState({});
-  
-  const { loginClient } = useAuth();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let formattedValue = value;
+
+    // Aplicar máscaras
+    if (name === 'cpf') {
+      formattedValue = cpfMask(value);
+    } else if (name === 'phone') {
+      formattedValue = phoneMask(value);
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }));
-    
+
     // Limpar erro do campo
     if (errors[name]) {
       setErrors(prev => ({
@@ -216,183 +278,127 @@ const ClientLoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (activeTab === 'register') {
-      if (!formData.name.trim()) {
-        newErrors.name = 'Nome é obrigatório';
-      }
-      if (!formData.cpf.trim()) {
-        newErrors.cpf = 'CPF é obrigatório';
-      }
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Telefone é obrigatório';
-      }
-    } else {
-      if (!formData.cpf.trim() && !formData.phone.trim()) {
-        newErrors.identifier = 'CPF ou telefone é obrigatório';
-      }
+
+    if (!formData.cpf.trim()) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (!validateCPF(formData.cpf)) {
+      newErrors.cpf = 'CPF inválido';
     }
-    
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Telefone inválido';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
-    setLoading(true);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
     
     try {
-      const identifier = formData.cpf.trim() || formData.phone.trim();
-      const response = await api.post('/clients/login', { identifier });
+      // Limpar formatação para enviar ao backend
+      const cleanData = {
+        cpf: formData.cpf.replace(/\D/g, ''),
+        phone: formData.phone.replace(/\D/g, '')
+      };
+
+      const response = await api.post('/clients/login', cleanData);
       
-      loginClient(response.data);
-      navigate('/cliente/dashboard');
+      if (response.status === 200) {
+        toast.success('Login realizado com sucesso!');
+        
+        // Fazer login
+        await loginClient(cleanData.cpf, cleanData.phone);
+        
+        // Redirecionar para tela de atendimento
+        navigate('/cliente/atendimento');
+      }
     } catch (error) {
-      const message = error.response?.data?.detail || 'Erro ao fazer login';
-      toast.error(message);
+      console.error('Erro no login:', error);
+      
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Erro ao fazer login. Verifique seus dados.');
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    
-    try {
-      const response = await api.post('/clients/', formData);
-      
-      loginClient(response.data);
-      navigate('/cliente/dashboard');
-    } catch (error) {
-      const message = error.response?.data?.detail || 'Erro ao cadastrar';
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = (e) => {
-    if (activeTab === 'login') {
-      handleLogin(e);
-    } else {
-      handleRegister(e);
-    }
+  const handleBackClick = () => {
+    navigate('/');
   };
 
   return (
     <PageContainer>
-      <ContentCard>
-        <BackButton to="/">
-          <FaArrowLeft />
-          Voltar
-        </BackButton>
-        
+      <Container>
         <Header>
-          <div className="logo">M</div>
-          <h1>Matheus Barber</h1>
-          <p>Área do Cliente</p>
+          <BackButton onClick={handleBackClick}>
+            <FaArrowLeft />
+            Voltar
+          </BackButton>
+          <h1>Login do Cliente</h1>
         </Header>
-        
-        <TabContainer>
-          <Tab
-            active={activeTab === 'login'}
-            onClick={() => setActiveTab('login')}
-          >
-            <FaUser />
-            Login
-          </Tab>
-          <Tab
-            active={activeTab === 'register'}
-            onClick={() => setActiveTab('register')}
-          >
-            <FaUserPlus />
-            Cadastro
-          </Tab>
-        </TabContainer>
-        
-        <Form onSubmit={handleSubmit}>
-          {activeTab === 'register' && (
-            <div className="form-group">
-              <label className="form-label">Nome Completo</label>
+
+        <FormCard>
+          <form onSubmit={handleSubmit}>
+            <FormGroup>
+              <label>
+                <FaIdCard className="icon" />
+                CPF
+              </label>
               <input
                 type="text"
-                name="name"
-                className={`form-input ${errors.name ? 'error' : ''}`}
-                value={formData.name}
+                name="cpf"
+                value={formData.cpf}
                 onChange={handleInputChange}
-                placeholder="Digite seu nome completo"
+                placeholder="000.000.000-00"
+                maxLength="14"
+                className={errors.cpf ? 'error' : ''}
               />
-              {errors.name && <div className="form-error">{errors.name}</div>}
-            </div>
-          )}
-          
-          <div className="form-group">
-            <label className="form-label">
-              {activeTab === 'login' ? 'CPF ou Telefone' : 'CPF'}
-            </label>
-            <input
-              type="text"
-              name="cpf"
-              className={`form-input ${errors.cpf ? 'error' : ''}`}
-              value={formData.cpf}
-              onChange={handleInputChange}
-              placeholder={activeTab === 'login' ? 'CPF ou telefone' : 'Digite seu CPF'}
-            />
-            {errors.cpf && <div className="form-error">{errors.cpf}</div>}
-          </div>
-          
-          {activeTab === 'register' && (
-            <div className="form-group">
-              <label className="form-label">Telefone</label>
+              {errors.cpf && <ErrorMessage>{errors.cpf}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <label>
+                <FaPhone className="icon" />
+                Telefone
+              </label>
               <input
-                type="tel"
+                type="text"
                 name="phone"
-                className={`form-input ${errors.phone ? 'error' : ''}`}
                 value={formData.phone}
                 onChange={handleInputChange}
-                placeholder="Digite seu telefone"
+                placeholder="(00) 00000-0000"
+                maxLength="15"
+                className={errors.phone ? 'error' : ''}
               />
-              {errors.phone && <div className="form-error">{errors.phone}</div>}
-            </div>
-          )}
-          
-          {activeTab === 'register' && (
-            <div className="form-group">
-              <label className="form-label">Email (opcional)</label>
-              <input
-                type="email"
-                name="email"
-                className="form-input"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Digite seu email"
-              />
-            </div>
-          )}
-          
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <LoadingSpinner />
-                {activeTab === 'login' ? 'Entrando...' : 'Cadastrando...'}
-              </>
-            ) : (
-              activeTab === 'login' ? 'Entrar' : 'Cadastrar'
-            )}
-          </button>
-        </Form>
-      </ContentCard>
+              {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+            </FormGroup>
+
+            <SubmitButton type="submit" disabled={isLoading}>
+              {isLoading ? 'Entrando...' : 'Entrar'}
+            </SubmitButton>
+          </form>
+
+          <RegisterLink>
+            Não tem uma conta?{' '}
+            <button onClick={() => navigate('/cliente/cadastro')}>
+              Cadastre-se
+            </button>
+          </RegisterLink>
+        </FormCard>
+      </Container>
     </PageContainer>
   );
 };

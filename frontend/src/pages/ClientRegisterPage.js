@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaUserPlus, FaArrowLeft, FaIdCard, FaPhone, FaEnvelope, FaUser } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
 import api from '../services/api';
+import { toast } from 'react-toastify';
+import { cpfMask, phoneMask, validateCPF, validatePhone } from '../utils/masks';
+import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaArrowLeft } from 'react-icons/fa';
+import styled from 'styled-components';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -25,7 +26,7 @@ const ContentCard = styled.div`
   position: relative;
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.button`
   position: absolute;
   top: 20px;
   left: 20px;
@@ -39,6 +40,8 @@ const BackButton = styled(Link)`
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
   
   &:hover {
     background: var(--primary);
@@ -179,7 +182,8 @@ const LoginLink = styled.div`
 `;
 
 const ClientRegisterPage = () => {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { loginClient } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     cpf: '',
@@ -187,17 +191,24 @@ const ClientRegisterPage = () => {
     email: ''
   });
   const [errors, setErrors] = useState({});
-  
-  const { loginClient } = useAuth();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let formattedValue = value;
+
+    // Aplicar máscaras
+    if (name === 'cpf') {
+      formattedValue = cpfMask(value);
+    } else if (name === 'phone') {
+      formattedValue = phoneMask(value);
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }));
-    
+
     // Limpar erro do campo
     if (errors[name]) {
       setErrors(prev => ({
@@ -209,28 +220,29 @@ const ClientRegisterPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
-    
+
     if (!formData.cpf.trim()) {
       newErrors.cpf = 'CPF é obrigatório';
-    } else if (formData.cpf.length < 11) {
-      newErrors.cpf = 'CPF deve ter pelo menos 11 dígitos';
+    } else if (!validateCPF(formData.cpf)) {
+      newErrors.cpf = 'CPF inválido';
     }
-    
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Telefone é obrigatório';
-    } else if (formData.phone.length < 10) {
-      newErrors.phone = 'Telefone deve ter pelo menos 10 dígitos';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Telefone inválido';
     }
-    
-    // Validação básica de email (se fornecido)
-    if (formData.email && !formData.email.includes('@')) {
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email inválido';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -238,30 +250,52 @@ const ClientRegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
-    setLoading(true);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
     
     try {
-      const response = await api.post('/clients/', formData);
+      // Limpar formatação para enviar ao backend
+      const cleanData = {
+        ...formData,
+        cpf: formData.cpf.replace(/\D/g, ''),
+        phone: formData.phone.replace(/\D/g, '')
+      };
+
+      const response = await api.post('/clients/', cleanData);
       
-      // Fazer login automático após cadastro
-      loginClient(response.data);
-      
-      toast.success(`Bem-vindo, ${formData.name}! Cadastro realizado com sucesso.`);
-      navigate('/cliente/dashboard');
+      if (response.status === 201) {
+        toast.success('Cadastro realizado com sucesso!');
+        
+        // Fazer login automático
+        await loginClient(cleanData.cpf, cleanData.phone);
+        
+        // Redirecionar para tela de atendimento
+        navigate('/cliente/atendimento');
+      }
     } catch (error) {
-      const message = error.response?.data?.detail || 'Erro ao realizar cadastro';
-      toast.error(message);
+      console.error('Erro no cadastro:', error);
+      
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Erro ao realizar cadastro. Tente novamente.');
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const handleBackClick = () => {
+    navigate('/');
   };
 
   return (
     <PageContainer>
       <ContentCard>
-        <BackButton to="/cliente/login">
+        <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
           Voltar
         </BackButton>
@@ -300,7 +334,8 @@ const ClientRegisterPage = () => {
               className={`form-input ${errors.cpf ? 'error' : ''}`}
               value={formData.cpf}
               onChange={handleInputChange}
-              placeholder="Digite seu CPF"
+              placeholder="000.000.000-00"
+              maxLength="14"
             />
             {errors.cpf && <div className="form-error">{errors.cpf}</div>}
           </div>
@@ -311,12 +346,13 @@ const ClientRegisterPage = () => {
               Telefone
             </label>
             <input
-              type="tel"
+              type="text"
               name="phone"
               className={`form-input ${errors.phone ? 'error' : ''}`}
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="Digite seu telefone"
+              placeholder="(00) 00000-0000"
+              maxLength="15"
             />
             {errors.phone && <div className="form-error">{errors.phone}</div>}
           </div>
@@ -324,7 +360,7 @@ const ClientRegisterPage = () => {
           <div className="form-group">
             <label className="form-label">
               <FaEnvelope style={{ marginRight: '8px' }} />
-              Email (opcional)
+              Email
             </label>
             <input
               type="email"
@@ -332,7 +368,7 @@ const ClientRegisterPage = () => {
               className={`form-input ${errors.email ? 'error' : ''}`}
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="Digite seu email"
+              placeholder="seu@email.com"
             />
             {errors.email && <div className="form-error">{errors.email}</div>}
           </div>
@@ -340,25 +376,22 @@ const ClientRegisterPage = () => {
           <button
             type="submit"
             className="submit-btn"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <LoadingSpinner />
                 Cadastrando...
               </>
             ) : (
-              <>
-                <FaUserPlus style={{ marginRight: '8px' }} />
-                Cadastrar
-              </>
+                              'Cadastrar'
             )}
           </button>
         </Form>
         
         <LoginLink>
           <p>Já tem uma conta?</p>
-          <Link to="/cliente/login">Faça login aqui</Link>
+          <button onClick={() => navigate('/cliente/login')}>Faça login aqui</button>
         </LoginLink>
       </ContentCard>
     </PageContainer>

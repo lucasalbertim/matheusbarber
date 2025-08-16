@@ -1,7 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import styled from 'styled-components';
-import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-icons/fa';
+import { FaCut, FaUser, FaUserTie, FaArrowRight, FaClock, FaStar } from 'react-icons/fa';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -98,7 +99,7 @@ const OptionsSection = styled.section`
   }
 `;
 
-const OptionCard = styled(Link)`
+const OptionCard = styled.div`
   display: block;
   background: var(--surface);
   border-radius: 16px;
@@ -108,6 +109,7 @@ const OptionCard = styled(Link)`
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  cursor: pointer; /* Added cursor pointer for clickability */
   
   &:hover {
     transform: translateY(-8px);
@@ -217,6 +219,139 @@ const FeatureCard = styled.div`
 `;
 
 const HomePage = () => {
+  const navigate = useNavigate();
+  const { isClient, isAdmin, isLoading } = useAuth();
+
+  useEffect(() => {
+    // Se já estiver logado, redirecionar automaticamente
+    if (!isLoading) {
+      if (isClient()) {
+        navigate('/cliente/atendimento');
+      } else if (isAdmin()) {
+        navigate('/admin/dashboard');
+      }
+    }
+  }, [isLoading, isClient, isAdmin, navigate]);
+
+  const handleClientClick = () => {
+    navigate('/cliente/login');
+  };
+
+  const handleAdminClick = () => {
+    navigate('/admin/login');
+  };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isLoading) {
+    return (
+      <HomeContainer>
+        <HeroSection>
+          <HeroContent>
+            <LogoDisplay>
+              <div className="logo-circle">M</div>
+              <div className="logo-text">
+                <h2>Matheus Barber</h2>
+                <span>Desde 2018</span>
+              </div>
+            </LogoDisplay>
+            <h1>Sistema de Gerenciamento</h1>
+            <p>
+              Plataforma completa para gerenciar sua barbearia com eficiência e estilo.
+              Controle de clientes, agendamentos e relatórios em tempo real.
+            </p>
+          </HeroContent>
+        </HeroSection>
+        <MainContent>
+          <OptionsSection>
+            <OptionCard onClick={handleClientClick}>
+              <div className="card-header">
+                <div className="icon">
+                  <FaUser />
+                </div>
+                <div className="title">
+                  <h3>Sou Cliente</h3>
+                  <p>Acesse sua conta ou cadastre-se</p>
+                </div>
+              </div>
+              <div className="card-content">
+                <p>
+                  Faça login com seu CPF ou telefone para acessar seu perfil, 
+                  histórico de atendimentos e agendar novos serviços.
+                </p>
+                <div className="action">
+                  Acessar <FaArrowRight />
+                </div>
+              </div>
+            </OptionCard>
+
+            <OptionCard onClick={handleAdminClick}>
+              <div className="card-header">
+                <div className="icon">
+                  <FaUserTie />
+                </div>
+                <div className="title">
+                  <h3>Sou Administrador</h3>
+                  <p>Painel de controle da barbearia</p>
+                </div>
+              </div>
+              <div className="card-content">
+                <p>
+                  Acesse o painel administrativo para gerenciar clientes, 
+                  atendimentos, serviços e visualizar relatórios detalhados.
+                </p>
+                <div className="action">
+                  Acessar <FaArrowRight />
+                </div>
+              </div>
+            </OptionCard>
+          </OptionsSection>
+
+          <FeaturesSection>
+            <h2>Recursos Principais</h2>
+            <FeaturesGrid>
+              <FeatureCard>
+                <div className="icon">
+                  <FaCut />
+                </div>
+                <h3>Gestão de Serviços</h3>
+                <p>Controle completo dos serviços oferecidos com preços e duração</p>
+              </FeatureCard>
+              
+              <FeatureCard>
+                <div className="icon">
+                  <FaUser />
+                </div>
+                <h3>Cadastro de Clientes</h3>
+                <p>Sistema inteligente de cadastro e identificação de clientes</p>
+              </FeatureCard>
+              
+              <FeatureCard>
+                <div className="icon">
+                  <FaClock />
+                </div>
+                <h3>Agendamentos</h3>
+                <p>Controle de horários e atendimentos em tempo real</p>
+              </FeatureCard>
+              
+              <FeatureCard>
+                <div className="icon">
+                  <FaStar />
+                </div>
+                <h3>Relatórios</h3>
+                <p>Métricas e insights para melhorar o negócio</p>
+              </FeatureCard>
+            </FeaturesGrid>
+          </FeaturesSection>
+        </MainContent>
+      </HomeContainer>
+    );
+  }
+
+  // Se já estiver logado, não mostrar nada (será redirecionado)
+  if (isClient() || isAdmin()) {
+    return null;
+  }
+
   return (
     <HomeContainer>
       <HeroSection>
@@ -238,7 +373,7 @@ const HomePage = () => {
 
       <MainContent>
         <OptionsSection>
-          <OptionCard to="/cliente/login">
+          <OptionCard onClick={handleClientClick}>
             <div className="card-header">
               <div className="icon">
                 <FaUser />
@@ -259,7 +394,7 @@ const HomePage = () => {
             </div>
           </OptionCard>
 
-          <OptionCard to="/admin/login">
+          <OptionCard onClick={handleAdminClick}>
             <div className="card-header">
               <div className="icon">
                 <FaUserTie />
