@@ -42,18 +42,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Montar arquivos estáticos do frontend
+# Montar arquivos estáticos do frontend (apenas para produção)
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
 if os.path.exists(frontend_path):
     app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
 
-# Rota para servir o frontend
+# Rota para servir o frontend (apenas index.html)
 @app.get("/")
 async def serve_frontend():
     frontend_index = os.path.join(frontend_path, "index.html")
     if os.path.exists(frontend_index):
         return FileResponse(frontend_index)
     return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
+
+# Rota para verificar status da API
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Metheus Barber API funcionando"}
 
 security = HTTPBearer()
 
