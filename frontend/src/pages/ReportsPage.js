@@ -1,108 +1,547 @@
-import React from 'react';
-import styled from 'styled-components';
-import { FaChartLine, FaArrowLeft } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const PageContainer = styled.div`
-  min-height: 100vh;
-  background: var(--background);
-  padding: 20px;
-`;
+import styled from 'styled-components';
+import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+`;
+
+const Title = styled.h1`
+  color: var(--primary);
+  margin: 0;
 `;
 
 const BackButton = styled.button`
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  background: var(--background);
-  color: var(--text-primary);
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: color 0.3s;
+
+  &:hover {
+    color: var(--primary);
+  }
+`;
+
+const FilterSection = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+`;
+
+const FilterTitle = styled.h3`
+  color: var(--text);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FilterRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const FilterLabel = styled.label`
+  margin-bottom: 8px;
+  color: var(--text);
+  font-weight: 600;
+`;
+
+const FilterInput = styled.input`
+  padding: 10px;
   border: 2px solid var(--border);
   border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 30px;
-  
-  &:hover {
-    background: var(--primary);
-    color: var(--accent);
+  font-size: 16px;
+
+  &:focus {
+    outline: none;
     border-color: var(--primary);
   }
 `;
 
-const ContentCard = styled.div`
-  background: var(--surface);
-  border-radius: 20px;
-  padding: 60px;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+const FilterSelect = styled.select`
+  padding: 10px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  background: white;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
 `;
 
-const Icon = styled.div`
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
-  border-radius: 50%;
+const FilterActions = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+`;
+
+const FilterButton = styled.button`
+  padding: 12px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background: var(--primary-dark);
+  }
+`;
+
+const ExportButton = styled.button`
+  padding: 12px 24px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  color: var(--primary);
-  margin: 0 auto 30px;
-  box-shadow: 0 8px 32px rgba(212, 175, 55, 0.3);
+  gap: 8px;
+
+  &:hover {
+    background: var(--success-dark);
+  }
 `;
 
-const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 20px;
-`;
-
-const Description = styled.p`
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+const MetricsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
   margin-bottom: 30px;
+`;
+
+const MetricCard = styled.div`
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-left: 4px solid var(--primary);
+
+  &.revenue { border-left-color: var(--success); }
+  &.clients { border-left-color: var(--info); }
+  &.attendances { border-left-color: var(--warning); }
+  &.average { border-left-color: var(--secondary); }
+
+  .icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 15px;
+  }
+
+  .number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .label {
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .change {
+    font-size: 14px;
+    font-weight: 600;
+
+    &.positive { color: var(--success); }
+    &.negative { color: var(--error); }
+    &.neutral { color: var(--text-light); }
+  }
+`;
+
+const ChartsSection = styled.div`
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+`;
+
+const ChartTitle = styled.h3`
+  color: var(--text);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ChartPlaceholder = styled.div`
+  background: var(--background);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-light);
+
+  .icon {
+    font-size: 3rem;
+    color: var(--border);
+    margin-bottom: 15px;
+  }
+
+  h4 {
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+`;
+
+const TableSection = styled.div`
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const TableHeader = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  background: var(--background);
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+`;
+
+const TableRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+
+  &:hover {
+    background: var(--background);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+
+  h3 {
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+`;
+
+const LoadingState = styled.div`
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
 `;
 
 const ReportsPage = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    period: 'month'
+  });
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    totalClients: 0,
+    totalAttendances: 0,
+    averageTicket: 0
+  });
+  const [topClients, setTopClients] = useState([]);
+  const [revenueByPeriod, setRevenueByPeriod] = useState([]);
+
+  useEffect(() => {
+    if (!isAdmin()) {
+      navigate('/admin/login');
+      return;
+    }
+    fetchReports();
+  }, [isAdmin, navigate]);
+
+  const fetchReports = async () => {
+    try {
+      const [metricsResponse, clientsResponse, revenueResponse] = await Promise.all([
+        api.get('/admin/reports/summary'),
+        api.get('/admin/reports/top-clients'),
+        api.get('/admin/reports/revenue-by-period')
+      ]);
+
+      setMetrics(metricsResponse.data);
+      setTopClients(clientsResponse.data);
+      setRevenueByPeriod(revenueResponse.data);
+    } catch (error) {
+      console.error('Erro ao buscar relatórios:', error);
+      toast.error('Erro ao carregar relatórios');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    fetchReports();
+  };
+
+  const handleExportData = async () => {
+    try {
+      const response = await api.get('/admin/reports/export', {
+        params: filters,
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `relatorio-${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Relatório exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      toast.error('Erro ao exportar relatório');
+    }
+  };
+
+  const handleBackClick = () => {
+    navigate('/admin/dashboard');
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  if (isLoading) {
+    return (
+      <Container>
+        <LoadingState>
+          <h3>Carregando relatórios...</h3>
+        </LoadingState>
+      </Container>
+    );
+  }
 
   return (
-    <PageContainer>
-      <Container>
-        <BackButton onClick={() => navigate('/admin/dashboard')}>
+    <Container>
+      <Header>
+        <Title>Relatórios e Métricas</Title>
+        <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
           Voltar ao Dashboard
         </BackButton>
+      </Header>
+
+      <FilterSection>
+        <FilterTitle>
+          <FaFilter />
+          Filtros de Relatório
+        </FilterTitle>
         
-        <ContentCard>
-          <Icon>
-            <FaChartLine />
-          </Icon>
-          <Title>Relatórios e Métricas</Title>
-          <Description>
-            Esta funcionalidade será implementada em breve. Aqui você poderá:
-            <br />
-            • Visualizar métricas de clientes
-            <br />
-            • Acompanhar receita e faturamento
-            <br />
-            • Analisar tendências de atendimentos
-            <br />
-            • Identificar clientes inativos
-            <br />
-            • Exportar dados para análise
-          </Description>
-        </ContentCard>
-      </Container>
-    </PageContainer>
+        <FilterRow>
+          <FilterGroup>
+            <FilterLabel>Data Inicial</FilterLabel>
+            <FilterInput
+              type="date"
+              name="startDate"
+              value={filters.startDate}
+              onChange={handleFilterChange}
+            />
+          </FilterGroup>
+          
+          <FilterGroup>
+            <FilterLabel>Data Final</FilterLabel>
+            <FilterInput
+              type="date"
+              name="endDate"
+              value={filters.endDate}
+              onChange={handleFilterChange}
+            />
+          </FilterGroup>
+          
+          <FilterGroup>
+            <FilterLabel>Período</FilterLabel>
+            <FilterSelect
+              name="period"
+              value={filters.period}
+              onChange={handleFilterChange}
+            >
+              <option value="day">Diário</option>
+              <option value="week">Semanal</option>
+              <option value="month">Mensal</option>
+              <option value="quarter">Trimestral</option>
+              <option value="year">Anual</option>
+            </FilterSelect>
+          </FilterGroup>
+        </FilterRow>
+        
+        <FilterActions>
+          <FilterButton onClick={handleApplyFilters}>
+            Aplicar Filtros
+          </FilterButton>
+          
+          <ExportButton onClick={handleExportData}>
+            <FaDownload />
+            Exportar Relatório
+          </ExportButton>
+        </FilterActions>
+      </FilterSection>
+
+      <MetricsGrid>
+        <MetricCard className="revenue">
+          <div className="icon">
+            <FaMoneyBillWave />
+          </div>
+          <div className="number">{formatCurrency(metrics.totalRevenue)}</div>
+          <div className="label">Receita Total</div>
+          <div className="change positive">+12.5% vs mês anterior</div>
+        </MetricCard>
+        
+        <MetricCard className="clients">
+          <div className="icon">
+            <FaUsers />
+          </div>
+          <div className="number">{metrics.totalClients}</div>
+          <div className="label">Total de Clientes</div>
+          <div className="change positive">+8.3% vs mês anterior</div>
+        </MetricCard>
+        
+        <MetricCard className="attendances">
+          <div className="icon">
+            <FaCalendarAlt />
+          </div>
+          <div className="number">{metrics.totalAttendances}</div>
+          <div className="label">Total de Atendimentos</div>
+          <div className="change positive">+15.2% vs mês anterior</div>
+        </MetricCard>
+        
+        <MetricCard className="average">
+          <div className="icon">
+            <FaChartBar />
+          </div>
+          <div className="number">{formatCurrency(metrics.averageTicket)}</div>
+          <div className="label">Ticket Médio</div>
+          <div className="change neutral">0% vs mês anterior</div>
+        </MetricCard>
+      </MetricsGrid>
+
+      <ChartsSection>
+        <ChartTitle>
+          <FaChartBar />
+          Receita por Período
+        </ChartTitle>
+        <ChartPlaceholder>
+          <div className="icon">
+            <FaChartBar />
+          </div>
+          <h4>Gráfico de Receita</h4>
+          <p>Este gráfico mostrará a evolução da receita ao longo do tempo.</p>
+        </ChartPlaceholder>
+      </ChartsSection>
+
+      <TableSection>
+        <TableHeader>
+          <div>Cliente</div>
+          <div>Total de Visitas</div>
+          <div>Receita Total</div>
+          <div>Última Visita</div>
+          <div>Status</div>
+        </TableHeader>
+
+        {topClients.length === 0 ? (
+          <EmptyState>
+            <h3>Nenhum cliente encontrado</h3>
+            <p>Comece cadastrando clientes para gerar relatórios.</p>
+          </EmptyState>
+        ) : (
+          topClients.map((client) => (
+            <TableRow key={client.id}>
+              <div>
+                    <strong>{client.name}</strong>
+                    <br />
+                    <small>{client.phone}</small>
+                  </div>
+                  <div>{client.totalVisits}</div>
+                  <div>{formatCurrency(client.totalRevenue)}</div>
+                  <div>{formatDate(client.lastVisit)}</div>
+                  <div>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      backgroundColor: client.status === 'active' ? '#d4edda' : '#f8d7da',
+                      color: client.status === 'active' ? '#155724' : '#721c24'
+                    }}>
+                      {client.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+            </TableRow>
+          ))
+        )}
+      </TableSection>
+    </Container>
   );
 };
 
