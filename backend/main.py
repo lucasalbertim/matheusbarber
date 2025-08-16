@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import jwt
 from datetime import datetime, timedelta
+import os
 
 from database import get_db, engine
 from models import Base, Client, Admin, Service, Attendance
@@ -26,18 +29,31 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Metheus Barber API",
-    description="API para sistema de barbearia",
-    version="1.0.0"
+    description="API para sistema de gerenciamento de barbearia",
+    version="1.1.0"
 )
 
-# CORS
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # Em produção, especificar domínios específicos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Montar arquivos estáticos do frontend
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
+
+# Rota para servir o frontend
+@app.get("/")
+async def serve_frontend():
+    frontend_index = os.path.join(frontend_path, "index.html")
+    if os.path.exists(frontend_index):
+        return FileResponse(frontend_index)
+    return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
 
 security = HTTPBearer()
 
@@ -172,7 +188,3 @@ def send_whatsapp_message(
 ):
     """Enviar mensagem via WhatsApp (apenas admin)"""
     return whatsapp_service.send_message(phone, message)
-
-@app.get("/")
-def read_root():
-    return {"message": "Metheus Barber API", "version": "1.0.0"}

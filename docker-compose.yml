@@ -15,20 +15,23 @@ services:
       - metheus_network
 
   backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
+    build: 
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/metheus_barber
       SECRET_KEY: your-secret-key-here-change-in-production
       WHATSAPP_API_KEY: your-whatsapp-api-key
       WHATSAPP_PHONE_NUMBER: your-whatsapp-phone-number
+    ports:
+      - "8000:8000"
     depends_on:
       - postgres
-    networks:
-      - metheus_network
     volumes:
       - ./backend:/app
+      - ./frontend/build:/app/frontend_build
+    networks:
+      - metheus_network
 
   frontend:
     build: ./frontend
@@ -36,13 +39,13 @@ services:
       - "3000:3000"
     environment:
       REACT_APP_API_URL: http://localhost:8000
-    depends_on:
-      - backend
-    networks:
-      - metheus_network
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks:
+      - metheus_network
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
