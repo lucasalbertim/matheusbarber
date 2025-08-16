@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaScissors, FaArrowLeft } from 'react-icons/fa';
+import { FaCut, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const PageContainer = styled.div`
@@ -84,7 +84,7 @@ const AttendanceManagementPage = () => {
         
         <ContentCard>
           <Icon>
-            <FaScissors />
+            <FaCut />
           </Icon>
           <Title>Gestão de Atendimentos</Title>
           <Description>

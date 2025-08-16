@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUserTie, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';

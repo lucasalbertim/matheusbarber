@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaChartLine, FaArrowLeft } from 'react-icons/fa';
+import { FaChartBar, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const PageContainer = styled.div`
@@ -84,7 +84,7 @@ const ReportsPage = () => {
         
         <ContentCard>
           <Icon>
-            <FaChartLine />
+            <FaChartBar />
           </Icon>
           <Title>Relatórios e Métricas</Title>
           <Description>

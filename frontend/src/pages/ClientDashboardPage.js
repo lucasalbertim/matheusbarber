@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUser, FaCalendar, FaClock, FaScissors, FaArrowLeft } from 'react-icons/fa';
+import { FaUser, FaCalendar, FaCut, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
 import api from '../services/api';
 
 const PageContainer = styled.div`
@@ -154,6 +153,18 @@ const ClientDashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchAttendances = async () => {
+      try {
+        await api.get(`/clients/${client.id}`);
+        // Aqui você pode implementar a busca de atendimentos do cliente
+        setAttendances([]); // Placeholder
+      } catch (error) {
+        console.error('Erro ao buscar atendimentos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (!client) {
       navigate('/cliente/login');
       return;
@@ -161,18 +172,6 @@ const ClientDashboardPage = () => {
     
     fetchAttendances();
   }, [client, navigate]);
-
-  const fetchAttendances = async () => {
-    try {
-      const response = await api.get(`/clients/${client.id}`);
-      // Aqui você pode implementar a busca de atendimentos do cliente
-      setAttendances([]); // Placeholder
-    } catch (error) {
-      console.error('Erro ao buscar atendimentos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = () => {
     logoutClient();
@@ -245,7 +244,7 @@ const ClientDashboardPage = () => {
           <DashboardCard>
             <div className="card-header">
               <div className="icon">
-                <FaScissors />
+                <FaCut />
               </div>
               <h3>Histórico de Serviços</h3>
             </div>
