@@ -178,6 +178,24 @@ def auto_inactivate_clients(
     count = client_service.auto_inactivate_clients(db, days_inactive)
     return {"message": f"{count} clientes foram inativados automaticamente"}
 
+@app.post("/admin/clients/{client_id}/reactivate")
+def reactivate_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Reativar cliente inativo (apenas admin)"""
+    client = client_service.get_client(db, client_id)
+    if client.is_active:
+        raise HTTPException(status_code=400, detail="Cliente já está ativo")
+    
+    client.is_active = True
+    client.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(client)
+    
+    return {"message": "Cliente reativado com sucesso"}
+
 # Rotas de Serviços
 @app.post("/services/", response_model=ServiceResponse)
 def create_service(

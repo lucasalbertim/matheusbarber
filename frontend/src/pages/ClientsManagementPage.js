@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR } from '../utils/formatters';
@@ -235,6 +235,15 @@ const ActionButton = styled.button`
       background: #128C7E;
     }
   }
+
+  &.reactivate {
+    background: var(--success);
+    color: white;
+
+    &:hover {
+      background: var(--success-dark);
+    }
+  }
 `;
 
 const EmptyState = styled.div`
@@ -357,6 +366,21 @@ ID: ${client.id}
     } catch (error) {
       console.error('Erro ao inativar clientes:', error);
       toast.error('Erro ao executar inativação automática');
+    }
+  };
+
+  const handleReactivateClient = async (clientId) => {
+    if (!window.confirm('Deseja reativar este cliente?')) {
+      return;
+    }
+
+    try {
+      await api.post(`/admin/clients/${clientId}/reactivate`);
+      toast.success('Cliente reativado com sucesso');
+      fetchClients();
+    } catch (error) {
+      console.error('Erro ao reativar cliente:', error);
+      toast.error('Erro ao reativar cliente');
     }
   };
 
@@ -483,6 +507,16 @@ ID: ${client.id}
                 >
                   <FaWhatsapp />
                 </ActionButton>
+                
+                {!client.is_active && (
+                  <ActionButton
+                    className="reactivate"
+                    title="Reativar"
+                    onClick={() => handleReactivateClient(client.id)}
+                  >
+                    <FaUserCheck />
+                  </ActionButton>
+                )}
                 
                 <ActionButton
                   className="delete"
