@@ -36,10 +36,14 @@ class AttendanceService:
         payload.pop('service_ids', None)
         db_attendance = Attendance(**payload)
         db_attendance.services = services
-        # Status inicial permanece 'waiting' e pagamento 'pending' (simulado)
+        # Definir status inicial explicitamente
+        db_attendance.status = "waiting"
+        db_attendance.payment_status = "pending"
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
+        
+        print(f"Atendimento criado: ID={db_attendance.id}, Status={db_attendance.status}, Data={db_attendance.appointment_date}")
         
         return db_attendance
     
@@ -54,9 +58,15 @@ class AttendanceService:
     
     def get_today_attendance(self, db: Session) -> List[Attendance]:
         today = date.today()
-        return db.query(Attendance).filter(
+        attendances = db.query(Attendance).filter(
             func.date(Attendance.appointment_date) == today
-        ).order_by(Attendance.appointment_date).all()
+        ).order_by(Attendance.appointment_date.desc()).all()
+        
+        print(f"Atendimentos de hoje ({today}): {len(attendances)} encontrados")
+        for att in attendances:
+            print(f"  - ID: {att.id}, Status: {att.status}, Data: {att.appointment_date}")
+        
+        return attendances
     
     def update_attendance(self, db: Session, attendance_id: int, attendance_update: AttendanceUpdate) -> Attendance:
         db_attendance = self.get_attendance(db, attendance_id)
