@@ -17,15 +17,18 @@ class AttendanceService:
                 detail="Cliente não encontrado"
             )
         
-        # Verificar se serviço existe
-        service = db.query(Service).filter(Service.id == attendance.service_id).first()
-        if not service:
+        # Buscar e validar serviços
+        services = db.query(Service).filter(Service.id.in_(attendance.service_ids), Service.is_active == True).all()
+        if not services or len(services) != len(attendance.service_ids):
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Serviço não encontrado"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Um ou mais serviços inválidos/inativos"
             )
         
-        db_attendance = Attendance(**attendance.dict())
+        payload = attendance.dict()
+        payload.pop('service_ids', None)
+        db_attendance = Attendance(**payload)
+        db_attendance.services = services
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
@@ -46,7 +49,7 @@ class AttendanceService:
         return db.query(Attendance).filter(
             and_(
                 func.date(Attendance.appointment_date) == today,
-                Attendance.status.in_(["pending", "in_progress"])
+                Attendance.status.in_(["waiting", "progress"])
             )
         ).order_by(Attendance.appointment_date).all()
     
@@ -77,8 +80,8 @@ class AttendanceService:
         # Total de atendimentos
         total_attendances = db.query(func.count(Attendance.id)).scalar()
         
-        # Receita total
-        total_revenue = db.query(func.sum(Service.price)).join(Attendance).filter(
+        # Receita total (soma de serviços dos atendimentos pagos)
+        total_revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
             Attendance.payment_status == "paid"
         ).scalar() or 0.0
         

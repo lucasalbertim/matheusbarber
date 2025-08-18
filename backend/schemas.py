@@ -71,13 +71,12 @@ class ServiceResponse(ServiceBase):
 # Schemas de Atendimento
 class AttendanceBase(BaseModel):
     client_id: int
-    service_id: int
     appointment_date: datetime
     payment_method: Optional[str] = None
     notes: Optional[str] = None
 
 class AttendanceCreate(AttendanceBase):
-    pass
+    service_ids: List[int]
 
 class AttendanceUpdate(BaseModel):
     status: Optional[str] = None
@@ -92,7 +91,7 @@ class AttendanceResponse(AttendanceBase):
     created_at: datetime
     updated_at: datetime
     client: ClientResponse
-    service: ServiceResponse
+    services: List[ServiceResponse]
     
     class Config:
         from_attributes = True
