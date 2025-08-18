@@ -115,13 +115,17 @@ class AttendanceService:
             Attendance.payment_status == "pending"
         ).scalar()
         
+        # Calcular ticket médio
+        average_ticket = total_revenue / total_attendances if total_attendances > 0 else 0.0
+        
         return {
-            "total_clients": total_clients,
-            "total_attendances": total_attendances,
-            "total_revenue": total_revenue,
-            "inactive_clients": inactive_clients,
-            "today_attendances": today_attendances,
-            "pending_payments": pending_payments
+            "totalClients": total_clients,
+            "totalAttendances": total_attendances,
+            "totalRevenue": float(total_revenue),
+            "averageTicket": float(average_ticket),
+            "inactiveClients": inactive_clients,
+            "todayAttendances": today_attendances,
+            "pendingPayments": pending_payments
         }
     
     def get_attendance_by_status(self, db: Session, status: str) -> List[Attendance]:
@@ -146,7 +150,8 @@ class AttendanceService:
             Client.name,
             Client.phone,
             func.count(Attendance.id).label('attendance_count'),
-            func.sum(Service.price).label('total_spent')
+            func.sum(Service.price).label('total_spent'),
+            func.max(Attendance.appointment_date).label('last_visit')
         ).join(Attendance, Client.id == Attendance.client_id)\
          .join(Attendance.services)\
          .filter(Attendance.payment_status == "paid")\
@@ -160,8 +165,10 @@ class AttendanceService:
                 "id": row.id,
                 "name": row.name,
                 "phone": row.phone,
-                "attendance_count": row.attendance_count,
-                "total_spent": float(row.total_spent or 0)
+                "totalVisits": row.attendance_count,
+                "totalRevenue": float(row.total_spent or 0),
+                "lastVisit": row.last_visit.isoformat() if row.last_visit else None,
+                "status": "active"  # Por enquanto todos são ativos
             }
             for row in result
         ]
