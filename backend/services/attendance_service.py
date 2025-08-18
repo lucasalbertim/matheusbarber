@@ -10,8 +10,6 @@ from utils.date_utils import get_recife_datetime, get_recife_date
 
 class AttendanceService:
     def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Attendance:
-        print(f"Criando atendimento para cliente {attendance.client_id}")
-        
         # Verificar se cliente existe
         client = db.query(Client).filter(Client.id == attendance.client_id).first()
         if not client:
@@ -37,7 +35,6 @@ class AttendanceService:
         
         payload = attendance.dict()
         payload.pop('service_ids', None)
-        print(f"Payload antes de criar: {payload}")
         
         db_attendance = Attendance(**payload)
         db_attendance.services = services
@@ -45,13 +42,9 @@ class AttendanceService:
         db_attendance.status = "waiting"
         db_attendance.payment_status = "pending"
         
-        print(f"Status definido: {db_attendance.status}")
-        
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
-        
-        print(f"Atendimento criado: ID={db_attendance.id}, Status={db_attendance.status}, Data={db_attendance.appointment_date}")
         
         return db_attendance
     
@@ -67,20 +60,10 @@ class AttendanceService:
     def get_today_attendance(self, db: Session) -> List[Attendance]:
         today = get_recife_date()
         
-        # Verificar todos os atendimentos no banco
-        all_attendances = db.query(Attendance).all()
-        print(f"Total de atendimentos no banco: {len(all_attendances)}")
-        for att in all_attendances:
-            print(f"  - ID: {att.id}, Status: {att.status}, Data: {att.appointment_date}, Cliente: {att.client_id}")
-        
         # Buscar atendimentos de hoje
         attendances = db.query(Attendance).filter(
             func.date(Attendance.appointment_date) == today
         ).order_by(Attendance.appointment_date.desc()).all()
-        
-        print(f"Atendimentos de hoje ({today}): {len(attendances)} encontrados")
-        for att in attendances:
-            print(f"  - ID: {att.id}, Status: {att.status}, Data: {att.appointment_date}")
         
         return attendances
     
@@ -135,8 +118,6 @@ class AttendanceService:
         today_attendances = db.query(func.count(Attendance.id)).filter(
             func.date(Attendance.appointment_date) == today
         ).scalar()
-        
-        print(f"Dashboard - Atendimentos de hoje ({today}): {today_attendances}")
         
         # Pagamentos pendentes
         pending_payments = db.query(func.count(Attendance.id)).filter(
