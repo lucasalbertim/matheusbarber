@@ -298,7 +298,9 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--secondary)' }}>
                 <FaCut />
               </div>
-              <div className="trend positive">+8%</div>
+              <div className={`trend ${(metrics.growthPercentages?.attendancesGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.attendancesGrowth ? `${metrics.growthPercentages.attendancesGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.attendancesGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
             <div className="metric-value">{metrics.totalAttendances}</div>
             <div className="metric-label">Total de Atendimentos</div>
@@ -309,7 +311,9 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(40, 167, 69, 0.1)', color: 'var(--success)' }}>
                 <FaDollarSign />
               </div>
-              <div className="trend positive">+15%</div>
+              <div className={`trend ${(metrics.growthPercentages?.revenueGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.revenueGrowth ? `${metrics.growthPercentages.revenueGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.revenueGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
             <div className="metric-value">R$ {(metrics.totalRevenue || 0).toFixed(2)}</div>
             <div className="metric-label">Receita Total</div>
@@ -320,7 +324,9 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(220, 53, 69, 0.1)', color: 'var(--error)' }}>
                 <FaExclamationCircle />
               </div>
-              <div className="trend negative">-5%</div>
+              <div className={`trend ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
             <div className="metric-value">{metrics.inactiveClients}</div>
             <div className="metric-label">Clientes Inativos</div>
