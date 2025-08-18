@@ -95,13 +95,17 @@ class AttendanceService:
             Attendance.payment_status == "paid"
         ).scalar() or 0.0
         
-        # Clientes inativos (últimos 30 dias)
+        # Clientes inativos (não fizeram atendimentos nos últimos 30 dias)
         from datetime import timedelta
         cutoff_date = datetime.utcnow() - timedelta(days=30)
         inactive_clients = db.query(func.count(Client.id)).filter(
             and_(
                 Client.is_active == True,
-                Client.updated_at < cutoff_date
+                ~Client.id.in_(
+                    db.query(Attendance.client_id).filter(
+                        func.date(Attendance.appointment_date) >= cutoff_date.date()
+                    ).distinct()
+                )
             )
         ).scalar()
         
