@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import * as Recharts from 'recharts';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
@@ -510,34 +509,8 @@ const ReportsPage = () => {
           Receita por Período
         </ChartTitle>
         {revenueData.length > 0 ? (
-          <Recharts.ResponsiveContainer width="100%" height={300}>
-            <Recharts.LineChart data={revenueData}>
-              <Recharts.CartesianGrid strokeDasharray="3 3" />
-              <Recharts.XAxis 
-                dataKey="label" 
-                tick={{ fontSize: 12 }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <Recharts.YAxis 
-                tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
-                tick={{ fontSize: 12 }}
-              />
-              <Recharts.Tooltip 
-                formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Receita']}
-                labelFormatter={(label) => `Período: ${label}`}
-              />
-              <Recharts.Line 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="#28a745" 
-                strokeWidth={3}
-                dot={{ fill: '#28a745', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: '#28a745', strokeWidth: 2 }}
-              />
-            </Recharts.LineChart>
-          </Recharts.ResponsiveContainer>
+          <SimpleChart data={revenueData} />
+        ) : (
         ) : (
           <ChartPlaceholder>
             <div className="icon">
@@ -591,6 +564,122 @@ const ReportsPage = () => {
         )}
       </TableSection>
     </Container>
+  );
+};
+
+// Componente de gráfico simples usando Canvas
+const SimpleChart = ({ data }) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!data || data.length === 0) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Limpar canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Encontrar valores máximo e mínimo
+    const maxRevenue = Math.max(...data.map(d => d.revenue));
+    const minRevenue = Math.min(...data.map(d => d.revenue));
+    const range = maxRevenue - minRevenue || 1;
+
+    // Configurações
+    const padding = 60;
+    const chartWidth = width - 2 * padding;
+    const chartHeight = height - 2 * padding;
+    const pointSpacing = chartWidth / (data.length - 1);
+
+    // Desenhar grade
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    
+    // Linhas horizontais
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    // Linhas verticais
+    for (let i = 0; i < data.length; i++) {
+      const x = padding + pointSpacing * i;
+      ctx.beginPath();
+      ctx.moveTo(x, padding);
+      ctx.lineTo(x, height - padding);
+      ctx.stroke();
+    }
+
+    // Desenhar linha do gráfico
+    ctx.strokeStyle = '#28a745';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    data.forEach((point, index) => {
+      const x = padding + pointSpacing * index;
+      const y = height - padding - ((point.revenue - minRevenue) / range) * chartHeight;
+      
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+
+    ctx.stroke();
+
+    // Desenhar pontos
+    ctx.fillStyle = '#28a745';
+    data.forEach((point, index) => {
+      const x = padding + pointSpacing * index;
+      const y = height - padding - ((point.revenue - minRevenue) / range) * chartHeight;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
+    // Desenhar labels do eixo Y
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'right';
+    
+    for (let i = 0; i <= 5; i++) {
+      const value = minRevenue + (range / 5) * i;
+      const y = padding + (chartHeight / 5) * i;
+      ctx.fillText(`R$ ${value.toFixed(0)}`, padding - 10, y + 4);
+    }
+
+    // Desenhar labels do eixo X
+    ctx.textAlign = 'center';
+    data.forEach((point, index) => {
+      const x = padding + pointSpacing * index;
+      const y = height - padding + 20;
+      
+      // Rotacionar texto para melhor legibilidade
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(point.label, 0, 0);
+      ctx.restore();
+    });
+
+  }, [data]);
+
+  return (
+    <div style={{ width: '100%', height: '300px', position: 'relative' }}>
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={300}
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
   );
 };
 
