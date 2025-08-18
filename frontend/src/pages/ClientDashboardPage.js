@@ -147,47 +147,29 @@ const DashboardCard = styled.div`
       .attendance-item {
         border: 1px solid var(--border);
         border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
         
         &:last-child {
           margin-bottom: 0;
         }
         
-        .attendance-date {
-          font-weight: 600;
-          color: var(--primary);
-          margin-bottom: 8px;
-          font-size: 0.9rem;
-        }
-        
-        .attendance-services {
+        .attendance-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 8px;
           
-          .service-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 0;
-            
-            .service-name {
-              color: var(--text-secondary);
-              font-weight: 500;
-            }
-            
-            .service-price {
-              color: var(--success);
-              font-weight: 600;
-              font-size: 0.9rem;
-            }
+          .attendance-date {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
           }
-        }
-        
-        .attendance-status {
+          
           .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
             
@@ -204,6 +186,17 @@ const DashboardCard = styled.div`
             &.finished {
               background: var(--success-light);
               color: var(--success);
+            }
+          }
+        }
+        
+        .attendance-services {
+          .service-item {
+            padding: 2px 0;
+            
+            .service-name {
+              color: var(--text-secondary);
+              font-size: 0.85rem;
             }
           }
         }
@@ -320,23 +313,22 @@ const ClientDashboardPage = () => {
               {attendances.length > 0 ? (
                 attendances.map((attendance) => (
                   <div key={attendance.id} className="attendance-item">
-                    <div className="attendance-date">
-                      {new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}
-                    </div>
-                    <div className="attendance-services">
-                      {attendance.services.map((service, index) => (
-                        <div key={index} className="service-item">
-                          <span className="service-name">{service.name}</span>
-                          <span className="service-price">R$ {service.price.toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="attendance-status">
+                    <div className="attendance-header">
+                      <span className="attendance-date">
+                        {new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}
+                      </span>
                       <span className={`status-badge ${attendance.status}`}>
                         {attendance.status === 'waiting' ? 'Aguardando' :
                          attendance.status === 'progress' ? 'Em Andamento' :
                          attendance.status === 'finished' ? 'Finalizado' : attendance.status}
                       </span>
+                    </div>
+                    <div className="attendance-services">
+                      {attendance.services.map((service, index) => (
+                        <div key={index} className="service-item">
+                          <span className="service-name">• {service.name}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))
