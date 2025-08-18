@@ -48,10 +48,7 @@ class AttendanceService:
     def get_today_attendance(self, db: Session) -> List[Attendance]:
         today = date.today()
         return db.query(Attendance).filter(
-            and_(
-                func.date(Attendance.appointment_date) == today,
-                Attendance.status.in_(["waiting", "progress"]) 
-            )
+            func.date(Attendance.appointment_date) == today
         ).order_by(Attendance.appointment_date).all()
     
     def update_attendance(self, db: Session, attendance_id: int, attendance_update: AttendanceUpdate) -> Attendance:
@@ -139,5 +136,47 @@ class AttendanceService:
                 func.date(Attendance.appointment_date) <= end_date
             )
         ).all()
+
+    def get_top_clients(self, db: Session) -> List[Dict[str, Any]]:
+        """Obter top clientes por número de atendimentos"""
+        from sqlalchemy import desc
+        
+        result = db.query(
+            Client.id,
+            Client.name,
+            Client.phone,
+            func.count(Attendance.id).label('attendance_count'),
+            func.sum(Service.price).label('total_spent')
+        ).join(Attendance, Client.id == Attendance.client_id)\
+         .join(Attendance.services)\
+         .filter(Attendance.payment_status == "paid")\
+         .group_by(Client.id, Client.name, Client.phone)\
+         .order_by(desc('attendance_count'))\
+         .limit(10)\
+         .all()
+        
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "phone": row.phone,
+                "attendance_count": row.attendance_count,
+                "total_spent": float(row.total_spent or 0)
+            }
+            for row in result
+        ]
+
+    def export_reports(self, db: Session) -> Dict[str, Any]:
+        """Exportar relatórios (simulado)"""
+        # Por enquanto retorna dados básicos para simular exportação
+        summary = self.get_reports_summary(db)
+        top_clients = self.get_top_clients(db)
+        
+        return {
+            "summary": summary,
+            "top_clients": top_clients,
+            "export_date": datetime.utcnow().isoformat(),
+            "message": "Exportação simulada - implementar geração de arquivo Excel"
+        }
 
 attendance_service = AttendanceService()

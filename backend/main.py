@@ -222,6 +222,22 @@ def get_reports_summary(
     """Obter resumo de relatórios (apenas admin)"""
     return attendance_service.get_reports_summary(db)
 
+@app.get("/admin/reports/top-clients")
+def get_top_clients(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter top clientes (apenas admin)"""
+    return attendance_service.get_top_clients(db)
+
+@app.get("/admin/reports/export")
+def export_reports(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Exportar relatórios (apenas admin)"""
+    return attendance_service.export_reports(db)
+
 # Rotas de WhatsApp
 @app.post("/whatsapp/send-message")
 def send_whatsapp_message(
