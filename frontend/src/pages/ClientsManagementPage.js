@@ -46,6 +46,21 @@ const SearchBar = styled.div`
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
+  align-items: center;
+`;
+
+const StatusFilter = styled.select`
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  background: white;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
 `;
 
 const SearchInput = styled.input`
@@ -89,7 +104,7 @@ const ClientsTable = styled.div`
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 120px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 80px 120px;
   gap: 20px;
   padding: 20px;
   background: var(--background);
@@ -100,7 +115,7 @@ const TableHeader = styled.div`
 
 const ClientRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 120px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 80px 120px;
   gap: 20px;
   padding: 20px;
   border-bottom: 1px solid var(--border);
@@ -131,6 +146,24 @@ const ClientInfo = styled.div`
 const ActionButtons = styled.div`
   display: flex;
   gap: 8px;
+`;
+
+const StatusBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  
+  &.active {
+    background: var(--success-light);
+    color: var(--success);
+  }
+  
+  &.inactive {
+    background: var(--error-light);
+    color: var(--error);
+  }
 `;
 
 const ActionButton = styled.button`
@@ -203,6 +236,7 @@ const ClientsManagementPage = () => {
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -211,7 +245,7 @@ const ClientsManagementPage = () => {
       return;
     }
     fetchClients();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, statusFilter]);
 
   useEffect(() => {
     const filterClients = () => {
@@ -234,7 +268,7 @@ const ClientsManagementPage = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await api.get('/admin/clients/');
+      const response = await api.get(`/admin/clients/?status=${statusFilter}`);
       setClients(response.data);
       setFilteredClients(response.data);
     } catch (error) {
@@ -269,13 +303,13 @@ ID: ${client.id}
   };
 
   const handleDeleteClient = async (clientId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) {
+    if (!window.confirm('⚠️ ATENÇÃO: Você está excluindo definitivamente o cliente do banco de dados. Esta ação não pode ser desfeita. Deseja continuar?')) {
       return;
     }
 
     try {
       await api.delete(`/admin/clients/${clientId}`);
-      toast.success('Cliente excluído com sucesso');
+      toast.success('Cliente excluído definitivamente com sucesso');
       fetchClients();
     } catch (error) {
       console.error('Erro ao excluir cliente:', error);
@@ -325,6 +359,14 @@ ID: ${client.id}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+        <StatusFilter
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">Todos os Clientes</option>
+          <option value="active">Apenas Ativos</option>
+          <option value="inactive">Apenas Inativos</option>
+        </StatusFilter>
         <AddButton onClick={handleAddClient}>
           <FaPlus />
           Novo Cliente
@@ -337,6 +379,7 @@ ID: ${client.id}
           <div>CPF</div>
           <div>Telefone</div>
           <div>Email</div>
+          <div>Status</div>
           <div>Ações</div>
         </TableHeader>
 
@@ -367,6 +410,12 @@ ID: ${client.id}
                 <div className="name">{client.email || 'Não informado'}</div>
                 <div className="details">Email</div>
               </ClientInfo>
+              
+              <div>
+                <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
+                  {client.is_active ? 'Ativo' : 'Inativo'}
+                </StatusBadge>
+              </div>
               
               <ActionButtons>
                 <ActionButton

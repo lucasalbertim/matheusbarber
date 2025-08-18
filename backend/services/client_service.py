@@ -167,10 +167,29 @@ class ClientService:
         return db_client
     
     def delete_client(self, db: Session, client_id: int):
+        """Excluir cliente definitivamente do banco"""
+        db_client = self.get_client(db, client_id)
+        db.delete(db_client)
+        db.commit()
+    
+    def inactivate_client(self, db: Session, client_id: int):
+        """Marcar cliente como inativo (após 45 dias sem visita)"""
         db_client = self.get_client(db, client_id)
         db_client.is_active = False
         db_client.updated_at = datetime.utcnow()
         db.commit()
+    
+    def get_clients_with_status(self, db: Session, status_filter: str = "all", skip: int = 0, limit: int = 100) -> List[Client]:
+        """Buscar clientes com filtro de status"""
+        query = db.query(Client)
+        
+        if status_filter == "active":
+            query = query.filter(Client.is_active == True)
+        elif status_filter == "inactive":
+            query = query.filter(Client.is_active == False)
+        # Se "all", não aplica filtro
+        
+        return query.offset(skip).limit(limit).all()
     
     def get_inactive_clients(self, db: Session, days_inactive: int = 30) -> List[Client]:
         """Buscar clientes inativos por X dias"""

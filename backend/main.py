@@ -121,13 +121,14 @@ def get_current_admin_info(current_admin: Admin = Depends(get_current_admin)):
 # Rotas de Cliente (Administrativas)
 @app.get("/admin/clients/", response_model=List[ClientResponse])
 def list_clients(
+    status: str = Query("all", description="Filtro de status: all, active, inactive"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    """Listar todos os clientes (apenas admin)"""
-    return client_service.get_clients(db, skip=skip, limit=limit)
+    """Listar clientes com filtro de status (apenas admin)"""
+    return client_service.get_clients_with_status(db, status, skip, limit)
 
 @app.put("/admin/clients/{client_id}", response_model=ClientResponse)
 def update_client(
