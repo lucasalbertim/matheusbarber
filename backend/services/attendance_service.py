@@ -9,6 +9,8 @@ from schemas import AttendanceCreate, AttendanceUpdate
 
 class AttendanceService:
     def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Attendance:
+        print(f"Criando atendimento para cliente {attendance.client_id}")
+        
         # Verificar se cliente existe
         client = db.query(Client).filter(Client.id == attendance.client_id).first()
         if not client:
@@ -34,11 +36,16 @@ class AttendanceService:
         
         payload = attendance.dict()
         payload.pop('service_ids', None)
+        print(f"Payload antes de criar: {payload}")
+        
         db_attendance = Attendance(**payload)
         db_attendance.services = services
         # Definir status inicial explicitamente
         db_attendance.status = "waiting"
         db_attendance.payment_status = "pending"
+        
+        print(f"Status definido: {db_attendance.status}")
+        
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
