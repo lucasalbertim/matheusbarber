@@ -49,7 +49,7 @@ class AttendanceService:
         return db.query(Attendance).filter(
             and_(
                 func.date(Attendance.appointment_date) == today,
-                Attendance.status.in_(["waiting", "progress"])
+                Attendance.status.in_(["waiting", "progress"]) 
             )
         ).order_by(Attendance.appointment_date).all()
     
