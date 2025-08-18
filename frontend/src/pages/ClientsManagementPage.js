@@ -247,8 +247,25 @@ const ClientsManagementPage = () => {
 
 
 
+  const handleViewClient = (clientId) => {
+    // Por enquanto, vamos mostrar os detalhes em um modal ou alert
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      const details = `
+Nome: ${client.name}
+CPF: ${formatCPF(client.cpf)}
+Telefone: ${formatPhoneBR(client.phone)}
+Email: ${client.email || 'Não informado'}
+ID: ${client.id}
+      `;
+      alert(details);
+    }
+  };
+
   const handleEditClient = (clientId) => {
-    navigate(`/admin/clientes/${clientId}/editar`);
+    // Por enquanto, vamos mostrar uma mensagem
+    toast.info('Funcionalidade de edição será implementada em breve');
+    // navigate(`/admin/clientes/${clientId}/editar`);
   };
 
   const handleDeleteClient = async (clientId) => {
@@ -264,6 +281,11 @@ const ClientsManagementPage = () => {
       console.error('Erro ao excluir cliente:', error);
       toast.error('Erro ao excluir cliente');
     }
+  };
+
+  const handleAddClient = () => {
+    toast.info('Funcionalidade de adicionar cliente será implementada em breve');
+    // navigate('/admin/clientes/novo');
   };
 
   const handleWhatsApp = (phone) => {
@@ -303,7 +325,7 @@ const ClientsManagementPage = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <AddButton>
+        <AddButton onClick={handleAddClient}>
           <FaPlus />
           Novo Cliente
         </AddButton>
@@ -350,7 +372,7 @@ const ClientsManagementPage = () => {
                 <ActionButton
                   className="view"
                   title="Visualizar"
-                  onClick={() => handleEditClient(client.id)}
+                  onClick={() => handleViewClient(client.id)}
                 >
                   <FaEye />
                 </ActionButton>
