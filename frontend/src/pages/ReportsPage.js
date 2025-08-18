@@ -5,7 +5,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  Title,
+  Title as ChartTitle,
   Tooltip,
   Legend,
   Filler
@@ -24,7 +24,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  Title,
+  ChartTitle,
   Tooltip,
   Legend,
   Filler
@@ -222,7 +222,7 @@ const ChartsSection = styled.div`
   margin-bottom: 30px;
 `;
 
-const ChartTitle = styled.h3`
+const ChartTitleStyled = styled.h3`
   color: var(--text);
   margin-bottom: 20px;
   display: flex;
@@ -528,10 +528,10 @@ const ReportsPage = () => {
       </MetricsGrid>
 
       <ChartsSection>
-        <ChartTitle>
+        <ChartTitleStyled>
           <FaChartBar />
           Receita por Período
-        </ChartTitle>
+        </ChartTitleStyled>
         {revenueData.length > 0 ? (
           <ModernChart data={revenueData} />
         ) : (
