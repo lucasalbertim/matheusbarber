@@ -29,6 +29,10 @@ class AttendanceService:
         payload.pop('service_ids', None)
         db_attendance = Attendance(**payload)
         db_attendance.services = services
+        # Se veio método de pagamento, marcar status e pagamento simulados
+        if db_attendance.payment_method:
+            db_attendance.status = 'finished'
+            db_attendance.payment_status = 'paid'
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)

@@ -13,7 +13,12 @@ const Container = styled.div`
 
 const Title = styled.h1`
   color: var(--primary);
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+`;
+
+const Subtitle = styled.p`
+  color: var(--text-secondary);
+  margin-bottom: 16px;
 `;
 
 const Methods = styled.div`
@@ -70,7 +75,7 @@ const ClientAttendancePaymentPage = () => {
   return (
     <Container>
       <Title>Pagamento</Title>
-      <p>Escolha a forma de pagamento para concluir.</p>
+      <Subtitle>Escolha a forma de pagamento para concluir seu atendimento.</Subtitle>
       <Methods>
         <Button onClick={() => confirmPayment('cash')}>Dinheiro</Button>
         <Button onClick={() => confirmPayment('card')}>Cartão</Button>
