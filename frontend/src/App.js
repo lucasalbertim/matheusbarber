@@ -13,6 +13,9 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClientsManagementPage from './pages/ClientsManagementPage';
 import AttendanceManagementPage from './pages/AttendanceManagementPage';
 import ReportsPage from './pages/ReportsPage';
+import ClientStartAttendancePage from './pages/ClientStartAttendancePage';
+import ClientAttendanceSummaryPage from './pages/ClientAttendanceSummaryPage';
+import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
 
 // Contextos
 import { AuthProvider } from './contexts/AuthContext';
@@ -42,6 +45,9 @@ function App() {
             
             {/* Rotas do cliente */}
             <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
+            <Route path="/cliente/atendimento/iniciar" element={<ClientStartAttendancePage />} />
+            <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
+            <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />
             
             {/* Rotas do administrador */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />

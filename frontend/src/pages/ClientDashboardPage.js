@@ -272,10 +272,13 @@ const ClientDashboardPage = () => {
               <div className="icon">
                 <FaCalendar />
               </div>
-              <h3>Próximos Agendamentos</h3>
+              <h3>Iniciar Atendimento</h3>
             </div>
             <div className="card-content">
-              <p>Funcionalidade de agendamento será implementada em breve.</p>
+              <p>Selecione serviços e avance até o pagamento para concluir seu atendimento.</p>
+              <button className="btn" onClick={() => navigate('/cliente/atendimento/iniciar')}>
+                Começar
+              </button>
             </div>
           </DashboardCard>
         </DashboardGrid>

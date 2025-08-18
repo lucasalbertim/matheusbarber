@@ -159,6 +159,26 @@ def list_services(db: Session = Depends(get_db)):
     """Listar todos os serviços"""
     return service_service.get_services(db)
 
+@app.put("/services/{service_id}", response_model=ServiceResponse)
+def update_service(
+    service_id: int,
+    service_update: ServiceCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Atualizar serviço (apenas admin)"""
+    return service_service.update_service(db, service_id, service_update)
+
+@app.delete("/services/{service_id}")
+def delete_service(
+    service_id: int,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Inativar serviço (apenas admin)"""
+    service_service.delete_service(db, service_id)
+    return {"message": "Serviço inativado com sucesso"}
+
 # Rotas de Atendimento
 @app.post("/attendance/", response_model=AttendanceResponse)
 def create_attendance(
