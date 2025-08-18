@@ -326,8 +326,8 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(220, 53, 69, 0.1)', color: 'var(--error)' }}>
                 <FaExclamationCircle />
               </div>
-              <div className={`trend ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
-                {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'}
+              <div className="trend neutral">
+                {metrics.totalClients > 0 ? `${((metrics.inactiveClients / metrics.totalClients) * 100).toFixed(1)}%` : '0%'}
               </div>
             </div>
             <div className="metric-value">{metrics.inactiveClients}</div>
