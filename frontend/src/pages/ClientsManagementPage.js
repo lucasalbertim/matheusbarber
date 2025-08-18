@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { formatCPF, formatPhoneBR } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
@@ -235,6 +236,7 @@ const ClientsManagementPage = () => {
     try {
       const response = await api.get('/admin/clients/');
       setClients(response.data);
+      setFilteredClients(response.data);
     } catch (error) {
       console.error('Erro ao buscar clientes:', error);
       toast.error('Erro ao carregar clientes');
@@ -330,12 +332,12 @@ const ClientsManagementPage = () => {
               </ClientInfo>
               
               <ClientInfo>
-                <div className="name">{client.cpf}</div>
+                <div className="name">{formatCPF(client.cpf)}</div>
                 <div className="details">CPF</div>
               </ClientInfo>
               
               <ClientInfo>
-                <div className="name">{client.phone}</div>
+                <div className="name">{formatPhoneBR(client.phone)}</div>
                 <div className="details">Telefone</div>
               </ClientInfo>
               
