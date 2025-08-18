@@ -11,6 +11,8 @@ import ClientDashboardPage from './pages/ClientDashboardPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClientsManagementPage from './pages/ClientsManagementPage';
+import AddClientPage from './pages/AddClientPage';
+import EditClientPage from './pages/EditClientPage';
 import AttendanceManagementPage from './pages/AttendanceManagementPage';
 import ReportsPage from './pages/ReportsPage';
 import ClientStartAttendancePage from './pages/ClientStartAttendancePage';
@@ -52,9 +54,11 @@ function App() {
             
             {/* Rotas do administrador */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-            <Route path="/admin/clientes" element={<ClientsManagementPage />} />
-            <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
-            <Route path="/admin/relatorios" element={<ReportsPage />} />
+                    <Route path="/admin/clientes" element={<ClientsManagementPage />} />
+        <Route path="/admin/clientes/novo" element={<AddClientPage />} />
+        <Route path="/admin/clientes/:clientId/editar" element={<EditClientPage />} />
+        <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
+        <Route path="/admin/relatorios" element={<ReportsPage />} />
             <Route path="/admin/servicos" element={<ServicesManagementPage />} />
             
             {/* Rota padrão */}

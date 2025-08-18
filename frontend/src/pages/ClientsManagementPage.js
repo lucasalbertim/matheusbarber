@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR } from '../utils/formatters';
@@ -92,6 +92,30 @@ const AddButton = styled.button`
 
   &:hover {
     background: var(--primary-dark);
+  }
+`;
+
+const AutoInactivateButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--warning);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background: var(--warning-dark);
+  }
+
+  &:disabled {
+    background: var(--border);
+    cursor: not-allowed;
   }
 `;
 
@@ -297,9 +321,7 @@ ID: ${client.id}
   };
 
   const handleEditClient = (clientId) => {
-    // Por enquanto, vamos mostrar uma mensagem
-    toast.info('Funcionalidade de edição será implementada em breve');
-    // navigate(`/admin/clientes/${clientId}/editar`);
+    navigate(`/admin/clientes/${clientId}/editar`);
   };
 
   const handleDeleteClient = async (clientId) => {
@@ -318,8 +340,22 @@ ID: ${client.id}
   };
 
   const handleAddClient = () => {
-    toast.info('Funcionalidade de adicionar cliente será implementada em breve');
-    // navigate('/admin/clientes/novo');
+    navigate('/admin/clientes/novo');
+  };
+
+  const handleAutoInactivate = async () => {
+    if (!window.confirm('Deseja inativar automaticamente os clientes que não vieram há 45 dias?')) {
+      return;
+    }
+
+    try {
+      const response = await api.post('/admin/clients/auto-inactivate');
+      toast.success(response.data.message);
+      fetchClients();
+    } catch (error) {
+      console.error('Erro ao inativar clientes:', error);
+      toast.error('Erro ao executar inativação automática');
+    }
   };
 
   const handleWhatsApp = (phone) => {
@@ -367,6 +403,10 @@ ID: ${client.id}
           <option value="active">Apenas Ativos</option>
           <option value="inactive">Apenas Inativos</option>
         </StatusFilter>
+        <AutoInactivateButton onClick={handleAutoInactivate}>
+          <FaUserTimes />
+          Inativar Inativos (45 dias)
+        </AutoInactivateButton>
         <AddButton onClick={handleAddClient}>
           <FaPlus />
           Novo Cliente
