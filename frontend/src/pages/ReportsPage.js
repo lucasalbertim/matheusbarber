@@ -306,8 +306,17 @@ const ReportsPage = () => {
 
   const fetchReports = async () => {
     try {
+      const params = {
+        period: filters.period
+      };
+      
+      if (filters.startDate && filters.endDate) {
+        params.start_date = filters.startDate;
+        params.end_date = filters.endDate;
+      }
+
       const [metricsResponse, clientsResponse] = await Promise.all([
-        api.get('/admin/reports/summary'),
+        api.get('/admin/reports/summary-by-period', { params }),
         api.get('/admin/reports/top-clients')
       ]);
 
@@ -454,7 +463,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{formatCurrency(metrics.totalRevenue)}</div>
           <div className="label">Receita Total</div>
-          <div className="change positive">+12.5% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.revenueGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.revenueGrowth ? `${metrics.growthPercentages.revenueGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.revenueGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="clients">
@@ -463,7 +474,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{metrics.totalClients}</div>
           <div className="label">Total de Clientes</div>
-          <div className="change positive">+8.3% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="attendances">
@@ -472,7 +485,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{metrics.totalAttendances}</div>
           <div className="label">Total de Atendimentos</div>
-          <div className="change positive">+15.2% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.attendancesGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.attendancesGrowth ? `${metrics.growthPercentages.attendancesGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.attendancesGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="average">
@@ -481,7 +496,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{formatCurrency(metrics.averageTicket)}</div>
           <div className="label">Ticket Médio</div>
-          <div className="change neutral">0% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.averageTicketGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.averageTicketGrowth ? `${metrics.growthPercentages.averageTicketGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.averageTicketGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
       </MetricsGrid>
 

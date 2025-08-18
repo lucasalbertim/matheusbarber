@@ -118,6 +118,9 @@ class AttendanceService:
         # Calcular ticket médio
         average_ticket = total_revenue / total_attendances if total_attendances > 0 else 0.0
         
+        # Calcular porcentagens de crescimento (mês atual vs mês anterior)
+        growth_percentages = self._get_dashboard_growth_percentages(db)
+        
         return {
             "totalClients": total_clients,
             "totalAttendances": total_attendances,
@@ -125,7 +128,8 @@ class AttendanceService:
             "averageTicket": float(average_ticket),
             "inactiveClients": inactive_clients,
             "todayAttendances": today_attendances,
-            "pendingPayments": pending_payments
+            "pendingPayments": pending_payments,
+            "growthPercentages": growth_percentages
         }
     
     def get_attendance_by_status(self, db: Session, status: str) -> List[Attendance]:
@@ -172,6 +176,137 @@ class AttendanceService:
             }
             for row in result
         ]
+
+    def get_reports_summary_by_period(self, db: Session, period: str, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
+        """Obter resumo de relatórios por período específico"""
+        from datetime import datetime, timedelta
+        
+        # Definir período atual
+        if start_date and end_date:
+            current_start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            current_end = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            today = date.today()
+            if period == 'day':
+                current_start = current_end = today
+            elif period == 'week':
+                current_start = today - timedelta(days=today.weekday())
+                current_end = current_start + timedelta(days=6)
+            elif period == 'month':
+                current_start = today.replace(day=1)
+                if today.month == 12:
+                    current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+                else:
+                    current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+            elif period == 'quarter':
+                quarter_start_month = ((today.month - 1) // 3) * 3 + 1
+                current_start = today.replace(month=quarter_start_month, day=1)
+                if quarter_start_month == 10:
+                    current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+                else:
+                    current_end = today.replace(month=quarter_start_month + 3, day=1) - timedelta(days=1)
+            elif period == 'year':
+                current_start = today.replace(month=1, day=1)
+                current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                current_start = current_end = today
+        
+        # Calcular período anterior
+        days_diff = (current_end - current_start).days + 1
+        previous_start = current_start - timedelta(days=days_diff)
+        previous_end = current_start - timedelta(days=1)
+        
+        # Buscar dados do período atual
+        current_metrics = self._get_metrics_for_period(db, current_start, current_end)
+        
+        # Buscar dados do período anterior
+        previous_metrics = self._get_metrics_for_period(db, previous_start, previous_end)
+        
+        # Calcular porcentagens de crescimento
+        growth_percentages = self._calculate_growth_percentages(current_metrics, previous_metrics)
+        
+        return {
+            **current_metrics,
+            "growthPercentages": growth_percentages,
+            "period": {
+                "current": {"start": current_start.isoformat(), "end": current_end.isoformat()},
+                "previous": {"start": previous_start.isoformat(), "end": previous_end.isoformat()}
+            }
+        }
+    
+    def _get_metrics_for_period(self, db: Session, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Obter métricas para um período específico"""
+        # Total de clientes (sempre total, não por período)
+        total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
+        
+        # Atendimentos no período
+        attendances_in_period = db.query(func.count(Attendance.id)).filter(
+            and_(
+                func.date(Attendance.appointment_date) >= start_date,
+                func.date(Attendance.appointment_date) <= end_date
+            )
+        ).scalar()
+        
+        # Receita no período
+        revenue_in_period = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+            and_(
+                Attendance.payment_status == "paid",
+                func.date(Attendance.appointment_date) >= start_date,
+                func.date(Attendance.appointment_date) <= end_date
+            )
+        ).scalar() or 0.0
+        
+        # Ticket médio no período
+        average_ticket = revenue_in_period / attendances_in_period if attendances_in_period > 0 else 0.0
+        
+        return {
+            "totalClients": total_clients,
+            "totalAttendances": attendances_in_period,
+            "totalRevenue": float(revenue_in_period),
+            "averageTicket": float(average_ticket)
+        }
+    
+    def _calculate_growth_percentages(self, current: Dict[str, Any], previous: Dict[str, Any]) -> Dict[str, float]:
+        """Calcular porcentagens de crescimento"""
+        def calculate_percentage(current_val, previous_val):
+            if previous_val == 0:
+                return 100.0 if current_val > 0 else 0.0
+            return ((current_val - previous_val) / previous_val) * 100
+        
+        return {
+            "revenueGrowth": calculate_percentage(current["totalRevenue"], previous["totalRevenue"]),
+            "clientsGrowth": calculate_percentage(current["totalClients"], previous["totalClients"]),
+            "attendancesGrowth": calculate_percentage(current["totalAttendances"], previous["totalAttendances"]),
+            "averageTicketGrowth": calculate_percentage(current["averageTicket"], previous["averageTicket"])
+        }
+
+    def _get_dashboard_growth_percentages(self, db: Session) -> Dict[str, float]:
+        """Calcular porcentagens de crescimento para dashboard (mês atual vs anterior)"""
+        from datetime import datetime, timedelta
+        
+        today = date.today()
+        
+        # Mês atual
+        current_month_start = today.replace(day=1)
+        if today.month == 12:
+            current_month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            current_month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+        
+        # Mês anterior
+        if today.month == 1:
+            previous_month_start = today.replace(year=today.year - 1, month=12, day=1)
+            previous_month_end = today.replace(day=1) - timedelta(days=1)
+        else:
+            previous_month_start = today.replace(month=today.month - 1, day=1)
+            previous_month_end = today.replace(day=1) - timedelta(days=1)
+        
+        # Buscar dados dos dois meses
+        current_metrics = self._get_metrics_for_period(db, current_month_start, current_month_end)
+        previous_metrics = self._get_metrics_for_period(db, previous_month_start, previous_month_end)
+        
+        # Calcular porcentagens
+        return self._calculate_growth_percentages(current_metrics, previous_metrics)
 
     def export_reports(self, db: Session) -> Dict[str, Any]:
         """Exportar relatórios (simulado)"""

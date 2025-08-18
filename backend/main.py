@@ -222,6 +222,17 @@ def get_reports_summary(
     """Obter resumo de relatórios (apenas admin)"""
     return attendance_service.get_reports_summary(db)
 
+@app.get("/admin/reports/summary-by-period")
+def get_reports_summary_by_period(
+    period: str,
+    start_date: str = None,
+    end_date: str = None,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter resumo de relatórios por período (apenas admin)"""
+    return attendance_service.get_reports_summary_by_period(db, period, start_date, end_date)
+
 @app.get("/admin/reports/top-clients")
 def get_top_clients(
     db: Session = Depends(get_db),
