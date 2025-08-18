@@ -511,7 +511,6 @@ const ReportsPage = () => {
         {revenueData.length > 0 ? (
           <SimpleChart data={revenueData} />
         ) : (
-        ) : (
           <ChartPlaceholder>
             <div className="icon">
               <FaChartBar />
