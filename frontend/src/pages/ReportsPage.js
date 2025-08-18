@@ -1,10 +1,34 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+
+// Registrar componentes do Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const Container = styled.div`
   max-width: 1200px;
@@ -509,7 +533,7 @@ const ReportsPage = () => {
           Receita por Período
         </ChartTitle>
         {revenueData.length > 0 ? (
-          <SimpleChart data={revenueData} />
+          <ModernChart data={revenueData} />
         ) : (
           <ChartPlaceholder>
             <div className="icon">
@@ -566,118 +590,99 @@ const ReportsPage = () => {
   );
 };
 
-// Componente de gráfico simples usando Canvas
-const SimpleChart = ({ data }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (!data || data.length === 0) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Limpar canvas
-    ctx.clearRect(0, 0, width, height);
-
-    // Encontrar valores máximo e mínimo
-    const maxRevenue = Math.max(...data.map(d => d.revenue));
-    const minRevenue = Math.min(...data.map(d => d.revenue));
-    const range = maxRevenue - minRevenue || 1;
-
-    // Configurações
-    const padding = 60;
-    const chartWidth = width - 2 * padding;
-    const chartHeight = height - 2 * padding;
-    const pointSpacing = chartWidth / (data.length - 1);
-
-    // Desenhar grade
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 1;
-    
-    // Linhas horizontais
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
-
-    // Linhas verticais
-    for (let i = 0; i < data.length; i++) {
-      const x = padding + pointSpacing * i;
-      ctx.beginPath();
-      ctx.moveTo(x, padding);
-      ctx.lineTo(x, height - padding);
-      ctx.stroke();
-    }
-
-    // Desenhar linha do gráfico
-    ctx.strokeStyle = '#28a745';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-
-    data.forEach((point, index) => {
-      const x = padding + pointSpacing * index;
-      const y = height - padding - ((point.revenue - minRevenue) / range) * chartHeight;
-      
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
+// Componente de gráfico moderno usando Chart.js
+const ModernChart = ({ data }) => {
+  const chartData = {
+    labels: data.map(item => item.label),
+    datasets: [
+      {
+        label: 'Receita (R$)',
+        data: data.map(item => item.revenue),
+        borderColor: '#28a745',
+        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#28a745',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#28a745',
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
       }
-    });
+    ]
+  };
 
-    ctx.stroke();
-
-    // Desenhar pontos
-    ctx.fillStyle = '#28a745';
-    data.forEach((point, index) => {
-      const x = padding + pointSpacing * index;
-      const y = height - padding - ((point.revenue - minRevenue) / range) * chartHeight;
-      
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, 2 * Math.PI);
-      ctx.fill();
-    });
-
-    // Desenhar labels do eixo Y
-    ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'right';
-    
-    for (let i = 0; i <= 5; i++) {
-      const value = minRevenue + (range / 5) * i;
-      const y = padding + (chartHeight / 5) * i;
-      ctx.fillText(`R$ ${value.toFixed(0)}`, padding - 10, y + 4);
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#28a745',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: function(context) {
+            return `Receita: R$ ${context.parsed.y.toFixed(2)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          borderColor: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          color: '#666',
+          font: {
+            size: 12
+          },
+          maxRotation: 45,
+          minRotation: 45
+        }
+      },
+      y: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          borderColor: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          color: '#666',
+          font: {
+            size: 12
+          },
+          callback: function(value) {
+            return `R$ ${value.toFixed(0)}`;
+          }
+        },
+        beginAtZero: true
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    elements: {
+      point: {
+        hoverRadius: 8
+      }
     }
-
-    // Desenhar labels do eixo X
-    ctx.textAlign = 'center';
-    data.forEach((point, index) => {
-      const x = padding + pointSpacing * index;
-      const y = height - padding + 20;
-      
-      // Rotacionar texto para melhor legibilidade
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-Math.PI / 4);
-      ctx.fillText(point.label, 0, 0);
-      ctx.restore();
-    });
-
-  }, [data]);
+  };
 
   return (
-    <div style={{ width: '100%', height: '300px', position: 'relative' }}>
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={300}
-        style={{ width: '100%', height: '100%' }}
-      />
+    <div style={{ width: '100%', height: '400px', position: 'relative' }}>
+      <Line data={chartData} options={options} />
     </div>
   );
 };
