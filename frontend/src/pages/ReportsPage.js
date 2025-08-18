@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
@@ -302,9 +302,9 @@ const ReportsPage = () => {
       return;
     }
     fetchReports();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, fetchReports]);
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       const params = {
         period: filters.period
@@ -329,7 +329,7 @@ const ReportsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
