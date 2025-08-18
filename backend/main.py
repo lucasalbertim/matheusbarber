@@ -130,6 +130,24 @@ def list_clients(
     """Listar clientes com filtro de status (apenas admin)"""
     return client_service.get_clients_with_status(db, status, skip, limit)
 
+@app.get("/admin/clients/{client_id}", response_model=ClientResponse)
+def get_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter cliente específico (apenas admin)"""
+    return client_service.get_client(db, client_id)
+
+@app.post("/admin/clients/", response_model=ClientResponse)
+def create_client(
+    client: ClientCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Criar novo cliente (apenas admin)"""
+    return client_service.create_client(db, client)
+
 @app.put("/admin/clients/{client_id}", response_model=ClientResponse)
 def update_client(
     client_id: int,
@@ -149,6 +167,16 @@ def delete_client(
     """Excluir cliente (apenas admin)"""
     client_service.delete_client(db, client_id)
     return {"message": "Cliente excluído com sucesso"}
+
+@app.post("/admin/clients/auto-inactivate")
+def auto_inactivate_clients(
+    days_inactive: int = 45,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Inativar automaticamente clientes inativos (apenas admin)"""
+    count = client_service.auto_inactivate_clients(db, days_inactive)
+    return {"message": f"{count} clientes foram inativados automaticamente"}
 
 # Rotas de Serviços
 @app.post("/services/", response_model=ServiceResponse)

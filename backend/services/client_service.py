@@ -191,7 +191,7 @@ class ClientService:
         
         return query.offset(skip).limit(limit).all()
     
-    def get_inactive_clients(self, db: Session, days_inactive: int = 30) -> List[Client]:
+    def get_inactive_clients(self, db: Session, days_inactive: int = 45) -> List[Client]:
         """Buscar clientes inativos por X dias"""
         cutoff_date = datetime.utcnow() - timedelta(days=days_inactive)
         return db.query(Client).filter(
@@ -200,5 +200,31 @@ class ClientService:
                 Client.updated_at < cutoff_date
             )
         ).all()
+    
+    def auto_inactivate_clients(self, db: Session, days_inactive: int = 45) -> int:
+        """Inativar automaticamente clientes que não vieram há X dias"""
+        cutoff_date = datetime.utcnow() - timedelta(days=days_inactive)
+        
+        # Buscar clientes ativos que não tiveram atendimentos recentes
+        clients_to_inactivate = db.query(Client).filter(
+            and_(
+                Client.is_active == True,
+                ~Client.id.in_(
+                    db.query(Attendance.client_id).filter(
+                        func.date(Attendance.appointment_date) >= cutoff_date.date()
+                    ).distinct()
+                )
+            )
+        ).all()
+        
+        # Inativar clientes
+        count = 0
+        for client in clients_to_inactivate:
+            client.is_active = False
+            client.updated_at = datetime.utcnow()
+            count += 1
+        
+        db.commit()
+        return count
 
 client_service = ClientService()
