@@ -155,37 +155,14 @@ const DashboardCard = styled.div`
         }
         
         .attendance-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
           margin-bottom: 8px;
           
           .attendance-date {
-            font-weight: 600;
             color: var(--primary);
             font-size: 0.9rem;
-          }
-          
-          .status-badge {
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
             
-            &.waiting {
-              background: var(--warning-light);
-              color: var(--warning);
-            }
-            
-            &.progress {
-              background: var(--info-light);
-              color: var(--info);
-            }
-            
-            &.finished {
-              background: var(--success-light);
-              color: var(--success);
+            strong {
+              font-weight: 700;
             }
           }
         }
@@ -315,12 +292,7 @@ const ClientDashboardPage = () => {
                   <div key={attendance.id} className="attendance-item">
                     <div className="attendance-header">
                       <span className="attendance-date">
-                        {new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}
-                      </span>
-                      <span className={`status-badge ${attendance.status}`}>
-                        {attendance.status === 'waiting' ? 'Aguardando' :
-                         attendance.status === 'progress' ? 'Em Andamento' :
-                         attendance.status === 'finished' ? 'Finalizado' : attendance.status}
+                        <strong>{new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}</strong>
                       </span>
                     </div>
                     <div className="attendance-services">
