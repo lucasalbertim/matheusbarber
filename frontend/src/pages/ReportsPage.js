@@ -295,15 +295,6 @@ const ReportsPage = () => {
   });
   const [topClients, setTopClients] = useState([]);
 
-
-  useEffect(() => {
-    if (!isAdmin()) {
-      navigate('/admin/login');
-      return;
-    }
-    fetchReports();
-  }, [isAdmin, navigate, fetchReports]);
-
   const fetchReports = useCallback(async () => {
     try {
       const params = {
@@ -330,6 +321,14 @@ const ReportsPage = () => {
       setIsLoading(false);
     }
   }, [filters]);
+
+  useEffect(() => {
+    if (!isAdmin()) {
+      navigate('/admin/login');
+      return;
+    }
+    fetchReports();
+  }, [isAdmin, navigate, fetchReports]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
