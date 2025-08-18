@@ -7,7 +7,7 @@ class ClientBase(BaseModel):
     name: str
     cpf: str
     phone: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
 
 class ClientCreate(ClientBase):
     pass
