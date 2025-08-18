@@ -9,7 +9,7 @@ import sys
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Base, Admin, Service
-from auth import get_password_hash
+from security import get_password_hash
 
 def init_database():
     """Inicializar banco de dados com dados de exemplo"""

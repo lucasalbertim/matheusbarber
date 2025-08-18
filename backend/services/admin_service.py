@@ -6,7 +6,7 @@ from sqlalchemy import and_
 
 from models import Admin
 from schemas import AdminCreate, AdminLogin
-from auth import get_password_hash, verify_password, create_access_token
+from security import get_password_hash, verify_password, create_access_token
 
 class AdminService:
     def create_admin(self, db: Session, admin: AdminCreate) -> Admin:
