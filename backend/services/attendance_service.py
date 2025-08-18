@@ -29,10 +29,7 @@ class AttendanceService:
         payload.pop('service_ids', None)
         db_attendance = Attendance(**payload)
         db_attendance.services = services
-        # Se veio método de pagamento, marcar status e pagamento simulados
-        if db_attendance.payment_method:
-            db_attendance.status = 'finished'
-            db_attendance.payment_status = 'paid'
+        # Status inicial permanece 'waiting' e pagamento 'pending' (simulado)
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
@@ -59,9 +56,21 @@ class AttendanceService:
     
     def update_attendance(self, db: Session, attendance_id: int, attendance_update: AttendanceUpdate) -> Attendance:
         db_attendance = self.get_attendance(db, attendance_id)
+        update_data = attendance_update.dict(exclude_unset=True)
+
+        # Se houver transição de status para finished, marcar pagamento como paid (simulado)
+        new_status = update_data.get('status')
+        if new_status:
+            db_attendance.status = new_status
+            if new_status == 'finished':
+                db_attendance.payment_status = 'paid'
         
-        for field, value in attendance_update.dict(exclude_unset=True).items():
-            setattr(db_attendance, field, value)
+        if 'payment_method' in update_data and update_data['payment_method'] is not None:
+            db_attendance.payment_method = update_data['payment_method']
+        if 'payment_status' in update_data and update_data['payment_status'] is not None:
+            db_attendance.payment_status = update_data['payment_status']
+        if 'notes' in update_data:
+            db_attendance.notes = update_data['notes']
         
         db_attendance.updated_at = datetime.utcnow()
         db.commit()

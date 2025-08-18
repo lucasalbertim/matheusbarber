@@ -306,6 +306,8 @@ const AttendanceManagementPage = () => {
     };
     
     fetchAttendances();
+    const id = setInterval(fetchAttendances, 5000);
+    return () => clearInterval(id);
   }, [isAdmin, navigate]);
 
   useEffect(() => {
@@ -361,6 +363,20 @@ const AttendanceManagementPage = () => {
       cancelled: 'Cancelado'
     };
     return labels[payment] || payment;
+  };
+
+  const advanceStatus = async (attendance) => {
+    const next = attendance.status === 'waiting' ? 'progress' : attendance.status === 'progress' ? 'finished' : 'finished';
+    try {
+      const { data } = await api.put(`/attendance/${attendance.id}`, { status: next });
+      toast.success('Status atualizado');
+      // Atualiza lista
+      const updated = attendances.map(a => (a.id === attendance.id ? data : a));
+      setAttendances(updated);
+      calculateStats(updated);
+    } catch (e) {
+      toast.error('Erro ao atualizar status');
+    }
   };
 
   if (isLoading) {
@@ -471,6 +487,15 @@ const AttendanceManagementPage = () => {
               </PaymentBadge>
               
               <ActionButtons>
+                {attendance.status !== 'finished' && (
+                  <ActionButton
+                    className="edit"
+                    title={attendance.status === 'waiting' ? 'Colocar em Atendimento' : 'Finalizar Atendimento'}
+                    onClick={() => advanceStatus(attendance)}
+                  >
+                    {attendance.status === 'waiting' ? 'Iniciar' : 'Finalizar'}
+                  </ActionButton>
+                )}
                 <ActionButton
                   className="view"
                   title="Visualizar"
