@@ -8,7 +8,7 @@ import os
 
 from database import get_db
 from models import Admin
-from services import admin_service
+from services.admin_service import admin_service
 
 # Configurações de segurança
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
