@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaScissors, FaDollarSign, FaClock, FaChartLine, FaExclamationTriangle } from 'react-icons/fa';
+import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -296,7 +296,7 @@ const AdminDashboardPage = () => {
           <MetricCard>
             <div className="metric-header">
               <div className="icon" style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--secondary)' }}>
-                <FaScissors />
+                <FaCut />
               </div>
               <div className="trend positive">+8%</div>
             </div>
@@ -318,7 +318,7 @@ const AdminDashboardPage = () => {
           <MetricCard>
             <div className="metric-header">
               <div className="icon" style={{ background: 'rgba(220, 53, 69, 0.1)', color: 'var(--error)' }}>
-                <FaExclamationTriangle />
+                <FaExclamationCircle />
               </div>
               <div className="trend negative">-5%</div>
             </div>
@@ -348,7 +348,7 @@ const AdminDashboardPage = () => {
           
           <QuickActionCard>
             <h3>
-              <FaScissors className="icon" />
+              <FaCut className="icon" />
               Gestão de Atendimentos
             </h3>
             <div className="action-buttons">
@@ -366,7 +366,7 @@ const AdminDashboardPage = () => {
           
           <QuickActionCard>
             <h3>
-              <FaChartLine className="icon" />
+              <FaChartBar className="icon" />
               Relatórios
             </h3>
             <div className="action-buttons">
@@ -401,7 +401,7 @@ const AdminDashboardPage = () => {
             
             <div className="activity-item">
               <div className="activity-icon">
-                <FaScissors />
+                <FaCut />
               </div>
               <div className="activity-content">
                 <div className="activity-title">Atendimento concluído</div>

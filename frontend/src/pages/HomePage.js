@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUser, FaUserTie, FaArrowRight, FaScissors, FaStar, FaClock } from 'react-icons/fa';
+import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-icons/fa';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -286,7 +286,7 @@ const HomePage = () => {
           <FeaturesGrid>
             <FeatureCard>
               <div className="icon">
-                <FaScissors />
+                <FaCut />
               </div>
               <h3>Gestão de Serviços</h3>
               <p>Controle completo dos serviços oferecidos com preços e duração</p>

@@ -294,7 +294,7 @@ const ReportsPage = () => {
     averageTicket: 0
   });
   const [topClients, setTopClients] = useState([]);
-  const [revenueByPeriod, setRevenueByPeriod] = useState([]);
+
 
   useEffect(() => {
     if (!isAdmin()) {
@@ -306,15 +306,14 @@ const ReportsPage = () => {
 
   const fetchReports = async () => {
     try {
-      const [metricsResponse, clientsResponse, revenueResponse] = await Promise.all([
+      const [metricsResponse, clientsResponse] = await Promise.all([
         api.get('/admin/reports/summary'),
-        api.get('/admin/reports/top-clients'),
-        api.get('/admin/reports/revenue-by-period')
+        api.get('/admin/reports/top-clients')
       ]);
 
       setMetrics(metricsResponse.data);
       setTopClients(clientsResponse.data);
-      setRevenueByPeriod(revenueResponse.data);
+      // setRevenueByPeriod(revenueResponse.data); // Para uso futuro
     } catch (error) {
       console.error('Erro ao buscar relatórios:', error);
       toast.error('Erro ao carregar relatórios');

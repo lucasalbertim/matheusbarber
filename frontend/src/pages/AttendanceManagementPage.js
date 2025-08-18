@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaClock, FaCheck, FaTimes, FaSpinner, FaEye, FaEdit, FaWhatsapp } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -291,25 +291,38 @@ const AttendanceManagementPage = () => {
       navigate('/admin/login');
       return;
     }
+    
+    const fetchAttendances = async () => {
+      try {
+        const response = await api.get('/attendance/today');
+        setAttendances(response.data);
+        calculateStats(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar atendimentos:', error);
+        toast.error('Erro ao carregar atendimentos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     fetchAttendances();
   }, [isAdmin, navigate]);
 
   useEffect(() => {
+    const filterAttendances = () => {
+      if (activeFilter === 'all') {
+        setFilteredAttendances(attendances);
+        return;
+      }
+
+      const filtered = attendances.filter(attendance => 
+        attendance.status === activeFilter
+      );
+      setFilteredAttendances(filtered);
+    };
+    
     filterAttendances();
   }, [activeFilter, attendances]);
-
-  const fetchAttendances = async () => {
-    try {
-      const response = await api.get('/attendance/today');
-      setAttendances(response.data);
-      calculateStats(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar atendimentos:', error);
-      toast.error('Erro ao carregar atendimentos');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const calculateStats = (data) => {
     const total = data.length;
@@ -320,31 +333,7 @@ const AttendanceManagementPage = () => {
     setStats({ total, waiting, progress, finished });
   };
 
-  const filterAttendances = () => {
-    if (activeFilter === 'all') {
-      setFilteredAttendances(attendances);
-      return;
-    }
 
-    const filtered = attendances.filter(attendance => 
-      attendance.status === activeFilter
-    );
-    setFilteredAttendances(filtered);
-  };
-
-  const updateAttendanceStatus = async (attendanceId, newStatus) => {
-    try {
-      await api.put(`/attendance/${attendanceId}`, {
-        status: newStatus
-      });
-      
-      toast.success('Status atualizado com sucesso');
-      fetchAttendances();
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast.error('Erro ao atualizar status');
-    }
-  };
 
   const handleWhatsApp = (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');

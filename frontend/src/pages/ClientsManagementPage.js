@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaSearch, FaPlus, FaWhatsapp, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,6 +213,21 @@ const ClientsManagementPage = () => {
   }, [isAdmin, navigate]);
 
   useEffect(() => {
+    const filterClients = () => {
+      if (!searchTerm.trim()) {
+        setFilteredClients(clients);
+        return;
+      }
+
+      const filtered = clients.filter(client =>
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.cpf.includes(searchTerm) ||
+        client.phone.includes(searchTerm) ||
+        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredClients(filtered);
+    };
+    
     filterClients();
   }, [searchTerm, clients]);
 
@@ -228,20 +243,7 @@ const ClientsManagementPage = () => {
     }
   };
 
-  const filterClients = () => {
-    if (!searchTerm.trim()) {
-      setFilteredClients(clients);
-      return;
-    }
 
-    const filtered = clients.filter(client =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.cpf.includes(searchTerm) ||
-      client.phone.includes(searchTerm) ||
-      (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-    setFilteredClients(filtered);
-  };
 
   const handleEditClient = (clientId) => {
     navigate(`/admin/clientes/${clientId}/editar`);
