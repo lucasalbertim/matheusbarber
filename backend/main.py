@@ -97,6 +97,11 @@ def get_client(client_id: int, db: Session = Depends(get_db)):
     """Obter cliente por ID"""
     return client_service.get_client(db, client_id)
 
+@app.get("/clients/{client_id}/attendances", response_model=List[AttendanceResponse])
+def get_client_attendances(client_id: int, db: Session = Depends(get_db)):
+    """Obter atendimentos de um cliente específico"""
+    return attendance_service.get_client_attendances(db, client_id)
+
 # Rotas de Administrador
 @app.post("/admins/", response_model=AdminResponse)
 def create_admin(admin: AdminCreate, db: Session = Depends(get_db)):

@@ -149,6 +149,12 @@ class AttendanceService:
             )
         ).all()
 
+    def get_client_attendances(self, db: Session, client_id: int) -> List[Attendance]:
+        """Buscar atendimentos de um cliente específico"""
+        return db.query(Attendance).filter(
+            Attendance.client_id == client_id
+        ).order_by(Attendance.appointment_date.desc()).all()
+
     def get_top_clients(self, db: Session) -> List[Dict[str, Any]]:
         """Obter top clientes por número de atendimentos"""
         from sqlalchemy import desc
