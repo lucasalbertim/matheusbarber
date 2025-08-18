@@ -17,6 +17,13 @@ class AttendanceService:
                 detail="Cliente não encontrado"
             )
         
+        # Reativar cliente se estiver inativo
+        if not client.is_active:
+            client.is_active = True
+            client.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(client)
+        
         # Buscar e validar serviços
         services = db.query(Service).filter(Service.id.in_(attendance.service_ids), Service.is_active == True).all()
         if not services or len(services) != len(attendance.service_ids):
