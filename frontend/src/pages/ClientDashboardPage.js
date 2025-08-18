@@ -143,6 +143,71 @@ const DashboardCard = styled.div`
         color: var(--primary);
         font-weight: 600;
       }
+      
+      .attendance-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .attendance-date {
+          font-weight: 600;
+          color: var(--primary);
+          margin-bottom: 8px;
+          font-size: 0.9rem;
+        }
+        
+        .attendance-services {
+          margin-bottom: 8px;
+          
+          .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            
+            .service-name {
+              color: var(--text-secondary);
+              font-weight: 500;
+            }
+            
+            .service-price {
+              color: var(--success);
+              font-weight: 600;
+              font-size: 0.9rem;
+            }
+          }
+        }
+        
+        .attendance-status {
+          .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            
+            &.waiting {
+              background: var(--warning-light);
+              color: var(--warning);
+            }
+            
+            &.progress {
+              background: var(--info-light);
+              color: var(--info);
+            }
+            
+            &.finished {
+              background: var(--success-light);
+              color: var(--success);
+            }
+          }
+        }
+      }
     }
   }
 `;
@@ -161,11 +226,11 @@ const ClientDashboardPage = () => {
     
     const fetchAttendances = async () => {
       try {
-        await api.get(`/clients/${client.id}`);
-        // Aqui você pode implementar a busca de atendimentos do cliente
-        setAttendances([]); // Placeholder
+        const response = await api.get(`/clients/${client.id}/attendances`);
+        setAttendances(response.data);
       } catch (error) {
         console.error('Erro ao buscar atendimentos:', error);
+        setAttendances([]);
       } finally {
         setLoading(false);
       }
@@ -254,11 +319,25 @@ const ClientDashboardPage = () => {
             <div className="card-content">
               {attendances.length > 0 ? (
                 attendances.map((attendance) => (
-                  <div key={attendance.id} className="info-item">
-                    <span className="label">{attendance.service.name}</span>
-                    <span className="value">
+                  <div key={attendance.id} className="attendance-item">
+                    <div className="attendance-date">
                       {new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}
-                    </span>
+                    </div>
+                    <div className="attendance-services">
+                      {attendance.services.map((service, index) => (
+                        <div key={index} className="service-item">
+                          <span className="service-name">{service.name}</span>
+                          <span className="service-price">R$ {service.price.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="attendance-status">
+                      <span className={`status-badge ${attendance.status}`}>
+                        {attendance.status === 'waiting' ? 'Aguardando' :
+                         attendance.status === 'progress' ? 'Em Andamento' :
+                         attendance.status === 'finished' ? 'Finalizado' : attendance.status}
+                      </span>
+                    </div>
                   </div>
                 ))
               ) : (
