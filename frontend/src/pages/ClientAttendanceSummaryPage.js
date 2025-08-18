@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaClock, FaMoneyBillWave, FaCheckCircle, FaCreditCard } from 'react-icons/fa';
+import { FaArrowLeft, FaClock, FaMoneyBillWave, FaCreditCard } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
