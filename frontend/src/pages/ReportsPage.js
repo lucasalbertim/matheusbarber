@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import * as Recharts from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
@@ -510,25 +510,25 @@ const ReportsPage = () => {
           Receita por Período
         </ChartTitle>
         {revenueData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
+          <Recharts.ResponsiveContainer width="100%" height={300}>
+            <Recharts.LineChart data={revenueData}>
+              <Recharts.CartesianGrid strokeDasharray="3 3" />
+              <Recharts.XAxis 
                 dataKey="label" 
                 tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={80}
               />
-              <YAxis 
+              <Recharts.YAxis 
                 tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
                 tick={{ fontSize: 12 }}
               />
-              <Tooltip 
+              <Recharts.Tooltip 
                 formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Receita']}
                 labelFormatter={(label) => `Período: ${label}`}
               />
-              <Line 
+              <Recharts.Line 
                 type="monotone" 
                 dataKey="revenue" 
                 stroke="#28a745" 
@@ -536,8 +536,8 @@ const ReportsPage = () => {
                 dot={{ fill: '#28a745', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6, stroke: '#28a745', strokeWidth: 2 }}
               />
-            </LineChart>
-          </ResponsiveContainer>
+            </Recharts.LineChart>
+          </Recharts.ResponsiveContainer>
         ) : (
           <ChartPlaceholder>
             <div className="icon">
