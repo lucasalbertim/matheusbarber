@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUserPlus, FaArrowLeft, FaIdCard, FaPhone, FaUser, FaEnvelope } from 'react-icons/fa';
+import { FaArrowLeft, FaIdCard, FaPhone, FaUser, FaEnvelope } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 
@@ -197,7 +197,7 @@ const ClientRegisterPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/clients/', {
+      await api.post('/clients/', {
         name: formData.name.trim(),
         cpf: formData.cpf.replace(/\D/g, ''),
         phone: formData.phone.replace(/\D/g, ''),
