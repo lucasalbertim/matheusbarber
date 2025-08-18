@@ -241,6 +241,17 @@ def get_top_clients(
     """Obter top clientes (apenas admin)"""
     return attendance_service.get_top_clients(db)
 
+@app.get("/admin/reports/revenue-chart")
+def get_revenue_chart(
+    period: str,
+    start_date: str = None,
+    end_date: str = None,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter dados de receita para gráfico (apenas admin)"""
+    return attendance_service.get_revenue_by_period(db, period, start_date, end_date)
+
 @app.get("/admin/reports/export")
 def export_reports(
     db: Session = Depends(get_db),
