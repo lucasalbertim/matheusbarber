@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaIdCard, FaPhone, FaUser, FaEnvelope } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { formatCPF, formatPhoneBR, isValidCPF, isValidPhoneBR, isValidEmail, onlyDigits, normalizeEmail } from '../utils/formatters';
 
 const Container = styled.div`
   max-width: 500px;
@@ -120,30 +121,16 @@ const ClientRegisterPage = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Máscaras para formatação
-  const applyCPFMask = (value) => {
-    value = value.replace(/\D/g, '');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    return value;
-  };
-
-  const applyPhoneMask = (value) => {
-    value = value.replace(/\D/g, '');
-    value = value.replace(/(\d{2})(\d)/, '($1) $2');
-    value = value.replace(/(\d{5})(\d)/, '$1-$2');
-    return value;
-  };
-
+  // Máscaras via utilitários
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
-
     if (name === 'cpf') {
-      formattedValue = applyCPFMask(value);
+      formattedValue = formatCPF(value);
     } else if (name === 'phone') {
-      formattedValue = applyPhoneMask(value);
+      formattedValue = formatPhoneBR(value);
+    } else if (name === 'email') {
+      formattedValue = normalizeEmail(value);
     }
 
     setFormData(prev => ({
@@ -167,19 +154,21 @@ const ClientRegisterPage = () => {
       newErrors.name = 'Nome é obrigatório';
     }
 
-    if (!formData.cpf.replace(/\D/g, '')) {
+    const cpfDigits = onlyDigits(formData.cpf);
+    if (!cpfDigits) {
       newErrors.cpf = 'CPF é obrigatório';
-    } else if (formData.cpf.replace(/\D/g, '').length !== 11) {
-      newErrors.cpf = 'CPF deve ter 11 dígitos';
+    } else if (!isValidCPF(cpfDigits)) {
+      newErrors.cpf = 'CPF inválido';
     }
 
-    if (!formData.phone.replace(/\D/g, '')) {
+    const phoneDigits = onlyDigits(formData.phone);
+    if (!phoneDigits) {
       newErrors.phone = 'Telefone é obrigatório';
-    } else if (formData.phone.replace(/\D/g, '').length < 10) {
-      newErrors.phone = 'Telefone deve ter pelo menos 10 dígitos';
+    } else if (!isValidPhoneBR(phoneDigits)) {
+      newErrors.phone = 'Telefone inválido';
     }
 
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+    if (formData.email && !isValidEmail(formData.email)) {
       newErrors.email = 'Email inválido';
     }
 
@@ -199,9 +188,9 @@ const ClientRegisterPage = () => {
     try {
       await api.post('/clients/', {
         name: formData.name.trim(),
-        cpf: formData.cpf.replace(/\D/g, ''),
-        phone: formData.phone.replace(/\D/g, ''),
-        email: formData.email.trim() || null
+        cpf: onlyDigits(formData.cpf),
+        phone: onlyDigits(formData.phone),
+        email: formData.email ? normalizeEmail(formData.email) : null
       });
 
       toast.success('Cliente cadastrado com sucesso!');
