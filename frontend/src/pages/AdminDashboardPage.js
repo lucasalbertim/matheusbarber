@@ -363,6 +363,24 @@ const AdminDashboardPage = () => {
               </button>
             </div>
           </QuickActionCard>
+
+          <QuickActionCard>
+            <h3>
+              <FaCut className="icon" />
+              Gestão de Serviços
+            </h3>
+            <div className="action-buttons">
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/admin/servicos')}
+              >
+                Ver Serviços
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate('/admin/servicos')}>
+                Novo Serviço
+              </button>
+            </div>
+          </QuickActionCard>
           
           <QuickActionCard>
             <h3>

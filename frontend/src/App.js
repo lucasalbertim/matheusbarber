@@ -16,6 +16,7 @@ import ReportsPage from './pages/ReportsPage';
 import ClientStartAttendancePage from './pages/ClientStartAttendancePage';
 import ClientAttendanceSummaryPage from './pages/ClientAttendanceSummaryPage';
 import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
+import ServicesManagementPage from './pages/ServicesManagementPage';
 
 // Contextos
 import { AuthProvider } from './contexts/AuthContext';
@@ -54,6 +55,7 @@ function App() {
             <Route path="/admin/clientes" element={<ClientsManagementPage />} />
             <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
             <Route path="/admin/relatorios" element={<ReportsPage />} />
+            <Route path="/admin/servicos" element={<ServicesManagementPage />} />
             
             {/* Rota padrão */}
             <Route path="*" element={<Navigate to="/" replace />} />
