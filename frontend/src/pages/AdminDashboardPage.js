@@ -287,7 +287,9 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(26, 26, 26, 0.1)', color: 'var(--primary)' }}>
                 <FaUsers />
               </div>
-              <div className="trend positive">+12%</div>
+              <div className={`trend ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
             <div className="metric-value">{metrics.totalClients}</div>
             <div className="metric-label">Total de Clientes</div>
