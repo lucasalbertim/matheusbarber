@@ -75,6 +75,25 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('metheus_admin', JSON.stringify(updatedAdmin));
   };
 
+  // Funções de verificação de autenticação
+  const isAdmin = () => {
+    return !!admin && !!admin.token;
+  };
+
+  const isClient = () => {
+    return !!client;
+  };
+
+  const isAuthenticated = () => {
+    return isAdmin() || isClient();
+  };
+
+  const getCurrentUser = () => {
+    if (isAdmin()) return { type: 'admin', data: admin };
+    if (isClient()) return { type: 'client', data: client };
+    return null;
+  };
+
   const value = {
     client,
     admin,
@@ -85,6 +104,10 @@ export const AuthProvider = ({ children }) => {
     logoutAdmin,
     updateClient,
     updateAdmin,
+    isClient,
+    isAdmin,
+    isAuthenticated,
+    getCurrentUser,
     isClientAuthenticated: !!client,
     isAdminAuthenticated: !!admin,
   };
