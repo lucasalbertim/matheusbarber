@@ -321,6 +321,146 @@ class AttendanceService:
         # Calcular porcentagens
         return self._calculate_growth_percentages(current_metrics, previous_metrics)
 
+    def get_revenue_by_period(self, db: Session, period: str, start_date: str = None, end_date: str = None) -> List[Dict[str, Any]]:
+        """Obter dados de receita por período para gráfico"""
+        from datetime import datetime, timedelta
+        
+        # Definir período
+        if start_date and end_date:
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            today = date.today()
+            if period == 'day':
+                start = today - timedelta(days=30)  # Últimos 30 dias
+                end = today
+            elif period == 'week':
+                start = today - timedelta(days=12 * 7)  # Últimas 12 semanas
+                end = today
+            elif period == 'month':
+                start = today.replace(day=1) - timedelta(days=365)  # Últimos 12 meses
+                end = today
+            elif period == 'quarter':
+                start = today - timedelta(days=4 * 90)  # Últimos 4 trimestres
+                end = today
+            elif period == 'year':
+                start = today.replace(month=1, day=1) - timedelta(days=365 * 3)  # Últimos 3 anos
+                end = today
+            else:
+                start = today - timedelta(days=30)
+                end = today
+        
+        # Gerar pontos de dados baseados no período
+        data_points = []
+        current = start
+        
+        while current <= end:
+            if period == 'day':
+                # Dados diários
+                revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+                    and_(
+                        Attendance.payment_status == "paid",
+                        func.date(Attendance.appointment_date) == current
+                    )
+                ).scalar() or 0.0
+                
+                data_points.append({
+                    "date": current.isoformat(),
+                    "revenue": float(revenue),
+                    "label": current.strftime('%d/%m')
+                })
+                current += timedelta(days=1)
+                
+            elif period == 'week':
+                # Dados semanais
+                week_end = min(current + timedelta(days=6), end)
+                revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+                    and_(
+                        Attendance.payment_status == "paid",
+                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) <= week_end
+                    )
+                ).scalar() or 0.0
+                
+                data_points.append({
+                    "date": current.isoformat(),
+                    "revenue": float(revenue),
+                    "label": f"Sem {current.strftime('%U')}"
+                })
+                current += timedelta(days=7)
+                
+            elif period == 'month':
+                # Dados mensais
+                if current.month == 12:
+                    month_end = current.replace(year=current.year + 1, month=1, day=1) - timedelta(days=1)
+                else:
+                    month_end = current.replace(month=current.month + 1, day=1) - timedelta(days=1)
+                
+                revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+                    and_(
+                        Attendance.payment_status == "paid",
+                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) <= month_end
+                    )
+                ).scalar() or 0.0
+                
+                data_points.append({
+                    "date": current.isoformat(),
+                    "revenue": float(revenue),
+                    "label": current.strftime('%b/%Y')
+                })
+                
+                if current.month == 12:
+                    current = current.replace(year=current.year + 1, month=1, day=1)
+                else:
+                    current = current.replace(month=current.month + 1, day=1)
+                    
+            elif period == 'quarter':
+                # Dados trimestrais
+                quarter_end_month = ((current.month - 1) // 3) * 3 + 3
+                if quarter_end_month > 12:
+                    quarter_end = current.replace(year=current.year + 1, month=quarter_end_month - 12, day=1) - timedelta(days=1)
+                else:
+                    quarter_end = current.replace(month=quarter_end_month, day=1) - timedelta(days=1)
+                
+                revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+                    and_(
+                        Attendance.payment_status == "paid",
+                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) <= quarter_end
+                    )
+                ).scalar() or 0.0
+                
+                data_points.append({
+                    "date": current.isoformat(),
+                    "revenue": float(revenue),
+                    "label": f"T{((current.month - 1) // 3) + 1}/{current.year}"
+                })
+                
+                current = quarter_end + timedelta(days=1)
+                
+            elif period == 'year':
+                # Dados anuais
+                year_end = current.replace(month=12, day=31)
+                
+                revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
+                    and_(
+                        Attendance.payment_status == "paid",
+                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) <= year_end
+                    )
+                ).scalar() or 0.0
+                
+                data_points.append({
+                    "date": current.isoformat(),
+                    "revenue": float(revenue),
+                    "label": str(current.year)
+                })
+                
+                current = current.replace(year=current.year + 1, month=1, day=1)
+        
+        return data_points
+
     def export_reports(self, db: Session) -> Dict[str, Any]:
         """Exportar relatórios (simulado)"""
         # Por enquanto retorna dados básicos para simular exportação

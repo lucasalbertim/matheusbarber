@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
@@ -294,6 +295,7 @@ const ReportsPage = () => {
     averageTicket: 0
   });
   const [topClients, setTopClients] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -306,14 +308,15 @@ const ReportsPage = () => {
         params.end_date = filters.endDate;
       }
 
-      const [metricsResponse, clientsResponse] = await Promise.all([
+      const [metricsResponse, clientsResponse, revenueResponse] = await Promise.all([
         api.get('/admin/reports/summary-by-period', { params }),
-        api.get('/admin/reports/top-clients')
+        api.get('/admin/reports/top-clients'),
+        api.get('/admin/reports/revenue-chart', { params })
       ]);
 
       setMetrics(metricsResponse.data);
       setTopClients(clientsResponse.data);
-      // setRevenueByPeriod(revenueResponse.data); // Para uso futuro
+      setRevenueData(revenueResponse.data);
     } catch (error) {
       console.error('Erro ao buscar relatórios:', error);
       toast.error('Erro ao carregar relatórios');
@@ -506,13 +509,44 @@ const ReportsPage = () => {
           <FaChartBar />
           Receita por Período
         </ChartTitle>
-        <ChartPlaceholder>
-          <div className="icon">
-            <FaChartBar />
-          </div>
-          <h4>Gráfico de Receita</h4>
-          <p>Este gráfico mostrará a evolução da receita ao longo do tempo.</p>
-        </ChartPlaceholder>
+        {revenueData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="label" 
+                tick={{ fontSize: 12 }}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis 
+                tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip 
+                formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Receita']}
+                labelFormatter={(label) => `Período: ${label}`}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#28a745" 
+                strokeWidth={3}
+                dot={{ fill: '#28a745', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#28a745', strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <ChartPlaceholder>
+            <div className="icon">
+              <FaChartBar />
+            </div>
+            <h4>Nenhum dado disponível</h4>
+            <p>Não há dados de receita para o período selecionado.</p>
+          </ChartPlaceholder>
+        )}
       </ChartsSection>
 
       <TableSection>
