@@ -12,6 +12,11 @@ const Container = styled.div`
 
 const Title = styled.h1`
   color: var(--primary);
+  margin-bottom: 8px;
+`;
+
+const Subtitle = styled.p`
+  color: var(--text-secondary);
   margin-bottom: 20px;
 `;
 
@@ -63,6 +68,7 @@ const ClientAttendanceSummaryPage = () => {
   return (
     <Container>
       <Title>Resumo do Atendimento</Title>
+      <Subtitle>Confira os serviços escolhidos e os totais antes de pagar.</Subtitle>
       <List>
         {services.map(s => (
           <li key={s.id}>{s.name} — R$ {s.price.toFixed(2)} — {s.duration_minutes} min</li>

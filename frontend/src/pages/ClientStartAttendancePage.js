@@ -13,6 +13,11 @@ const Container = styled.div`
 
 const Title = styled.h1`
   color: var(--primary);
+  margin-bottom: 8px;
+`;
+
+const Subtitle = styled.p`
+  color: var(--text-secondary);
   margin-bottom: 20px;
 `;
 
@@ -89,10 +94,14 @@ const ClientStartAttendancePage = () => {
   return (
     <Container>
       <Title>Escolha seus serviços</Title>
+      <Subtitle>Selecione um ou mais serviços para seu atendimento.</Subtitle>
       <ServiceList>
         {services.map(s => (
           <ServiceItem key={s.id}>
-            <span>{s.name} — R$ {s.price.toFixed(2)} — {s.duration_minutes} min</span>
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--text)' }}>{s.name}</div>
+              <div style={{ fontSize: 14, color: 'var(--text-light)' }}>R$ {s.price.toFixed(2)} • {s.duration_minutes} min</div>
+            </div>
             <input type="checkbox" checked={selected.includes(s.id)} onChange={() => toggle(s.id)} />
           </ServiceItem>
         ))}
