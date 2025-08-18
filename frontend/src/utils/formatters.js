@@ -34,7 +34,7 @@ export const isValidEmail = (value = '') => {
   const email = normalizeEmail(value);
   if (!email) return false;
   // RFC 5322-ish simple validation
-  const re = /^(?:[a-zA-Z0-9_'^&\+`{}~!#$%*?\/=\|\-]+(?:\.[a-zA-Z0-9_'^&\+`{}~!#$%*?\/=\|\-]+)*)@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+  const re = /^(?:[a-zA-Z0-9_'^&+`{}~!#$%*?/=|-]+(?:\.[a-zA-Z0-9_'^&+`{}~!#$%*?/=|-]+)*)@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
   return re.test(email);
 };
 
