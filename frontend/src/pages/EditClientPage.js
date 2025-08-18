@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaSave, FaEdit } from 'react-icons/fa';
@@ -147,7 +147,6 @@ const EditClientPage = () => {
   const navigate = useNavigate();
   const { clientId } = useParams();
   const { isAdmin } = useAuth();
-  const [client, setClient] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     cpf: '',
@@ -158,19 +157,10 @@ const EditClientPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!isAdmin()) {
-      navigate('/admin/login');
-      return;
-    }
-    fetchClient();
-  }, [clientId, isAdmin, navigate]);
-
-  const fetchClient = async () => {
+  const fetchClient = useCallback(async () => {
     try {
       const response = await api.get(`/admin/clients/${clientId}`);
       const clientData = response.data;
-      setClient(clientData);
       setFormData({
         name: clientData.name || '',
         cpf: formatCPF(clientData.cpf) || '',
@@ -184,7 +174,15 @@ const EditClientPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [clientId, navigate]);
+
+  useEffect(() => {
+    if (!isAdmin()) {
+      navigate('/admin/login');
+      return;
+    }
+    fetchClient();
+  }, [isAdmin, navigate, fetchClient]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

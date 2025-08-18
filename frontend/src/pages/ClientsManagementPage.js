@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes } from 'react-icons/fa';
@@ -263,13 +263,26 @@ const ClientsManagementPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchClients = useCallback(async () => {
+    try {
+      const response = await api.get(`/admin/clients/?status=${statusFilter}`);
+      setClients(response.data);
+      setFilteredClients(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+      toast.error('Erro ao carregar clientes');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter]);
+
   useEffect(() => {
     if (!isAdmin()) {
       navigate('/admin/login');
       return;
     }
     fetchClients();
-  }, [isAdmin, navigate, statusFilter]);
+  }, [isAdmin, navigate, fetchClients]);
 
   useEffect(() => {
     const filterClients = () => {
@@ -290,18 +303,7 @@ const ClientsManagementPage = () => {
     filterClients();
   }, [searchTerm, clients]);
 
-  const fetchClients = async () => {
-    try {
-      const response = await api.get(`/admin/clients/?status=${statusFilter}`);
-      setClients(response.data);
-      setFilteredClients(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar clientes:', error);
-      toast.error('Erro ao carregar clientes');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
 
 
