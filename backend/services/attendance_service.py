@@ -236,8 +236,16 @@ class AttendanceService:
     
     def _get_metrics_for_period(self, db: Session, start_date: date, end_date: date) -> Dict[str, Any]:
         """Obter métricas para um período específico"""
-        # Total de clientes (sempre total, não por período)
+        # Total de clientes ativos (sempre total, não por período)
         total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
+        
+        # Clientes que fizeram atendimentos no período
+        clients_in_period = db.query(func.count(func.distinct(Attendance.client_id))).filter(
+            and_(
+                func.date(Attendance.appointment_date) >= start_date,
+                func.date(Attendance.appointment_date) <= end_date
+            )
+        ).scalar()
         
         # Atendimentos no período
         attendances_in_period = db.query(func.count(Attendance.id)).filter(
@@ -261,6 +269,7 @@ class AttendanceService:
         
         return {
             "totalClients": total_clients,
+            "activeClientsInPeriod": clients_in_period,
             "totalAttendances": attendances_in_period,
             "totalRevenue": float(revenue_in_period),
             "averageTicket": float(average_ticket)
@@ -275,7 +284,7 @@ class AttendanceService:
         
         return {
             "revenueGrowth": calculate_percentage(current["totalRevenue"], previous["totalRevenue"]),
-            "clientsGrowth": calculate_percentage(current["totalClients"], previous["totalClients"]),
+            "clientsGrowth": calculate_percentage(current["activeClientsInPeriod"], previous["activeClientsInPeriod"]),
             "attendancesGrowth": calculate_percentage(current["totalAttendances"], previous["totalAttendances"]),
             "averageTicketGrowth": calculate_percentage(current["averageTicket"], previous["averageTicket"])
         }
