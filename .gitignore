@@ -1,60 +1,72 @@
 # Dependencies
 node_modules/
 */node_modules/
-frontend/node_modules/
-backend/venv/
-backend/__pycache__/
-backend/*/__pycache__/
-backend/*/*/__pycache__/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
 
-# Build outputs
-frontend/build/
-frontend/dist/
-frontend/.next/
-frontend/out/
-backend/build/
-backend/dist/
+# Production builds
+build/
+dist/
+*/build/
+*/dist/
 
-# Environment files
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-backend/.env
-frontend/.env
+*/.env
+*/.env.local
+*/.env.development.local
+*/.env.test.local
+*/.env.production.local
 
-# Cache and temporary files
-.cache/
-*.cache
-frontend/.cache/
-frontend/.parcel-cache/
-backend/.pytest_cache/
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
 
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+# Database
+*.db
+*.sqlite3
+*.sqlite
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-.pnpm-debug.log*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
@@ -62,6 +74,8 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+
+# nyc test coverage
 .nyc_output
 
 # Dependency directories
@@ -73,6 +87,12 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
 # Optional REPL history
 .node_repl_history
 
@@ -83,6 +103,7 @@ jspm_packages/
 .yarn-integrity
 
 # parcel-bundler cache (https://parceljs.org/)
+.cache
 .parcel-cache
 
 # Next.js build output
@@ -104,14 +125,12 @@ public
 tmp/
 temp/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Docker
-.dockerignore
-docker-compose.override.yml
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS generated files
 .DS_Store
@@ -122,86 +141,30 @@ docker-compose.override.yml
 ehthumbs.db
 Thumbs.db
 
-# Python specific
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
+# Docker
+.dockerignore
+docker-compose.override.yml
 
-# Alembic
-alembic/versions/*.py
-!alembic/versions/__init__.py
+# Git
+.git/
+.gitignore
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Frontend specific
-frontend/.eslintcache
-frontend/.stylelintcache
-frontend/.cache/
-frontend/coverage/
-frontend/.nyc_output/
-
-# Backend specific
-backend/.pytest_cache/
-backend/.coverage
-backend/htmlcov/
-backend/.tox/
-backend/.coverage.*
-backend/coverage.xml
-backend/*.cover
-backend/.hypothesis/
-
-# System specific
-*.tmp
-*.temp
+# Backup files
 *.bak
 *.backup
-*.orig
-*.rej
+*.old
 
-# Package manager locks (uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+dist/
+build/
+
+# Test coverage
+coverage/
+.nyc_output/
 
 # Local development
 .local/
-local/
-dev/
-development/
