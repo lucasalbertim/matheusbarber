@@ -230,12 +230,12 @@ const AdminDashboardPage = () => {
   const { admin } = useAuth();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState({
-    total_clients: 0,
-    total_attendances: 0,
-    total_revenue: 0,
-    inactive_clients: 0,
-    today_attendances: 0,
-    pending_payments: 0
+    totalClients: 0,
+    totalAttendances: 0,
+    totalRevenue: 0,
+    inactiveClients: 0,
+    todayAttendances: 0,
+    pendingPayments: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -289,7 +289,7 @@ const AdminDashboardPage = () => {
               </div>
               <div className="trend positive">+12%</div>
             </div>
-            <div className="metric-value">{metrics.total_clients}</div>
+            <div className="metric-value">{metrics.totalClients}</div>
             <div className="metric-label">Total de Clientes</div>
           </MetricCard>
           
@@ -300,7 +300,7 @@ const AdminDashboardPage = () => {
               </div>
               <div className="trend positive">+8%</div>
             </div>
-            <div className="metric-value">{metrics.total_attendances}</div>
+            <div className="metric-value">{metrics.totalAttendances}</div>
             <div className="metric-label">Total de Atendimentos</div>
           </MetricCard>
           
@@ -311,7 +311,7 @@ const AdminDashboardPage = () => {
               </div>
               <div className="trend positive">+15%</div>
             </div>
-            <div className="metric-value">R$ {metrics.total_revenue.toFixed(2)}</div>
+            <div className="metric-value">R$ {(metrics.totalRevenue || 0).toFixed(2)}</div>
             <div className="metric-label">Receita Total</div>
           </MetricCard>
           
@@ -322,7 +322,7 @@ const AdminDashboardPage = () => {
               </div>
               <div className="trend negative">-5%</div>
             </div>
-            <div className="metric-value">{metrics.inactive_clients}</div>
+            <div className="metric-value">{metrics.inactiveClients}</div>
             <div className="metric-label">Clientes Inativos</div>
           </MetricCard>
         </MetricsGrid>
