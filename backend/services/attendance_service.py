@@ -65,6 +65,14 @@ class AttendanceService:
     
     def get_today_attendance(self, db: Session) -> List[Attendance]:
         today = date.today()
+        
+        # Verificar todos os atendimentos no banco
+        all_attendances = db.query(Attendance).all()
+        print(f"Total de atendimentos no banco: {len(all_attendances)}")
+        for att in all_attendances:
+            print(f"  - ID: {att.id}, Status: {att.status}, Data: {att.appointment_date}, Cliente: {att.client_id}")
+        
+        # Buscar atendimentos de hoje
         attendances = db.query(Attendance).filter(
             func.date(Attendance.appointment_date) == today
         ).order_by(Attendance.appointment_date.desc()).all()
@@ -126,6 +134,8 @@ class AttendanceService:
         today_attendances = db.query(func.count(Attendance.id)).filter(
             func.date(Attendance.appointment_date) == today
         ).scalar()
+        
+        print(f"Dashboard - Atendimentos de hoje ({today}): {today_attendances}")
         
         # Pagamentos pendentes
         pending_payments = db.query(func.count(Attendance.id)).filter(
