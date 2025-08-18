@@ -8,42 +8,83 @@ from models import Client
 from schemas import ClientCreate, ClientLogin
 from services.whatsapp_service import whatsapp_service
 
+
+def _only_digits(value: str) -> str:
+    return ''.join(ch for ch in (value or '') if ch.isdigit())
+
+
+def _normalize_email(value: Optional[str]) -> Optional[str]:
+    return (value or '').strip().lower() or None
+
+
+def _is_valid_cpf(cpf: str) -> bool:
+    digits = _only_digits(cpf)
+    if len(digits) != 11:
+        return False
+    if digits == digits[0] * 11:
+        return False
+    def calc(base: str) -> int:
+        total = sum(int(base[i]) * (len(base) + 1 - i) for i in range(len(base)))
+        mod = total % 11
+        return 0 if mod < 2 else 11 - mod
+    d1 = calc(digits[:9])
+    d2 = calc(digits[:9] + str(d1))
+    return digits.endswith(f"{d1}{d2}")
+
+
 class ClientService:
     def create_client(self, db: Session, client: ClientCreate) -> Client:
+        # Sanitização
+        cpf_digits = _only_digits(client.cpf)
+        phone_digits = _only_digits(client.phone)
+        email_norm = _normalize_email(client.email)
+
+        # Validação
+        if not _is_valid_cpf(cpf_digits):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CPF inválido")
+        if len(phone_digits) not in (10, 11):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Telefone inválido")
+
         # Verificar se CPF já existe
-        if db.query(Client).filter(Client.cpf == client.cpf).first():
+        if db.query(Client).filter(Client.cpf == cpf_digits).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="CPF já cadastrado"
             )
         
         # Verificar se telefone já existe
-        if db.query(Client).filter(Client.phone == client.phone).first():
+        if db.query(Client).filter(Client.phone == phone_digits).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Telefone já cadastrado"
             )
         
-        db_client = Client(**client.dict())
+        payload = client.dict()
+        payload["cpf"] = cpf_digits
+        payload["phone"] = phone_digits
+        payload["email"] = email_norm
+        payload["name"] = payload["name"].strip()
+        db_client = Client(**payload)
         db.add(db_client)
         db.commit()
         db.refresh(db_client)
         
         # Enviar mensagem de boas-vindas via WhatsApp
         try:
-            welcome_message = f"Seja bem-vindo, {client.name}! Você foi cadastrado com sucesso na Matheus Barber."
-            whatsapp_service.send_message(client.phone, welcome_message)
+            welcome_message = f"Seja bem-vindo, {db_client.name}! Você foi cadastrado com sucesso na Matheus Barber."
+            whatsapp_service.send_message(db_client.phone, welcome_message)
         except Exception as e:
             print(f"Erro ao enviar mensagem WhatsApp: {e}")
         
         return db_client
     
     def login_client(self, db: Session, login_data: ClientLogin) -> Client:
-        # Buscar cliente por CPF ou telefone
+        # Buscar cliente por CPF ou telefone (sanitizado)
+        identifier = _only_digits(login_data.identifier)
         client = db.query(Client).filter(
             and_(
                 Client.is_active == True,
-                (Client.cpf == login_data.identifier) | (Client.phone == login_data.identifier)
+                (Client.cpf == identifier) | (Client.phone == identifier)
             )
         ).first()
         
@@ -89,24 +130,35 @@ class ClientService:
     def update_client(self, db: Session, client_id: int, client_update: ClientCreate) -> Client:
         db_client = self.get_client(db, client_id)
         
+        cpf_digits = _only_digits(client_update.cpf)
+        phone_digits = _only_digits(client_update.phone)
+        email_norm = _normalize_email(client_update.email)
+
+        if not _is_valid_cpf(cpf_digits):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CPF inválido")
+        if len(phone_digits) not in (10, 11):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Telefone inválido")
+        
         # Verificar se CPF já existe (se foi alterado)
-        if client_update.cpf != db_client.cpf:
-            if db.query(Client).filter(and_(Client.cpf == client_update.cpf, Client.id != client_id)).first():
+        if cpf_digits != db_client.cpf:
+            if db.query(Client).filter(and_(Client.cpf == cpf_digits, Client.id != client_id)).first():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="CPF já cadastrado"
                 )
         
         # Verificar se telefone já existe (se foi alterado)
-        if client_update.phone != db_client.phone:
-            if db.query(Client).filter(and_(Client.phone == client_update.phone, Client.id != client_id)).first():
+        if phone_digits != db_client.phone:
+            if db.query(Client).filter(and_(Client.phone == phone_digits, Client.id != client_id)).first():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Telefone já cadastrado"
                 )
         
-        for field, value in client_update.dict().items():
-            setattr(db_client, field, value)
+        db_client.name = client_update.name.strip()
+        db_client.cpf = cpf_digits
+        db_client.phone = phone_digits
+        db_client.email = email_norm
         
         db_client.updated_at = datetime.utcnow()
         db.commit()
