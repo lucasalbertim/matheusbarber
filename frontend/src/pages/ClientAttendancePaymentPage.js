@@ -5,6 +5,7 @@ import { FaArrowLeft, FaMoneyBillWave, FaCreditCard, FaQrcode, FaCheckCircle, Fa
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { getRecifeDateTime } from '../utils/dateUtils';
 
 const Container = styled.div`
   max-width: 800px;
@@ -261,10 +262,9 @@ const ClientAttendancePaymentPage = () => {
     setIsProcessing(true);
 
     try {
-      const now = new Date().toISOString();
-      await api.post('/attendance/', {
+            await api.post('/attendance/', {
         client_id: client.id,
-        appointment_date: now,
+        appointment_date: getRecifeDateTime(),
         payment_method: selectedMethod,
         notes: null,
         service_ids: selection.service_ids,

@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 
 from models import Attendance, Client, Service
 from schemas import AttendanceCreate, AttendanceUpdate
+from utils.date_utils import get_recife_datetime, get_recife_date
 
 class AttendanceService:
     def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Attendance:
@@ -22,7 +23,7 @@ class AttendanceService:
         # Reativar cliente se estiver inativo
         if not client.is_active:
             client.is_active = True
-            client.updated_at = datetime.utcnow()
+            client.updated_at = get_recife_datetime()
             db.commit()
             db.refresh(client)
         
@@ -64,7 +65,7 @@ class AttendanceService:
         return attendance
     
     def get_today_attendance(self, db: Session) -> List[Attendance]:
-        today = date.today()
+        today = get_recife_date()
         
         # Verificar todos os atendimentos no banco
         all_attendances = db.query(Attendance).all()
@@ -101,7 +102,7 @@ class AttendanceService:
         if 'notes' in update_data:
             db_attendance.notes = update_data['notes']
         
-        db_attendance.updated_at = datetime.utcnow()
+        db_attendance.updated_at = get_recife_datetime()
         db.commit()
         db.refresh(db_attendance)
         
@@ -114,7 +115,7 @@ class AttendanceService:
     
     def get_reports_summary(self, db: Session) -> Dict[str, Any]:
         """Obter resumo de relatórios para dashboard administrativo"""
-        today = date.today()
+        today = get_recife_date()
         
         # Total de clientes
         total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
