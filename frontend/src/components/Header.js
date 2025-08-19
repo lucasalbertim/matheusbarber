@@ -29,21 +29,14 @@ const Logo = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  
-  .logo-icon {
+
+  img {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: var(--primary);
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
   }
-  
+
   .logo-text {
     h1 {
       font-size: 1.5rem;
@@ -52,7 +45,7 @@ const Logo = styled.div`
       margin: 0;
       line-height: 1.2;
     }
-    
+
     span {
       font-size: 0.9rem;
       color: var(--text-secondary);
@@ -84,11 +77,11 @@ const NavLink = styled(Link)`
   
   &:hover {
     background-color: var(--background);
-    color: var(--primary);
+    color: #20AC9F; // Alterado para a nova cor
   }
   
   &.active {
-    background-color: var(--secondary);
+    background-color: #20AC9F; // Alterado para a nova cor
     color: var(--primary);
   }
 `;
@@ -117,7 +110,7 @@ const UserSection = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background-color: var(--error);
+    background-color: #20AC9F; // Alterado para a nova cor
     color: var(--accent);
     border: none;
     border-radius: 6px;
@@ -126,7 +119,7 @@ const UserSection = styled.div`
     transition: all 0.2s ease;
     
     &:hover {
-      background-color: #c82333;
+      background-color: #1A8C7F; // Alterado para a nova cor
       transform: translateY(-1px);
     }
   }
@@ -153,7 +146,7 @@ const Header = () => {
     <HeaderContainer>
       <HeaderContent>
         <Logo>
-          <div className="logo-icon">M</div>
+          <img src="/logo.jpeg" alt="Matheus Barber Logo" />
           <div className="logo-text">
             <h1>Matheus Barber</h1>
             <span>Desde 2018</span>

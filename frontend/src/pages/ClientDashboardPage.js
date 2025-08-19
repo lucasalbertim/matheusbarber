@@ -39,27 +39,21 @@ const BackButton = styled.button`
 `;
 
 const WelcomeSection = styled.div`
-  background: linear-gradient(135deg, var(--primary) 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #20AC9F 0%, #2d2d2d 100%);
   color: var(--accent);
   padding: 40px;
   border-radius: 20px;
   text-align: center;
   margin-bottom: 40px;
-  
-  .welcome-icon {
+
+  img {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    color: var(--primary);
     margin: 0 auto 20px;
     box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
   }
-  
+
   h1 {
     font-size: 2.5rem;
     font-weight: 700;
@@ -99,7 +93,7 @@ const DashboardCard = styled.div`
     .icon {
       width: 50px;
       height: 50px;
-      background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
+      background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -238,7 +232,7 @@ const ClientDashboardPage = () => {
         </BackButton>
         
         <WelcomeSection>
-          <div className="welcome-icon">M</div>
+          <img src="/logo.jpeg" alt="Matheus Barber Logo" />
           <h1>Bem-vindo, {client.name}!</h1>
           <p>Gerencie seu perfil e visualize seus atendimentos</p>
         </WelcomeSection>

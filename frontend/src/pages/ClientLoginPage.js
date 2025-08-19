@@ -50,29 +50,22 @@ const BackButton = styled(Link)`
 const Header = styled.div`
   text-align: center;
   margin-bottom: 40px;
-  
-  .logo {
+
+  img {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-weight: bold;
-    color: var(--primary);
     margin: 0 auto 20px;
     box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
   }
-  
+
   h1 {
     font-size: 2rem;
     font-weight: 700;
     color: var(--primary);
     margin-bottom: 8px;
   }
-  
+
   p {
     color: var(--text-secondary);
     font-size: 1.1rem;
@@ -103,7 +96,7 @@ const Tab = styled.button`
   gap: 8px;
   
   &:hover {
-    color: var(--primary);
+    color: #20AC9F;
   }
 `;
 
@@ -148,7 +141,7 @@ const Form = styled.form`
   .submit-btn {
     width: 100%;
     padding: 16px;
-    background: var(--primary);
+    background: #20AC9F;
     color: var(--accent);
     border: none;
     border-radius: 10px;
@@ -159,7 +152,7 @@ const Form = styled.form`
     margin-top: 20px;
     
     &:hover:not(:disabled) {
-      background: #000000;
+      background: #1A8C7F;
       transform: translateY(-2px);
       box-shadow: 0 4px 16px rgba(26, 26, 26, 0.3);
     }
@@ -340,7 +333,7 @@ const ClientLoginPage = () => {
         </BackButton>
         
         <Header>
-          <div className="logo">M</div>
+          <img src="/logo.jpeg" alt="Matheus Barber Logo" />
           <h1>Matheus Barber</h1>
           <p>Área do Cliente</p>
         </Header>

@@ -119,9 +119,9 @@ const FilterButton = styled.button`
   font-weight: 600;
 
   &.active {
-    background: var(--primary);
+    background: #20AC9F; // Alterado para a nova cor
     color: white;
-    border-color: var(--primary);
+    border-color: #20AC9F; // Alterado para a nova cor
   }
 
   &:hover {
@@ -314,8 +314,8 @@ const PaymentBadge = styled.span`
   }
 
   &.paid {
-    background: var(--success-light);
-    color: var(--success);
+    background: rgba(32, 172, 159, 0.1); // Alterado para a nova cor
+    color: #20AC9F; // Alterado para a nova cor
   }
 
   &.cancelled {
@@ -499,7 +499,7 @@ const AttendanceManagementPage = () => {
           break;
         case 'payment':
           aValue = a.payment_status;
-          bValue = b.payment_status;
+          bValue = a.payment_status;
           break;
         default:
           aValue = a.id;

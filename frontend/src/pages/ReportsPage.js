@@ -48,7 +48,7 @@ const Header = styled.div`
 `;
 
 const Title = styled.h1`
-  color: var(--primary);
+  color: #20AC9F;
   margin: 0;
 `;
 
@@ -136,7 +136,7 @@ const FilterActions = styled.div`
 
 const FilterButton = styled.button`
   padding: 12px 24px;
-  background: var(--primary);
+  background: #20AC9F;
   color: white;
   border: none;
   border-radius: 8px;
@@ -152,7 +152,7 @@ const FilterButton = styled.button`
 
 const ExportButton = styled.button`
   padding: 12px 24px;
-  background: var(--success);
+  background: #20AC9F;
   color: white;
   border: none;
   border-radius: 8px;
@@ -184,7 +184,7 @@ const MetricCard = styled.div`
   text-align: center;
   border-left: 4px solid var(--primary);
 
-  &.revenue { border-left-color: var(--success); }
+  &.revenue { border-left-color: #20AC9F; }
   &.clients { border-left-color: var(--info); }
   &.attendances { border-left-color: var(--warning); }
   &.average { border-left-color: var(--secondary); }
@@ -603,17 +603,17 @@ const ModernChart = ({ data }) => {
       {
         label: 'Receita (R$)',
         data: data.map(item => item.revenue),
-        borderColor: '#28a745',
-        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+        borderColor: '#20AC9F',
+        backgroundColor: 'rgba(32, 172, 159, 0.1)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#28a745',
+        pointBackgroundColor: '#20AC9F',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
         pointRadius: 6,
         pointHoverRadius: 8,
-        pointHoverBackgroundColor: '#28a745',
+        pointHoverBackgroundColor: '#20AC9F',
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 3,
       }

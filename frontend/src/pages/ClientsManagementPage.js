@@ -85,7 +85,7 @@ const AddButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: var(--primary);
+  background: #20AC9F;
   color: white;
   border: none;
   border-radius: 8px;
@@ -241,7 +241,7 @@ const ActionButton = styled.button`
   }
 
   &.reactivate {
-    background: var(--success);
+    background: #20AC9F;
     color: white;
 
     &:hover {

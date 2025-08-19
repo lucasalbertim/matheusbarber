@@ -11,7 +11,7 @@ const HomeContainer = styled.div`
 const HeroSection = styled.section`
   padding: 80px 20px;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary) 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #20AC9F 100%);
   color: var(--accent);
   margin-bottom: 60px;
 `;
@@ -47,22 +47,15 @@ const LogoDisplay = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 40px;
-  
-  .logo-circle {
+
+  img {
     width: 120px;
     height: 120px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    font-weight: bold;
-    color: var(--primary);
     box-shadow: 0 8px 32px rgba(212, 175, 55, 0.4);
     margin-right: 20px;
   }
-  
+
   .logo-text {
     text-align: left;
     
@@ -70,7 +63,7 @@ const LogoDisplay = styled.div`
       font-size: 2rem;
       font-weight: 700;
       margin: 0;
-      color: var(--secondary);
+      color: var(--title);
     }
     
     span {
@@ -112,7 +105,7 @@ const OptionCard = styled(Link)`
   &:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    border-color: var(--secondary);
+    border-color: #20AC9F;
   }
   
   .card-header {
@@ -193,7 +186,7 @@ const FeatureCard = styled.div`
   .icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
+    background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -222,7 +215,7 @@ const HomePage = () => {
       <HeroSection>
         <HeroContent>
           <LogoDisplay>
-            <div className="logo-circle">M</div>
+            <img src="/logo.jpeg" alt="Matheus Barber Logo" />
             <div className="logo-text">
               <h2>Matheus Barber</h2>
               <span>Desde 2018</span>

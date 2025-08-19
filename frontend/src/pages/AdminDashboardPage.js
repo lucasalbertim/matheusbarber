@@ -68,6 +68,8 @@ const MetricCard = styled.div`
       align-items: center;
       justify-content: center;
       font-size: 20px;
+      background: rgba(32, 172, 159, 0.1); // Alterado para a nova cor
+      color: #20AC9F; // Alterado para a nova cor
     }
     
     .trend {
@@ -146,11 +148,11 @@ const QuickActionCard = styled.div`
       gap: 8px;
       
       &.btn-primary {
-        background: var(--primary);
+        background: #20AC9F; // Alterado para a nova cor
         color: var(--accent);
         
         &:hover {
-          background: #000000;
+          background: #1A8C7F; // Alterado para a nova cor
           transform: translateY(-1px);
         }
       }
