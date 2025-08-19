@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle } from 'react-icons/fa';
+import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -221,6 +221,41 @@ const RecentActivityCard = styled.div`
           font-size: 0.9rem;
           color: var(--text-secondary);
         }
+        
+        .activity-description {
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          margin: 2px 0;
+        }
+      }
+    }
+    
+    .loading-activities {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top: 2px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+    }
+    
+    .no-activities {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      
+      p {
+        margin: 0;
+        font-style: italic;
       }
     }
   }
@@ -238,6 +273,8 @@ const AdminDashboardPage = () => {
     pendingPayments: 0
   });
   const [loading, setLoading] = useState(true);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
     if (!admin) {
@@ -246,6 +283,7 @@ const AdminDashboardPage = () => {
     }
     
     fetchMetrics();
+    fetchRecentActivities();
   }, [admin, navigate]);
 
   const fetchMetrics = async () => {
@@ -257,6 +295,53 @@ const AdminDashboardPage = () => {
       toast.error('Erro ao carregar métricas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecentActivities = async () => {
+    setLoadingActivities(true);
+    try {
+      const response = await api.get('/admin/reports/recent-activities?limit=5');
+      setRecentActivities(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar atividades recentes:', error);
+      toast.error('Erro ao carregar atividades recentes');
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - activityTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Agora mesmo';
+    if (diffInMinutes < 60) return `Há ${diffInMinutes} min`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Há ${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `Há ${diffInDays} dias`;
+    
+    return activityTime.toLocaleDateString('pt-BR');
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'new_attendance':
+        return <FaUsers style={{ color: 'var(--primary)' }} />;
+      case 'attendance_started':
+        return <FaClock style={{ color: 'var(--secondary)' }} />;
+      case 'attendance_completed':
+        return <FaCheckCircle style={{ color: 'var(--success)' }} />;
+      case 'attendance_finished':
+        return <FaCut style={{ color: 'var(--secondary)' }} />;
+      case 'attendance_updated':
+        return <FaExclamationCircle style={{ color: 'var(--warning)' }} />;
+      default:
+        return <FaUsers />;
     }
   };
 
@@ -415,35 +500,29 @@ const AdminDashboardPage = () => {
             Atividade Recente
           </h3>
           <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaUsers />
+            {loadingActivities ? (
+              <div className="loading-activities">
+                <div className="spinner"></div>
+                Carregando atividades...
               </div>
-              <div className="activity-content">
-                <div className="activity-title">Novo cliente cadastrado</div>
-                <div className="activity-time">Há 2 horas</div>
+            ) : recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <div key={activity.id} className="activity-item">
+                  <div className="activity-icon">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="activity-content">
+                    <div className="activity-title">{activity.title}</div>
+                    <div className="activity-description">{activity.description}</div>
+                    <div className="activity-time">{formatTimeAgo(activity.timestamp)}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-activities">
+                <p>Nenhuma atividade recente</p>
               </div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaCut />
-              </div>
-              <div className="activity-content">
-                <div className="activity-title">Atendimento concluído</div>
-                <div className="activity-time">Há 4 horas</div>
-              </div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaDollarSign />
-              </div>
-              <div className="activity-content">
-                <div className="activity-title">Pagamento recebido</div>
-                <div className="activity-time">Há 6 horas</div>
-              </div>
-            </div>
+            )}
           </div>
         </RecentActivityCard>
       </Container>
