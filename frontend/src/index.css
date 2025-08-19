@@ -23,7 +23,8 @@ code {
 /* Variáveis CSS para cores da marca */
 :root {
   --primary: #1A1A1A;
-  --secondary: #D4AF37;
+  --secondary: #20AC9F;
+  --title: #212529;
   --accent: #FFFFFF;
   --background: #f8f9fa;
   --surface: #FFFFFF;
