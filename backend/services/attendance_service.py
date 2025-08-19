@@ -251,13 +251,6 @@ class AttendanceService:
             })
         
         return activities
-                "totalVisits": row.attendance_count,
-                "totalRevenue": float(row.total_spent or 0),
-                "lastVisit": row.last_visit.isoformat() if row.last_visit else None,
-                "status": "active"  # Por enquanto todos são ativos
-            }
-            for row in result
-        ]
 
     def get_reports_summary_by_period(self, db: Session, period: str, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """Obter resumo de relatórios por período específico"""
