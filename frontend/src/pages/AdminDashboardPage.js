@@ -5,11 +5,14 @@ import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle,
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import Footer from '../components/Footer';
 
 const PageContainer = styled.div`
   min-height: 100vh;
   background: var(--background);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Container = styled.div`
@@ -526,6 +529,7 @@ const AdminDashboardPage = () => {
           </div>
         </RecentActivityCard>
       </Container>
+      <Footer />
     </PageContainer>
   );
 };

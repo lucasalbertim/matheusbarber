@@ -17,6 +17,7 @@ import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalend
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 // Registrar componentes do Chart.js
 ChartJS.register(
@@ -34,6 +35,9 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -586,6 +590,7 @@ const ReportsPage = () => {
           ))
         )}
       </TableSection>
+      <Footer />
     </Container>
   );
 };
