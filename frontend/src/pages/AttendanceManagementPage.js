@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -117,6 +117,27 @@ const AttendanceHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+`;
+
+const SortableHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+  
+  .sort-icon {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  
+  &.active .sort-icon {
+    opacity: 1;
+  }
 `;
 
 const AttendanceRow = styled.div`
@@ -278,6 +299,8 @@ const AttendanceManagementPage = () => {
   const [attendances, setAttendances] = useState([]);
   const [filteredAttendances, setFilteredAttendances] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [sortField, setSortField] = useState('id');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
@@ -312,19 +335,22 @@ const AttendanceManagementPage = () => {
 
   useEffect(() => {
     const filterAttendances = () => {
+      let filtered;
       if (activeFilter === 'all') {
-        setFilteredAttendances(attendances);
-        return;
+        filtered = attendances;
+      } else {
+        filtered = attendances.filter(attendance => 
+          attendance.status === activeFilter
+        );
       }
-
-      const filtered = attendances.filter(attendance => 
-        attendance.status === activeFilter
-      );
-      setFilteredAttendances(filtered);
+      
+      // Aplicar ordenação
+      const sorted = sortAttendances(filtered, sortField, sortDirection);
+      setFilteredAttendances(sorted);
     };
     
     filterAttendances();
-  }, [activeFilter, attendances]);
+  }, [activeFilter, attendances, sortField, sortDirection]);
 
   const calculateStats = (data) => {
     const total = data.length;
@@ -333,6 +359,59 @@ const AttendanceManagementPage = () => {
     const finished = data.filter(a => a.status === 'finished').length;
 
     setStats({ total, waiting, progress, finished });
+  };
+
+  const sortAttendances = (data, field, direction) => {
+    return [...data].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (field) {
+        case 'id':
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case 'client':
+          aValue = a.client.name.toLowerCase();
+          bValue = b.client.name.toLowerCase();
+          break;
+        case 'services':
+          aValue = a.services.length;
+          bValue = b.services.length;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'payment':
+          aValue = a.payment_status;
+          bValue = b.payment_status;
+          break;
+        default:
+          aValue = a.id;
+          bValue = b.id;
+      }
+      
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  const handleSort = (field) => {
+    const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(newDirection);
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) {
+      return <FaSort className="sort-icon" />;
+    }
+    return sortDirection === 'asc' ? 
+      <FaSortUp className="sort-icon" /> : 
+      <FaSortDown className="sort-icon" />;
   };
 
 
@@ -447,11 +526,36 @@ const AttendanceManagementPage = () => {
 
       <AttendancesContainer>
         <AttendanceHeader>
-          <div>Número</div>
-          <div>Cliente</div>
-          <div>Serviços</div>
-          <div>Status</div>
-          <div>Pagamento</div>
+          <SortableHeader 
+            className={sortField === 'id' ? 'active' : ''}
+            onClick={() => handleSort('id')}
+          >
+            Número {getSortIcon('id')}
+          </SortableHeader>
+          <SortableHeader 
+            className={sortField === 'client' ? 'active' : ''}
+            onClick={() => handleSort('client')}
+          >
+            Cliente {getSortIcon('client')}
+          </SortableHeader>
+          <SortableHeader 
+            className={sortField === 'services' ? 'active' : ''}
+            onClick={() => handleSort('services')}
+          >
+            Serviços {getSortIcon('services')}
+          </SortableHeader>
+          <SortableHeader 
+            className={sortField === 'status' ? 'active' : ''}
+            onClick={() => handleSort('status')}
+          >
+            Status {getSortIcon('status')}
+          </SortableHeader>
+          <SortableHeader 
+            className={sortField === 'payment' ? 'active' : ''}
+            onClick={() => handleSort('payment')}
+          >
+            Pagamento {getSortIcon('payment')}
+          </SortableHeader>
           <div>Ações</div>
         </AttendanceHeader>
 
