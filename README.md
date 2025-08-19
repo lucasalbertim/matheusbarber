@@ -251,4 +251,18 @@ Para suporte e dúvidas:
 
 ---
 
-**Desenvolvido com ❤️ para a Matheus Barber**
+**Desenvolvido por [Albertim Tech Solution](https://github.com/lucasalbertim) para a Matheus Barber**
+
+---
+
+## 🏢 Desenvolvimento
+
+**Albertim Tech Solution**  
+Soluções tecnológicas personalizadas para seu negócio.
+
+- 💻 Desenvolvimento Web e Mobile
+- 🚀 Sistemas de Gestão Empresarial
+- 🔧 Manutenção e Suporte Técnico
+- 📱 Aplicações Personalizadas
+
+**Contato:** [GitHub](https://github.com/lucasalbertim) | [LinkedIn](https://linkedin.com/in/lucasalbertim)
