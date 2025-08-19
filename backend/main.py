@@ -293,6 +293,15 @@ def get_top_clients(
     """Obter top clientes (apenas admin)"""
     return attendance_service.get_top_clients(db)
 
+@app.get("/admin/reports/recent-activities")
+def get_recent_activities(
+    limit: int = Query(10, description="Número de atividades a retornar"),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter atividades recentes (apenas admin)"""
+    return attendance_service.get_recent_activities(db, limit)
+
 @app.get("/admin/reports/revenue-chart")
 def get_revenue_chart(
     period: str,

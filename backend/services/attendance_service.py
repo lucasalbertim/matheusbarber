@@ -184,6 +184,73 @@ class AttendanceService:
                 "id": row.id,
                 "name": row.name,
                 "phone": row.phone,
+                "attendance_count": row.attendance_count,
+                "total_spent": float(row.total_spent) if row.total_spent else 0.0,
+                "last_visit": row.last_visit.isoformat() if row.last_visit else None
+            }
+            for row in result
+        ]
+
+    def get_recent_activities(self, db: Session, limit: int = 10) -> List[Dict[str, Any]]:
+        """Obter atividades recentes do sistema"""
+        from sqlalchemy import desc
+        
+        # Buscar atendimentos recentes
+        recent_attendances = db.query(
+            Attendance.id,
+            Attendance.status,
+            Attendance.payment_status,
+            Attendance.appointment_date,
+            Attendance.updated_at,
+            Client.name.label('client_name'),
+            func.string_agg(Service.name, ', ').label('services')
+        ).join(Client, Attendance.client_id == Client.id)\
+         .join(Attendance.services)\
+         .group_by(Attendance.id, Attendance.status, Attendance.payment_status, 
+                  Attendance.appointment_date, Attendance.updated_at, Client.name)\
+         .order_by(desc(Attendance.updated_at))\
+         .limit(limit)\
+         .all()
+        
+        activities = []
+        
+        for attendance in recent_attendances:
+            # Determinar tipo de atividade baseado no status
+            if attendance.status == "waiting":
+                activity_type = "new_attendance"
+                title = f"Novo atendimento - {attendance.client_name}"
+                description = f"Serviços: {attendance.services}"
+            elif attendance.status == "in_progress":
+                activity_type = "attendance_started"
+                title = f"Atendimento iniciado - {attendance.client_name}"
+                description = f"Serviços: {attendance.services}"
+            elif attendance.status == "finished":
+                if attendance.payment_status == "paid":
+                    activity_type = "attendance_completed"
+                    title = f"Atendimento concluído - {attendance.client_name}"
+                    description = f"Serviços: {attendance.services}"
+                else:
+                    activity_type = "attendance_finished"
+                    title = f"Atendimento finalizado - {attendance.client_name}"
+                    description = f"Serviços: {attendance.services}"
+            else:
+                activity_type = "attendance_updated"
+                title = f"Atendimento atualizado - {attendance.client_name}"
+                description = f"Status: {attendance.status}"
+            
+            activities.append({
+                "id": attendance.id,
+                "type": activity_type,
+                "title": title,
+                "description": description,
+                "timestamp": attendance.updated_at.isoformat(),
+                "client_name": attendance.client_name,
+                "services": attendance.services,
+                "status": attendance.status,
+                "payment_status": attendance.payment_status
+            })
+        
+        return activities
                 "totalVisits": row.attendance_count,
                 "totalRevenue": float(row.total_spent or 0),
                 "lastVisit": row.last_visit.isoformat() if row.last_visit else None,
