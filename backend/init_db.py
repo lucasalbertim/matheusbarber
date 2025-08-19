@@ -4,7 +4,6 @@ Script para inicializar o banco de dados com dados de exemplo
 Execute este script após a primeira execução do sistema
 """
 
-from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Base, Admin, Service
 from security import get_password_hash

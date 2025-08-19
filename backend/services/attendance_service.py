@@ -221,7 +221,7 @@ class AttendanceService:
                 activity_type = "new_attendance"
                 title = f"Novo atendimento - {attendance.client_name}"
                 description = f"Serviços: {attendance.services}"
-            elif attendance.status == "in_progress":
+            elif attendance.status == "progress":
                 activity_type = "attendance_started"
                 title = f"Atendimento iniciado - {attendance.client_name}"
                 description = f"Serviços: {attendance.services}"
