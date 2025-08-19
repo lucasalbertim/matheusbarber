@@ -184,9 +184,10 @@ class AttendanceService:
                 "id": row.id,
                 "name": row.name,
                 "phone": row.phone,
-                "attendance_count": row.attendance_count,
-                "total_spent": float(row.total_spent) if row.total_spent else 0.0,
-                "last_visit": row.last_visit.isoformat() if row.last_visit else None
+                "totalVisits": row.attendance_count,
+                "totalRevenue": float(row.total_spent) if row.total_spent else 0.0,
+                "lastVisit": row.last_visit.isoformat() if row.last_visit else None,
+                "status": "active"  # Por enquanto todos são ativos
             }
             for row in result
         ]
