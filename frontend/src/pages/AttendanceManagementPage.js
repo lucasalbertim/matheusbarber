@@ -50,6 +50,12 @@ const StatsContainer = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -75,6 +81,19 @@ const StatCard = styled.div`
   &.progress .number { color: var(--info); }
   &.finished .number { color: var(--success); }
   &.total .number { color: var(--primary); }
+
+  @media (max-width: 768px) {
+    padding: 15px;
+    
+    .number {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+    
+    .label {
+      font-size: 14px;
+    }
+  }
 `;
 
 const FilterBar = styled.div`
@@ -82,6 +101,11 @@ const FilterBar = styled.div`
   gap: 15px;
   margin-bottom: 20px;
   align-items: center;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 `;
 
 const FilterButton = styled.button`
@@ -103,6 +127,13 @@ const FilterButton = styled.button`
   &:hover {
     border-color: var(--primary);
   }
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+  }
 `;
 
 const AttendancesContainer = styled.div`
@@ -121,6 +152,10 @@ const AttendanceHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const SortableHeader = styled.div`
@@ -159,12 +194,34 @@ const AttendanceRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 `;
 
 const AttendanceNumber = styled.div`
   font-weight: 700;
   color: var(--primary);
   font-size: 1.2rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    text-align: center;
+    padding: 8px;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    width: fit-content;
+  }
 `;
 
 const ClientInfo = styled.div`
@@ -178,6 +235,17 @@ const ClientInfo = styled.div`
     font-size: 14px;
     color: var(--text-light);
   }
+
+  @media (max-width: 768px) {
+    .name {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    
+    .details {
+      font-size: 0.9rem;
+    }
+  }
 `;
 
 const ServicesList = styled.div`
@@ -188,6 +256,15 @@ const ServicesList = styled.div`
     margin-bottom: 4px;
     font-size: 14px;
     color: var(--text);
+  }
+
+  @media (max-width: 768px) {
+    .service {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
   }
 `;
 
@@ -211,6 +288,12 @@ const StatusBadge = styled.span`
   &.finished {
     background: var(--success-light);
     color: var(--success);
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 13px;
+    width: fit-content;
   }
 `;
 
@@ -243,11 +326,24 @@ const PaymentBadge = styled.span`
   svg {
     font-size: 16px;
   }
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 13px;
+    width: fit-content;
+    min-width: auto;
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
   gap: 8px;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -285,6 +381,13 @@ const ActionButton = styled.button`
     &:hover {
       background: #128C7E;
     }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    font-size: 14px;
+    min-width: 44px;
+    min-height: 44px;
   }
 `;
 
