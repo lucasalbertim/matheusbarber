@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaHeart, FaCode } from 'react-icons/fa';
+import { FaCode } from 'react-icons/fa';
 
 const FooterContainer = styled.footer`
   background: var(--surface);
@@ -52,7 +52,7 @@ const Footer = () => {
     <FooterContainer>
       <FooterContent>
         <CompanyInfo>
-          Desenvolvido com <FaHeart style={{ color: '#e74c3c' }} /> por
+          Desenvolvido por
           <TechBadge>
             <FaCode />
             Albertim Tech Solution
