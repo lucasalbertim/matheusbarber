@@ -5,11 +5,15 @@ import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown, F
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -656,6 +660,7 @@ const AttendanceManagementPage = () => {
           ))
         )}
       </AttendancesContainer>
+      <Footer />
     </Container>
   );
 };
