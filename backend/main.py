@@ -1,16 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
-from typing import List, Optional
-import jwt
+from typing import List
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from database import get_db, engine
-from models import Base, Client, Admin, Service, Attendance
+from models import Base, Admin
 from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
     AdminCreate, AdminLogin, AdminResponse,
@@ -78,8 +76,6 @@ async def serve_manifest():
 async def health_check():
     """Verificar status da API"""
     return {"status": "healthy", "message": "Metheus Barber API funcionando"}
-
-security = HTTPBearer()
 
 # Rotas de Cliente
 @app.post("/clients/", response_model=ClientResponse)

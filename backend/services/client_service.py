@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from models import Client
+from models import Client, Attendance
 from schemas import ClientCreate, ClientLogin
 from services.whatsapp_service import whatsapp_service
 
