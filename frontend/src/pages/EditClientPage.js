@@ -6,11 +6,15 @@ import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR, isValidCPF, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -380,6 +384,7 @@ const EditClientPage = () => {
           </CancelButton>
         </ButtonGroup>
       </Form>
+      <Footer />
     </Container>
   );
 };
