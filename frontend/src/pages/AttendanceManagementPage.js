@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown, FaMoneyBillWave, FaCreditCard, FaQrcode } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -211,11 +211,15 @@ const StatusBadge = styled.span`
 `;
 
 const PaymentBadge = styled.span`
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &.pending {
     background: var(--warning-light);
@@ -230,6 +234,10 @@ const PaymentBadge = styled.span`
   &.cancelled {
     background: var(--error-light);
     color: var(--error);
+  }
+
+  svg {
+    font-size: 16px;
   }
 `;
 
@@ -444,6 +452,23 @@ const AttendanceManagementPage = () => {
     return labels[payment] || payment;
   };
 
+  const getPaymentMethodIcon = (paymentMethod) => {
+    switch (paymentMethod?.toLowerCase()) {
+      case 'dinheiro':
+      case 'cash':
+        return <FaMoneyBillWave style={{ color: '#28a745' }} />;
+      case 'cartão':
+      case 'card':
+      case 'credit':
+      case 'debit':
+        return <FaCreditCard style={{ color: '#007bff' }} />;
+      case 'pix':
+        return <FaQrcode style={{ color: '#6f42c1' }} />;
+      default:
+        return null;
+    }
+  };
+
   const advanceStatus = async (attendance) => {
     const next = attendance.status === 'waiting' ? 'progress' : attendance.status === 'progress' ? 'finished' : 'finished';
     try {
@@ -587,7 +612,10 @@ const AttendanceManagementPage = () => {
               </StatusBadge>
               
               <PaymentBadge className={attendance.payment_status}>
-                {getPaymentLabel(attendance.payment_status)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {getPaymentMethodIcon(attendance.payment_method)}
+                  <span>{getPaymentLabel(attendance.payment_status)}</span>
+                </div>
               </PaymentBadge>
               
               <ActionButtons>
