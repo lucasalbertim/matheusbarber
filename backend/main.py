@@ -3,7 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+<<<<<<< HEAD
 from typing import List
+=======
+from typing import List, Optional
+# jwt import removed - using jose.jwt from security.py
+>>>>>>> 7b7c23cb (feat: adicionar estrutura de testes para backend - testes básicos funcionando, testes de API com problemas de SQLite)
 import os
 from datetime import datetime
 
