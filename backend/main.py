@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List, Optional
-import jwt
+# jwt import removed - using jose.jwt from security.py
 import os
 from datetime import datetime, timedelta
 
