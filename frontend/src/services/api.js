@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://191.252.195.85/api/',
+  baseURL: process.env.REACT_APP_API_URL || 'https://matheusbarber.shop/api/',
   timeout: 10000,
 });
 
