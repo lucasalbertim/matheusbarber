@@ -15,6 +15,10 @@ const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
@@ -22,6 +26,13 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
