@@ -187,6 +187,12 @@ const AttendanceRow = styled.div`
   border-bottom: 1px solid var(--border);
   align-items: center;
 
+  /* Centralizar a coluna de Status (4º item) no desktop */
+  & > *:nth-child(4) {
+    justify-self: center;
+    text-align: center;
+  }
+
   &:hover {
     background: var(--background);
   }
