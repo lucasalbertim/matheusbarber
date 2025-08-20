@@ -209,7 +209,6 @@ const AdminLoginPage = () => {
       [name]: value
     }));
     
-    // Limpar erro do campo
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
