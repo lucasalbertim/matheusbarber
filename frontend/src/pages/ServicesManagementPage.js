@@ -106,6 +106,10 @@ const TableHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Row = styled.div`
@@ -115,6 +119,19 @@ const Row = styled.div`
   padding: 20px;
   border-bottom: 1px solid var(--border);
   align-items: center;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+`;
   &:hover { background: var(--background); }
   &:last-child { border-bottom: none; }
 `;

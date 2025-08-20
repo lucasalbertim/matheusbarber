@@ -15,6 +15,11 @@ const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+    max-width: 100%;
+  }
 `;
 
 const Header = styled.div`
@@ -22,6 +27,13 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
@@ -54,6 +66,10 @@ const Form = styled.form`
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -96,6 +112,11 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 15px;
   margin-top: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 
 const SaveButton = styled.button`

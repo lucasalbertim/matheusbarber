@@ -10,6 +10,10 @@ const PageContainer = styled.div`
   min-height: 100vh;
   background: var(--background);
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Container = styled.div`
@@ -70,6 +74,27 @@ const WelcomeSection = styled.div`
     font-size: 1.2rem;
     opacity: 0.9;
   }
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    
+    .welcome-icon {
+      width: 70px;
+      height: 70px;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    
+    h1 {
+      font-size: 2rem;
+    }
+    
+    p {
+      font-size: 1.1rem;
+    }
+  }
 `;
 
 const DashboardGrid = styled.div`
@@ -77,6 +102,12 @@ const DashboardGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const DashboardCard = styled.div`
