@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 800px;
@@ -109,6 +110,7 @@ const ClientStartAttendancePage = () => {
       <Actions>
         <Button onClick={handleNext}>Avançar</Button>
       </Actions>
+      <Footer />
     </Container>
   );
 };

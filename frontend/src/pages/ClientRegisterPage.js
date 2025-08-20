@@ -5,6 +5,7 @@ import { FaArrowLeft, FaIdCard, FaPhone, FaUser, FaEnvelope } from 'react-icons/
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR, isValidCPF, isValidPhoneBR, isValidEmail, onlyDigits, normalizeEmail } from '../utils/formatters';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 500px;
@@ -286,6 +287,7 @@ const ClientRegisterPage = () => {
           Já tem uma conta? <Link to="/cliente/login">Faça login aqui</Link>
         </LoginLink>
       </Form>
+      <Footer />
     </Container>
   );
 };
