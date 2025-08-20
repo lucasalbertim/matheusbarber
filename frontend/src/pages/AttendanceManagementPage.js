@@ -679,6 +679,7 @@ const AttendanceManagementPage = () => {
           <SortableHeader 
             className={sortField === 'status' ? 'active' : ''}
             onClick={() => handleSort('status')}
+            style={{ textAlign: 'center' }}
           >
             Status {getSortIcon('status')}
           </SortableHeader>

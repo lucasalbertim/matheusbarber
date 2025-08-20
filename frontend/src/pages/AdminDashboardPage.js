@@ -13,6 +13,10 @@ const PageContainer = styled.div`
   padding: 20px;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Container = styled.div`
@@ -34,6 +38,18 @@ const PageHeader = styled.div`
     color: var(--text-secondary);
     font-size: 1.1rem;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 30px;
+    
+    h1 {
+      font-size: 2rem;
+    }
+    
+    p {
+      font-size: 1rem;
+    }
+  }
 `;
 
 const MetricsGrid = styled.div`
@@ -41,6 +57,12 @@ const MetricsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const MetricCard = styled.div`
@@ -106,6 +128,12 @@ const QuickActionsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const QuickActionCard = styled.div`
