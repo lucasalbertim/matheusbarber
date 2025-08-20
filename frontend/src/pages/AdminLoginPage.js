@@ -11,13 +11,11 @@ const PageContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background) 0%, #e9ecef 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   padding: 20px;
   
   @media (max-width: 768px) {
     padding: 15px;
-    align-items: flex-start;
     padding-top: 40px;
   }
 `;
@@ -185,6 +183,13 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const Main = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
 const AdminLoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -250,70 +255,72 @@ const AdminLoginPage = () => {
 
   return (
     <PageContainer>
-      <ContentCard>
-        <BackButton to="/">
-          <FaArrowLeft />
-          Voltar
-        </BackButton>
-        
-        <Header>
-          <img src="/logo.png" alt="Matheus Barber Logo" />
-          <h1>Matheus Barber</h1>
-          <p>Área Administrativa</p>
-        </Header>
-        
-        <Form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Username</label>
-            <input
-              type="text"
-              name="username"
-              className={`form-input ${errors.username ? 'error' : ''}`}
-              value={formData.username}
-              onChange={handleInputChange}
-              placeholder="Digite seu username"
-            />
-            {errors.username && <div className="form-error">{errors.username}</div>}
-          </div>
+      <Main>
+        <ContentCard>
+          <BackButton to="/">
+            <FaArrowLeft />
+            Voltar
+          </BackButton>
           
-          <div className="form-group">
-            <label className="form-label">Senha</label>
-            <div className="input-container">
+          <Header>
+            <img src="/logo.png" alt="Matheus Barber Logo" />
+            <h1>Matheus Barber</h1>
+            <p>Área Administrativa</p>
+          </Header>
+          
+          <Form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Username</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                className={`form-input ${errors.password ? 'error' : ''}`}
-                value={formData.password}
+                type="text"
+                name="username"
+                className={`form-input ${errors.username ? 'error' : ''}`}
+                value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Digite sua senha"
+                placeholder="Digite seu username"
               />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
+              {errors.username && <div className="form-error">{errors.username}</div>}
             </div>
-            {errors.password && <div className="form-error">{errors.password}</div>}
-          </div>
-          
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <LoadingSpinner />
-                Entrando...
-              </>
-            ) : (
-              'Entrar'
-            )}
-          </button>
-        </Form>
-      </ContentCard>
+            
+            <div className="form-group">
+              <label className="form-label">Senha</label>
+              <div className="input-container">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  className={`form-input ${errors.password ? 'error' : ''}`}
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Digite sua senha"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {errors.password && <div className="form-error">{errors.password}</div>}
+            </div>
+            
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <LoadingSpinner />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
+            </button>
+          </Form>
+        </ContentCard>
+      </Main>
       <Footer />
     </PageContainer>
   );
