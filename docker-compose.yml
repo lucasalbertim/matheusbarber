@@ -1,3 +1,4 @@
+
 version: '3.8'
 
 services:
@@ -6,43 +7,35 @@ services:
     environment:
       POSTGRES_DB: metheus_barber
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: wpote420574
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - metheus_network
+    restart: unless-stopped
 
   backend:
     build: ./backend
-    ports:
-      - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/metheus_barber
-      SECRET_KEY: your-secret-key-here-change-in-production
-      WHATSAPP_API_KEY: your-whatsapp-api-key
-      WHATSAPP_PHONE_NUMBER: your-whatsapp-phone-number
+      DATABASE_URL: postgresql://postgres:wpote420574@postgres:5432/metheus_barber
+      SECRET_KEY: chave-super-secreta-producao-matheusbarber-2024
+      WHATSAPP_API_KEY: sua-chave-api-whatsapp-producao
+      WHATSAPP_PHONE_NUMBER: seu-numero-whatsapp-producao
     depends_on:
       - postgres
     networks:
       - metheus_network
-    volumes:
-      - ./backend:/app
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_API_URL: https://matheusbarber.shop/api
     depends_on:
       - backend
     networks:
       - metheus_network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    restart: unless-stopped
 
 volumes:
   postgres_data:
