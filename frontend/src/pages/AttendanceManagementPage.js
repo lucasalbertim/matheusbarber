@@ -274,6 +274,10 @@ const StatusBadge = styled.span`
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
 
   &.waiting {
     background: var(--warning-light);
