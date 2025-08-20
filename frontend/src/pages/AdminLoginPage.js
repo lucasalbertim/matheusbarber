@@ -13,6 +13,12 @@ const PageContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
 `;
 
 const ContentCard = styled.div`
@@ -23,6 +29,12 @@ const ContentCard = styled.div`
   width: 100%;
   max-width: 450px;
   position: relative;
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
 `;
 
 const BackButton = styled(Link)`
