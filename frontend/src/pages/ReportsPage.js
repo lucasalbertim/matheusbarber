@@ -38,6 +38,10 @@ const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
@@ -45,6 +49,13 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
@@ -90,6 +101,12 @@ const FilterRow = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
 `;
 
 const FilterGroup = styled.div`
@@ -132,6 +149,12 @@ const FilterActions = styled.div`
   display: flex;
   gap: 15px;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
 `;
 
 const FilterButton = styled.button`
@@ -174,6 +197,12 @@ const MetricsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
 `;
 
 const MetricCard = styled.div`

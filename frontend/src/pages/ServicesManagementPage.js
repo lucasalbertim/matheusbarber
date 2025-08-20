@@ -14,6 +14,10 @@ const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
@@ -21,6 +25,13 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
@@ -46,6 +57,12 @@ const SearchBar = styled.div`
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -89,6 +106,10 @@ const TableHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Row = styled.div`
@@ -98,6 +119,19 @@ const Row = styled.div`
   padding: 20px;
   border-bottom: 1px solid var(--border);
   align-items: center;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+`;
   &:hover { background: var(--background); }
   &:last-child { border-bottom: none; }
 `;

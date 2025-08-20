@@ -6,6 +6,10 @@ import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-i
 const HomeContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background) 0%, #e9ecef 100%);
+  
+  @media (max-width: 768px) {
+    min-height: 100vh;
+  }
 `;
 
 const HeroSection = styled.section`
@@ -14,6 +18,11 @@ const HeroSection = styled.section`
   background: linear-gradient(135deg, #1a1a1a 0%, #20AC9F 100%);
   color: var(--accent);
   margin-bottom: 60px;
+  
+  @media (max-width: 768px) {
+    padding: 40px 15px;
+    margin-bottom: 40px;
+  }
 `;
 
 const HeroContent = styled.div`
@@ -71,12 +80,42 @@ const LogoDisplay = styled.div`
       opacity: 0.8;
     }
   }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+    
+    .logo-circle {
+      width: 100px;
+      height: 100px;
+      font-size: 40px;
+      margin-right: 0;
+      margin-bottom: 10px;
+    }
+    
+    .logo-text {
+      text-align: center;
+      
+      h2 {
+        font-size: 1.8rem;
+      }
+      
+      span {
+        font-size: 0.9rem;
+      }
+    }
+  }
 `;
 
 const MainContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  
+  @media (max-width: 768px) {
+    padding: 0 15px;
+  }
 `;
 
 const OptionsSection = styled.section`
@@ -157,6 +196,39 @@ const OptionCard = styled(Link)`
       font-size: 1.1rem;
     }
   }
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    
+    .card-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      
+      .icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+      }
+      
+      .title h3 {
+        font-size: 1.3rem;
+      }
+    }
+    
+    .card-content {
+      p {
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+      }
+      
+      .action {
+        justify-content: center;
+        font-size: 1rem;
+      }
+    }
+  }
 `;
 
 const FeaturesSection = styled.section`
@@ -169,12 +241,26 @@ const FeaturesSection = styled.section`
     color: var(--primary);
     margin-bottom: 50px;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 60px;
+    
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+    }
+  }
 `;
 
 const FeaturesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 30px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 `;
 
 const FeatureCard = styled.div`
@@ -206,6 +292,26 @@ const FeatureCard = styled.div`
   p {
     color: var(--text-secondary);
     line-height: 1.5;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 25px 15px;
+    
+    .icon {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+    
+    p {
+      font-size: 0.9rem;
+    }
   }
 `;
 

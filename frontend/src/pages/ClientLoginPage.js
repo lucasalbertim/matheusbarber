@@ -14,6 +14,12 @@ const PageContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
 `;
 
 const ContentCard = styled.div`
@@ -24,6 +30,12 @@ const ContentCard = styled.div`
   width: 100%;
   max-width: 500px;
   position: relative;
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
 `;
 
 const BackButton = styled(Link)`
@@ -44,6 +56,13 @@ const BackButton = styled(Link)`
   &:hover {
     background: var(--primary);
     color: var(--accent);
+  }
+  
+  @media (max-width: 768px) {
+    top: 15px;
+    left: 15px;
+    padding: 6px 12px;
+    font-size: 14px;
   }
 `;
 
@@ -69,6 +88,25 @@ const Header = styled.div`
   p {
     color: var(--text-secondary);
     font-size: 1.1rem;
+  }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 30px;
+    
+    .logo {
+      width: 70px;
+      height: 70px;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    
+    h1 {
+      font-size: 1.8rem;
+    }
+    
+    p {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -160,6 +198,28 @@ const Form = styled.form`
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .form-group {
+      margin-bottom: 18px;
+    }
+    
+    .form-label {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    
+    .form-input {
+      padding: 12px 14px;
+      font-size: 16px; /* Mantém 16px para evitar zoom no iOS */
+    }
+    
+    .submit-btn {
+      padding: 14px;
+      font-size: 16px;
+      margin-top: 18px;
     }
   }
 `;
