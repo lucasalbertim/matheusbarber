@@ -235,7 +235,7 @@ Para suporte e dúvidas:
 
 ## 🔄 Atualizações
 
-### Versão 1.0.0
+### Versão 2.0.0
 - ✅ Sistema básico de autenticação
 - ✅ Gestão de clientes e administradores
 - ✅ Painel de atendimentos

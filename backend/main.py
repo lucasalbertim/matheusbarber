@@ -28,7 +28,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # CORS

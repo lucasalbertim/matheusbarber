@@ -1,1 +1,0 @@
-# Arquivo de inicialização para o diretório de testes
