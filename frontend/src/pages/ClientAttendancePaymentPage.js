@@ -6,6 +6,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { getRecifeDateTime } from '../utils/dateUtils';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 800px;
@@ -399,6 +400,7 @@ const ClientAttendancePaymentPage = () => {
           )}
         </Button>
       </Actions>
+      <Footer />
     </Container>
   );
 };

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaCalendar, FaCut, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 import api from '../services/api';
 
@@ -350,6 +351,7 @@ const ClientDashboardPage = () => {
             </div>
           </DashboardCard>
         </DashboardGrid>
+        <Footer />
       </Container>
     </PageContainer>
   );

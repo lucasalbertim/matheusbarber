@@ -5,6 +5,7 @@ import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import Footer from '../components/Footer';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -313,6 +314,7 @@ const AdminLoginPage = () => {
           </button>
         </Form>
       </ContentCard>
+      <Footer />
     </PageContainer>
   );
 };

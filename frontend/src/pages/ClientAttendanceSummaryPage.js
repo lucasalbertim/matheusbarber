@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaClock, FaMoneyBillWave, FaCreditCard } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 const Container = styled.div`
   max-width: 800px;
@@ -323,6 +324,7 @@ const ClientAttendanceSummaryPage = () => {
           Ir para Pagamento
         </Button>
       </Actions>
+      <Footer />
     </Container>
   );
 };

@@ -5,6 +5,7 @@ import { FaUser, FaUserPlus, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import Footer from '../components/Footer';
 import { formatCPF, formatPhoneBR, isValidCPF, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
 
 const PageContainer = styled.div`
@@ -492,6 +493,7 @@ const ClientLoginPage = () => {
           </button>
         </Form>
       </ContentCard>
+      <Footer />
     </PageContainer>
   );
 };
