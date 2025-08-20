@@ -131,7 +131,6 @@ const Row = styled.div`
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-`;
   &:hover { background: var(--background); }
   &:last-child { border-bottom: none; }
 `;
