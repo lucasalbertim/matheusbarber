@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-icons/fa';
+import Footer from '../components/Footer';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -416,6 +417,7 @@ const HomePage = () => {
             </FeatureCard>
           </FeaturesGrid>
         </FeaturesSection>
+        <Footer />
       </MainContent>
     </HomeContainer>
   );

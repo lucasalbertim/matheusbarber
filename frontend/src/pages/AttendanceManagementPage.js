@@ -145,7 +145,7 @@ const AttendancesContainer = styled.div`
 
 const AttendanceHeader = styled.div`
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr 120px 120px;
+  grid-template-columns: 80px 1fr 1fr 1fr 140px 220px;
   gap: 20px;
   padding: 20px;
   background: var(--background);
@@ -181,11 +181,17 @@ const SortableHeader = styled.div`
 
 const AttendanceRow = styled.div`
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr 120px 120px;
+  grid-template-columns: 80px 1fr 1fr 1fr 140px 220px;
   gap: 20px;
   padding: 20px;
   border-bottom: 1px solid var(--border);
   align-items: center;
+
+  /* Centralizar a coluna de Status (4º item) no desktop */
+  & > *:nth-child(4) {
+    justify-self: center;
+    text-align: center;
+  }
 
   &:hover {
     background: var(--background);
@@ -229,11 +235,17 @@ const ClientInfo = styled.div`
     font-weight: 600;
     color: var(--text);
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .details {
     font-size: 14px;
     color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @media (max-width: 768px) {
@@ -256,6 +268,9 @@ const ServicesList = styled.div`
     margin-bottom: 4px;
     font-size: 14px;
     color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @media (max-width: 768px) {
@@ -264,6 +279,7 @@ const ServicesList = styled.div`
       margin-bottom: 6px;
       font-size: 13px;
       border-radius: 6px;
+      white-space: normal;
     }
   }
 `;
@@ -274,6 +290,10 @@ const StatusBadge = styled.span`
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
 
   &.waiting {
     background: var(--warning-light);
@@ -303,10 +323,13 @@ const PaymentBadge = styled.span`
   font-size: 14px;
   font-weight: 600;
   text-align: center;
-  min-width: 100px;
-  display: flex;
+  min-width: 120px;
+  max-width: 100%;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
+  white-space: nowrap;
 
   &.pending {
     background: var(--warning-light);
@@ -338,12 +361,8 @@ const PaymentBadge = styled.span`
 const ActionButtons = styled.div`
   display: flex;
   gap: 8px;
-
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-  }
+  flex-wrap: wrap;
+  justify-content: center;
 `;
 
 const ActionButton = styled.button`
