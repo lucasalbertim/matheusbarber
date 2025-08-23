@@ -90,6 +90,8 @@ const MobileMenuButton = styled.button`
   padding: 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
   
   &:hover {
     background-color: var(--background);
@@ -97,9 +99,10 @@ const MobileMenuButton = styled.button`
   }
   
   @media (max-width: 768px) {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    z-index: 1001;
   }
 `;
 
@@ -281,6 +284,15 @@ const Header = () => {
 
   // Verificar se há usuário logado
   const isLoggedIn = client || admin;
+  
+  // Debug: verificar se está em mobile
+  console.log('Header Debug:', {
+    isLoggedIn,
+    client: !!client,
+    admin: !!admin,
+    mobileMenuOpen,
+    windowWidth: window.innerWidth
+  });
 
   return (
     <HeaderContainer>
@@ -322,7 +334,7 @@ const Header = () => {
 
         {/* Botão do menu mobile */}
         {isLoggedIn && (
-          <MobileMenuButton onClick={toggleMobileMenu}>
+          <MobileMenuButton onClick={toggleMobileMenu} aria-label="Menu">
             {mobileMenuOpen ? <FaTimes /> : <FaBars />}
           </MobileMenuButton>
         )}
