@@ -26,6 +26,8 @@ const HeaderContent = styled.div`
   
   @media (max-width: 768px) {
     padding: 0 15px;
+    justify-content: space-between;
+    gap: 10px;
   }
 `;
 
@@ -82,20 +84,21 @@ const Navigation = styled.nav`
 
 const MobileMenuButton = styled.button`
   display: none;
-  background: none;
-  border: none;
-  color: var(--text-primary);
+  background: #333;
+  border: 2px solid #fff;
+  color: #fff;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  position: relative;
   
   &:hover {
-    background-color: var(--background);
-    color: var(--primary);
+    background-color: #555;
+    color: #fff;
   }
   
   @media (max-width: 768px) {
@@ -103,6 +106,9 @@ const MobileMenuButton = styled.button`
     align-items: center;
     justify-content: center;
     z-index: 1001;
+    position: relative;
+    margin-left: auto;
+    margin-right: 10px;
   }
 `;
 
@@ -284,15 +290,6 @@ const Header = () => {
 
   // Verificar se há usuário logado
   const isLoggedIn = client || admin;
-  
-  // Debug: verificar se está em mobile
-  console.log('Header Debug:', {
-    isLoggedIn,
-    client: !!client,
-    admin: !!admin,
-    mobileMenuOpen,
-    windowWidth: window.innerWidth
-  });
 
   return (
     <HeaderContainer>
