@@ -99,6 +99,81 @@ def ensure_first_login_column():
 # Executar verificação da coluna
 ensure_first_login_column()
 
+# Função para criar admin padrão se não existir
+def ensure_default_admin():
+    """Criar admin padrão se não existir"""
+    try:
+        from security import get_password_hash
+        
+        with engine.connect() as conn:
+            # Verificar se existe algum admin
+            result = conn.execute(text("SELECT COUNT(*) FROM admins"))
+            admin_count = result.fetchone()[0]
+            
+            if admin_count == 0:
+                print("🔄 Criando administrador padrão...")
+                # Criar admin padrão
+                conn.execute(text("""
+                    INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
+                    VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
+                """), {"password_hash": get_password_hash("admin123")})
+                
+                conn.commit()
+                print("✅ Administrador padrão criado com sucesso!")
+                print("   Username: admin")
+                print("   Senha: admin123")
+            else:
+                print("✅ Administrador já existe no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/criar admin padrão: {e}")
+
+# Executar verificação do admin padrão
+ensure_default_admin()
+
+# Função para criar serviços padrão se não existirem
+def ensure_default_services():
+    """Criar serviços padrão se não existirem"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se existem serviços
+            result = conn.execute(text("SELECT COUNT(*) FROM services"))
+            service_count = result.fetchone()[0]
+            
+            if service_count == 0:
+                print("🔄 Criando serviços padrão...")
+                
+                # Lista de serviços padrão
+                default_services = [
+                    ("Corte Masculino", "Corte tradicional masculino com acabamento", 35.00, 30),
+                    ("Barba", "Acabamento de barba com navalha", 25.00, 20),
+                    ("Corte + Barba", "Corte masculino + acabamento de barba", 50.00, 45),
+                    ("Hidratação", "Tratamento hidratante para cabelo", 40.00, 25),
+                    ("Pigmentação", "Coloração de cabelo ou barba", 60.00, 60)
+                ]
+                
+                for name, description, price, duration in default_services:
+                    conn.execute(text("""
+                        INSERT INTO services (name, description, price, duration_minutes, is_active, created_at)
+                        VALUES (:name, :description, :price, :duration, true, NOW())
+                    """), {
+                        "name": name,
+                        "description": description,
+                        "price": price,
+                        "duration": duration
+                    })
+                
+                conn.commit()
+                print("✅ Serviços padrão criados com sucesso!")
+            else:
+                print("✅ Serviços já existem no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/criar serviços padrão: {e}")
+
+# Executar verificação dos serviços padrão
+ensure_default_services()
+
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
