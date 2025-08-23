@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaHome, FaBars, FaTimes, FaChartBar, FaUsers, FaClipboardList } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaBars, FaTimes, FaChartBar, FaUsers, FaClipboardList } from 'react-icons/fa';
 
 const HeaderContainer = styled.header`
   position: fixed;
@@ -54,6 +54,18 @@ const Logo = styled.div`
       font-size: 0.9rem;
       color: var(--text-secondary);
       font-weight: 500;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .logo-text {
+      h1 {
+        font-size: 1.2rem;
+      }
+      
+      span {
+        font-size: 0.8rem;
+      }
     }
   }
 `;
@@ -139,6 +151,32 @@ const MobileNavLink = styled(Link)`
   }
 `;
 
+const MobileButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 500;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--background);
+    color: var(--primary);
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
 const NavLink = styled(Link)`
   display: flex;
   align-items: center;
@@ -152,11 +190,11 @@ const NavLink = styled(Link)`
   
   &:hover {
     background-color: var(--background);
-    color: #20AC9F; // Alterado para a nova cor
+    color: #20AC9F;
   }
   
   &.active {
-    background-color: #20AC9F; // Alterado para a nova cor
+    background-color: #20AC9F;
     color: var(--primary);
   }
 `;
@@ -166,6 +204,10 @@ const UserSection = styled.div`
   align-items: center;
   gap: 16px;
   
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+  
   .user-info {
     display: flex;
     align-items: center;
@@ -174,6 +216,11 @@ const UserSection = styled.div`
     background-color: var(--background);
     border-radius: 8px;
     font-weight: 500;
+    
+    @media (max-width: 768px) {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
     
     .user-icon {
       color: var(--secondary);
@@ -185,7 +232,7 @@ const UserSection = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background-color: #20AC9F; // Alterado para a nova cor
+    background-color: #20AC9F;
     color: var(--accent);
     border: none;
     border-radius: 6px;
@@ -193,8 +240,13 @@ const UserSection = styled.div`
     font-weight: 500;
     transition: all 0.2s ease;
     
+    @media (max-width: 768px) {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+    
     &:hover {
-      background-color: #1A8C7F; // Alterado para a nova cor
+      background-color: #1A8C7F;
       transform: translateY(-1px);
     }
   }
@@ -227,6 +279,9 @@ const Header = () => {
     setMobileMenuOpen(false);
   };
 
+  // Verificar se há usuário logado
+  const isLoggedIn = client || admin;
+
   return (
     <HeaderContainer>
       <HeaderContent>
@@ -238,14 +293,8 @@ const Header = () => {
           </div>
         </Logo>
 
+        {/* Navegação Desktop */}
         <Navigation>
-          {!client && (
-            <NavLink to="/" className={isActive('/') ? 'active' : ''}>
-              <FaHome />
-              Início
-            </NavLink>
-          )}
-          
           {client && (
             <NavLink to="/cliente/dashboard" className={isActive('/cliente/dashboard') ? 'active' : ''}>
               <FaUser />
@@ -272,17 +321,18 @@ const Header = () => {
         </Navigation>
 
         {/* Botão do menu mobile */}
-        {(client || (admin && !admin.is_first_login)) && (
+        {isLoggedIn && (
           <MobileMenuButton onClick={toggleMobileMenu}>
             {mobileMenuOpen ? <FaTimes /> : <FaBars />}
           </MobileMenuButton>
         )}
 
-        {(client || admin) && (
+        {/* Seção do usuário */}
+        {isLoggedIn && (
           <UserSection>
             <div className="user-info">
               <FaUser className="user-icon" />
-              {client ? client.name : (admin.is_first_login ? 'Configuração Inicial' : admin.name)}
+              {client ? client.name : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name || 'Usuário')}
             </div>
             <button className="logout-btn" onClick={handleLogout}>
               <FaSignOutAlt />
@@ -293,61 +343,59 @@ const Header = () => {
       </HeaderContent>
 
       {/* Menu mobile */}
-      {(client || (admin && !admin.is_first_login)) && (
-        <MobileMenu className={mobileMenuOpen ? 'open' : ''}>
-          {client && (
+      <MobileMenu className={mobileMenuOpen ? 'open' : ''}>
+        {client && (
+          <MobileNavLink 
+            to="/cliente/dashboard" 
+            className={isActive('/cliente/dashboard') ? 'active' : ''}
+            onClick={closeMobileMenu}
+          >
+            <FaUser />
+            Meu Perfil
+          </MobileNavLink>
+        )}
+        
+        {admin && !admin.is_first_login && (
+          <>
             <MobileNavLink 
-              to="/cliente/dashboard" 
-              className={isActive('/cliente/dashboard') ? 'active' : ''}
+              to="/admin/dashboard" 
+              className={isActive('/admin/dashboard') ? 'active' : ''}
               onClick={closeMobileMenu}
             >
-              <FaUser />
-              Meu Perfil
+              Dashboard
             </MobileNavLink>
-          )}
-          
-          {admin && !admin.is_first_login && (
-            <>
-              <MobileNavLink 
-                to="/admin/dashboard" 
-                className={isActive('/admin/dashboard') ? 'active' : ''}
-                onClick={closeMobileMenu}
-              >
-                Dashboard
-              </MobileNavLink>
-              <MobileNavLink 
-                to="/admin/clientes" 
-                className={isActive('/admin/clientes') ? 'active' : ''}
-                onClick={closeMobileMenu}
-              >
-                <FaUsers />
-                Clientes
-              </MobileNavLink>
-              <MobileNavLink 
-                to="/admin/atendimentos" 
-                className={isActive('/admin/atendimentos') ? 'active' : ''}
-                onClick={closeMobileMenu}
-              >
-                <FaClipboardList />
-                Atendimentos
-              </MobileNavLink>
-              <MobileNavLink 
-                to="/admin/relatorios" 
-                className={isActive('/admin/relatorios') ? 'active' : ''}
-                onClick={closeMobileMenu}
-              >
-                <FaChartBar />
-                Relatórios
-              </MobileNavLink>
-            </>
-          )}
-          
-          <MobileNavLink onClick={handleLogout}>
-            <FaSignOutAlt />
-            Sair
-          </MobileNavLink>
-        </MobileMenu>
-      )}
+            <MobileNavLink 
+              to="/admin/clientes" 
+              className={isActive('/admin/clientes') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaUsers />
+              Clientes
+            </MobileNavLink>
+            <MobileNavLink 
+              to="/admin/atendimentos" 
+              className={isActive('/admin/atendimentos') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaClipboardList />
+              Atendimentos
+            </MobileNavLink>
+            <MobileNavLink 
+              to="/admin/relatorios" 
+              className={isActive('/admin/relatorios') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaChartBar />
+              Relatórios
+            </MobileNavLink>
+          </>
+        )}
+        
+        <MobileButton onClick={handleLogout}>
+          <FaSignOutAlt />
+          Sair
+        </MobileButton>
+      </MobileMenu>
     </HeaderContainer>
   );
 };
