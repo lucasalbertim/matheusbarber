@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Configuração do banco de dados
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/metheus_barber")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
