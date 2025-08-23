@@ -107,8 +107,7 @@ const MobileMenuButton = styled.button`
     justify-content: center;
     z-index: 1001;
     position: relative;
-    margin-left: auto;
-    margin-right: 10px;
+    margin-left: 10px;
   }
 `;
 
@@ -124,9 +123,13 @@ const MobileMenu = styled.div`
   z-index: 999;
   transform: translateY(-100%);
   transition: transform 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
   
   &.open {
     transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
   }
   
   @media (max-width: 768px) {
@@ -329,25 +332,25 @@ const Header = () => {
           )}
         </Navigation>
 
-        {/* Botão do menu mobile */}
+        {/* Seção do usuário e botão mobile */}
         {isLoggedIn && (
-          <MobileMenuButton onClick={toggleMobileMenu} aria-label="Menu">
-            {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </MobileMenuButton>
-        )}
+          <>
+            <UserSection>
+              <div className="user-info">
+                <FaUser className="user-icon" />
+                {client ? client.name : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name || 'Usuário')}
+              </div>
+              <button className="logout-btn" onClick={handleLogout}>
+                <FaSignOutAlt />
+                Sair
+              </button>
+            </UserSection>
 
-        {/* Seção do usuário */}
-        {isLoggedIn && (
-          <UserSection>
-            <div className="user-info">
-              <FaUser className="user-icon" />
-              {client ? client.name : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name || 'Usuário')}
-            </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              <FaSignOutAlt />
-              Sair
-            </button>
-          </UserSection>
+            {/* Botão do menu mobile */}
+            <MobileMenuButton onClick={toggleMobileMenu} aria-label="Menu">
+              {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+            </MobileMenuButton>
+          </>
         )}
       </HeaderContent>
 
