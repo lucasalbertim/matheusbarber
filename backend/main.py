@@ -9,6 +9,7 @@ from datetime import datetime
 
 from database import get_db, engine
 from models import Base, Admin
+from sqlalchemy import text
 from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
     AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
@@ -24,6 +25,50 @@ from auth import get_current_admin
 
 # Criar tabelas
 Base.metadata.create_all(bind=engine)
+
+# Função para verificar e adicionar coluna is_first_login se necessário
+def ensure_first_login_column():
+    """Verificar se a coluna is_first_login existe e adicionar se necessário"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se a coluna existe
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'admins' AND column_name = 'is_first_login'
+            """))
+            
+            if not result.fetchone():
+                print("🔄 Adicionando coluna is_first_login à tabela admins...")
+                # Adicionar a coluna
+                conn.execute(text("""
+                    ALTER TABLE admins 
+                    ADD COLUMN is_first_login BOOLEAN DEFAULT TRUE
+                """))
+                
+                # Atualizar registros existentes
+                conn.execute(text("""
+                    UPDATE admins 
+                    SET is_first_login = TRUE 
+                    WHERE username = 'admin'
+                """))
+                
+                conn.execute(text("""
+                    UPDATE admins 
+                    SET is_first_login = FALSE 
+                    WHERE username != 'admin'
+                """))
+                
+                conn.commit()
+                print("✅ Coluna is_first_login adicionada com sucesso!")
+            else:
+                print("✅ Coluna is_first_login já existe")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/adicionar coluna is_first_login: {e}")
+
+# Executar verificação da coluna
+ensure_first_login_column()
 
 app = FastAPI(
     title="Metheus Barber API",
@@ -117,14 +162,14 @@ def get_current_admin_info(current_admin: Admin = Depends(get_current_admin)):
     """Obter informações do administrador logado"""
     return current_admin
 
-# @app.put("/admins/first-login", response_model=AdminResponse)
-# def update_first_login_admin(
-#     admin_update: AdminUpdate,
-#     db: Session = Depends(get_db),
-#     current_admin: Admin = Depends(get_current_admin)
-# ):
-#     """Atualizar administrador no primeiro login"""
-#     return admin_service.update_first_login_admin(db, current_admin.id, admin_update)
+@app.put("/admins/first-login", response_model=AdminResponse)
+def update_first_login_admin(
+    admin_update: AdminUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Atualizar administrador no primeiro login"""
+    return admin_service.update_first_login_admin(db, current_admin.id, admin_update)
 
 # Rotas de Cliente (Administrativas)
 @app.get("/admin/clients/", response_model=List[ClientResponse])
