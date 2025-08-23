@@ -13,6 +13,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - metheus_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d metheus_barber"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build: ./backend
@@ -24,11 +30,13 @@ services:
       WHATSAPP_API_KEY: your-whatsapp-api-key
       WHATSAPP_PHONE_NUMBER: your-whatsapp-phone-number
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - metheus_network
     volumes:
       - ./backend:/app
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
@@ -43,6 +51,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    restart: unless-stopped
 
 volumes:
   postgres_data:
