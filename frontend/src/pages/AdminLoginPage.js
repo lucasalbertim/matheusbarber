@@ -161,12 +161,12 @@ const AdminLoginPage = () => {
       const { access_token, admin, is_first_login } = response.data;
       loginAdmin(admin, access_token);
       
-      // Verificar se é primeiro login
-      if (is_first_login) {
-        navigate('/admin/setup');
-      } else {
+      // Verificar se é primeiro login (temporariamente desabilitado)
+      // if (is_first_login) {
+      //   navigate('/admin/setup');
+      // } else {
         navigate('/admin/dashboard');
-      }
+      // }
     } catch (error) {
       const message = error.response?.data?.detail || 'Erro ao fazer login';
       toast.error(message);

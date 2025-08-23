@@ -70,7 +70,7 @@ class AdminService:
             "access_token": access_token,
             "token_type": "bearer",
             "admin": admin,
-            "is_first_login": admin.is_first_login
+            "is_first_login": False  # Temporariamente sempre False
         }
     
     def get_admin_by_username(self, db: Session, username: str) -> Optional[Admin]:
@@ -126,43 +126,43 @@ class AdminService:
         db_admin.is_active = False
         db.commit()
     
-    def update_first_login_admin(self, db: Session, admin_id: int, admin_update: AdminUpdate) -> Admin:
-        """Atualizar admin no primeiro login"""
-        db_admin = self.get_admin(db, admin_id)
-        
-        # Verificar se é realmente o primeiro login
-        if not db_admin.is_first_login:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Este não é o primeiro login"
-            )
-        
-        # Verificar se username já existe (se foi alterado)
-        if admin_update.username != db_admin.username:
-            if db.query(Admin).filter(and_(Admin.username == admin_update.username, Admin.id != admin_id)).first():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Username já cadastrado"
-                )
-        
-        # Verificar se email já existe (se foi alterado)
-        if admin_update.email != db_admin.email:
-            if db.query(Admin).filter(and_(Admin.email == admin_update.email, Admin.id != admin_id)).first():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email já cadastrado"
-                )
-        
-        # Atualizar campos
-        db_admin.username = admin_update.username
-        db_admin.name = admin_update.name
-        db_admin.email = admin_update.email
-        db_admin.password_hash = get_password_hash(admin_update.password)
-        db_admin.is_first_login = False  # Marcar que não é mais primeiro login
-        
-        db.commit()
-        db.refresh(db_admin)
-        
-        return db_admin
+    # def update_first_login_admin(self, db: Session, admin_id: int, admin_update: AdminUpdate) -> Admin:
+    #     """Atualizar admin no primeiro login"""
+    #     db_admin = self.get_admin(db, admin_id)
+    #     
+    #     # Verificar se é realmente o primeiro login
+    #     if not db_admin.is_first_login:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_400_BAD_REQUEST,
+    #             detail="Este não é o primeiro login"
+    #         )
+    #     
+    #     # Verificar se username já existe (se foi alterado)
+    #     if admin_update.username != db_admin.username:
+    #         if db.query(Admin).filter(and_(Admin.username == admin_update.username, Admin.id != admin_id)).first():
+    #                 raise HTTPException(
+    #                     status_code=status.HTTP_400_BAD_REQUEST,
+    #                     detail="Username já cadastrado"
+    #                 )
+    #     
+    #     # Verificar se email já existe (se foi alterado)
+    #     if admin_update.email != db_admin.email:
+    #         if db.query(Admin).filter(and_(Admin.email == admin_update.email, Admin.id != admin_id)).first():
+    #                 raise HTTPException(
+    #                     status_code=status.HTTP_400_BAD_REQUEST,
+    #                     detail="Email já cadastrado"
+    #                 )
+    #     
+    #     # Atualizar campos
+    #     db_admin.username = admin_update.username
+    #     db_admin.name = admin_update.name
+    #     db_admin.email = admin_update.email
+    #     db_admin.password_hash = get_password_hash(admin_update.password)
+    #     db_admin.is_first_login = False  # Marcar que não é mais primeiro login
+    #     
+    #     db.commit()
+    #     db.refresh(db_admin)
+    #     
+    #     return db_admin
 
 admin_service = AdminService()

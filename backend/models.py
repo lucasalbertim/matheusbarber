@@ -37,7 +37,7 @@ class Admin(Base):
     email = Column(String(100), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
-    is_first_login = Column(Boolean, default=True)
+    # is_first_login = Column(Boolean, default=True)  # Temporariamente comentado
 
 class Service(Base):
     __tablename__ = "services"

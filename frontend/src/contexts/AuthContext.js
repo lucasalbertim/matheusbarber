@@ -57,12 +57,12 @@ export const AuthProvider = ({ children }) => {
     setAdmin(adminWithToken);
     localStorage.setItem('metheus_admin', JSON.stringify(adminWithToken));
     
-    // Verificar se é primeiro login
-    if (adminData.is_first_login) {
-      toast.info('Primeiro acesso detectado. Configure suas informações.');
-    } else {
+    // Verificar se é primeiro login (temporariamente desabilitado)
+    // if (adminData.is_first_login) {
+    //   toast.info('Primeiro acesso detectado. Configure suas informações.');
+    // } else {
       toast.success(`Bem-vindo, ${adminData.name}!`);
-    }
+    // }
   };
 
   const logoutAdmin = () => {

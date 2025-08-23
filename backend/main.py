@@ -117,14 +117,14 @@ def get_current_admin_info(current_admin: Admin = Depends(get_current_admin)):
     """Obter informações do administrador logado"""
     return current_admin
 
-@app.put("/admins/first-login", response_model=AdminResponse)
-def update_first_login_admin(
-    admin_update: AdminUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin)
-):
-    """Atualizar administrador no primeiro login"""
-    return admin_service.update_first_login_admin(db, current_admin.id, admin_update)
+# @app.put("/admins/first-login", response_model=AdminResponse)
+# def update_first_login_admin(
+#     admin_update: AdminUpdate,
+#     db: Session = Depends(get_db),
+#     current_admin: Admin = Depends(get_current_admin)
+# ):
+#     """Atualizar administrador no primeiro login"""
+#     return admin_service.update_first_login_admin(db, current_admin.id, admin_update)
 
 # Rotas de Cliente (Administrativas)
 @app.get("/admin/clients/", response_model=List[ClientResponse])
