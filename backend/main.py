@@ -7,7 +7,7 @@ from typing import List
 import os
 from datetime import datetime
 
-from database import get_db, engine, wait_for_database
+from database import get_db, engine
 from models import Base, Admin
 from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
@@ -22,25 +22,14 @@ from services import (
 )
 from auth import get_current_admin
 
+# Criar tabelas
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
     version="2.0.0"
 )
-
-@app.on_event("startup")
-async def startup_event():
-    """Evento executado na inicialização da aplicação"""
-    try:
-        # Aguarda o banco estar disponível
-        wait_for_database()
-        
-        # Criar tabelas após a aplicação estar rodando
-        Base.metadata.create_all(bind=engine)
-        print("✅ Tabelas do banco criadas com sucesso!")
-    except Exception as e:
-        print(f"❌ Erro ao criar tabelas: {e}")
-        raise e
 
 # CORS
 app.add_middleware(
