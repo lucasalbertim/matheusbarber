@@ -23,8 +23,37 @@ from services import (
 )
 from auth import get_current_admin
 
+import time
+
+# Função para aguardar o banco estar disponível
+def wait_for_database(max_retries=30, delay=2):
+    """Aguarda o banco de dados estar disponível"""
+    for attempt in range(max_retries):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+                print("✅ Conexão com banco de dados estabelecida!")
+                return True
+        except Exception as e:
+            if attempt == 0:
+                print("🔄 Aguardando banco de dados estar disponível...")
+            elif attempt % 5 == 0:
+                print(f"🔄 Tentativa {attempt + 1}/{max_retries}...")
+            time.sleep(delay)
+    
+    print("❌ Não foi possível conectar ao banco de dados após várias tentativas")
+    return False
+
+# Aguardar banco estar disponível
+if not wait_for_database():
+    print("⚠️ Continuando sem verificação de coluna...")
+
 # Criar tabelas
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tabelas criadas/verificadas com sucesso!")
+except Exception as e:
+    print(f"⚠️ Erro ao criar tabelas: {e}")
 
 # Função para verificar e adicionar coluna is_first_login se necessário
 def ensure_first_login_column():
