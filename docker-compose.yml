@@ -7,6 +7,7 @@ services:
       POSTGRES_DB: metheus_barber
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5432:5432"
     volumes:
@@ -15,10 +16,11 @@ services:
       - metheus_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d metheus_barber"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -29,6 +31,8 @@ services:
       SECRET_KEY: your-secret-key-here-change-in-production
       WHATSAPP_API_KEY: your-whatsapp-api-key
       WHATSAPP_PHONE_NUMBER: your-whatsapp-phone-number
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +41,12 @@ services:
     volumes:
       - ./backend:/app
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build: ./frontend
@@ -44,6 +54,7 @@ services:
       - "3000:3000"
     environment:
       REACT_APP_API_URL: http://localhost:8000
+      CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - backend
     networks:

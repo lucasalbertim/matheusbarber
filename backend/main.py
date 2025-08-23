@@ -7,7 +7,7 @@ from typing import List
 import os
 from datetime import datetime
 
-from database import get_db, engine
+from database import get_db, engine, wait_for_database
 from models import Base, Admin
 from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
@@ -32,6 +32,9 @@ app = FastAPI(
 async def startup_event():
     """Evento executado na inicialização da aplicação"""
     try:
+        # Aguarda o banco estar disponível
+        wait_for_database()
+        
         # Criar tabelas após a aplicação estar rodando
         Base.metadata.create_all(bind=engine)
         print("✅ Tabelas do banco criadas com sucesso!")
