@@ -158,9 +158,15 @@ const AdminLoginPage = () => {
     setLoading(true);
     try {
       const response = await api.post('/admins/login', formData);
-      const { access_token, admin } = response.data;
+      const { access_token, admin, is_first_login } = response.data;
       loginAdmin(admin, access_token);
-      navigate('/admin/dashboard');
+      
+      // Verificar se é primeiro login
+      if (is_first_login) {
+        navigate('/admin/setup');
+      } else {
+        navigate('/admin/dashboard');
+      }
     } catch (error) {
       const message = error.response?.data?.detail || 'Erro ao fazer login';
       toast.error(message);

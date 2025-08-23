@@ -29,7 +29,8 @@ def init_database():
             name="Administrador",
             email="admin@metheusbarber.com",
             password_hash=get_password_hash("admin123"),
-            is_active=True
+            is_active=True,
+            is_first_login=True
         )
         
         db.add(admin)

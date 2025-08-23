@@ -37,12 +37,19 @@ class AdminResponse(AdminBase):
     id: int
     created_at: datetime
     is_active: bool
+    is_first_login: bool
     
     class Config:
         from_attributes = True
 
 class AdminLogin(BaseModel):
     username: str
+    password: str
+
+class AdminUpdate(BaseModel):
+    username: str
+    name: str
+    email: EmailStr
     password: str
 
 class AdminToken(BaseModel):

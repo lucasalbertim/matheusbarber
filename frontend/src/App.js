@@ -10,6 +10,7 @@ import ClientRegisterPage from './pages/ClientRegisterPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminSetupPage from './pages/AdminSetupPage';
 import ClientsManagementPage from './pages/ClientsManagementPage';
 import AddClientPage from './pages/AddClientPage';
 import EditClientPage from './pages/EditClientPage';
@@ -67,6 +68,7 @@ function App() {
             
             {/* Rotas do administrador */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/setup" element={<AdminSetupPage />} />
                     <Route path="/admin/clientes" element={<ClientsManagementPage />} />
         <Route path="/admin/clientes/novo" element={<AddClientPage />} />
         <Route path="/admin/clientes/:clientId/editar" element={<EditClientPage />} />

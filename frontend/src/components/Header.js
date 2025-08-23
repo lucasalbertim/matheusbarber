@@ -168,7 +168,7 @@ const Header = () => {
             </NavLink>
           )}
           
-          {admin && (
+          {admin && !admin.is_first_login && (
             <>
               <NavLink to="/" className={isActive('/') ? 'active' : ''}>
                 <FaHome />
@@ -194,7 +194,7 @@ const Header = () => {
           <UserSection>
             <div className="user-info">
               <FaUser className="user-icon" />
-              {client ? client.name : admin.name}
+              {client ? client.name : (admin.is_first_login ? 'Configuração Inicial' : admin.name)}
             </div>
             <button className="logout-btn" onClick={handleLogout}>
               <FaSignOutAlt />
