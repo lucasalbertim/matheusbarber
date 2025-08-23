@@ -34,7 +34,10 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=[
+        "https://matheusbarber.shop",
+        "https://www.matheusbarber.shop",
+        "http://localhost:3000"],  # manter para desenvolvimento local],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,7 +74,7 @@ async def serve_manifest():
     
     raise HTTPException(status_code=404, detail="Manifest não encontrado")
 
-# Health check
+ #Health check
 @app.get("/health")
 async def health_check():
     """Verificar status da API"""
