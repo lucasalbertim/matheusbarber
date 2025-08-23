@@ -154,10 +154,12 @@ const Header = () => {
         </Logo>
 
         <Navigation>
-          <NavLink to="/" className={isActive('/') ? 'active' : ''}>
-            <FaHome />
-            Início
-          </NavLink>
+          {!client && (
+            <NavLink to="/" className={isActive('/') ? 'active' : ''}>
+              <FaHome />
+              Início
+            </NavLink>
+          )}
           
           {client && (
             <NavLink to="/cliente/dashboard" className={isActive('/cliente/dashboard') ? 'active' : ''}>
@@ -168,6 +170,10 @@ const Header = () => {
           
           {admin && (
             <>
+              <NavLink to="/" className={isActive('/') ? 'active' : ''}>
+                <FaHome />
+                Início
+              </NavLink>
               <NavLink to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>
                 Dashboard
               </NavLink>

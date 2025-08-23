@@ -64,6 +64,7 @@ const ClientStartAttendancePage = () => {
 
   useEffect(() => {
     if (!client) { navigate('/cliente/login'); return; }
+    
     const load = async () => {
       try {
         const { data } = await api.get('/services/');
@@ -74,7 +75,30 @@ const ClientStartAttendancePage = () => {
         setLoading(false);
       }
     };
+    
     load();
+    
+    // Controle de navegação do navegador - logout automático ao tentar voltar
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    
+    const handlePopState = (event) => {
+      event.preventDefault();
+      // Redireciona para o dashboard em vez de fazer logout direto
+      navigate('/cliente/dashboard');
+    };
+    
+    // Adiciona listeners para controlar a navegação
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remove listeners quando o componente for desmontado
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [client, navigate]);
 
   const toggle = (id) => {
