@@ -179,7 +179,7 @@ ensure_default_services()
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 # CORS
@@ -192,39 +192,40 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    root_path="/api"
 )
 
-# Configuração para servir arquivos estáticos do frontend
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
-if os.path.exists(frontend_path):
-    app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
-
-# Rota para servir o frontend
-@app.get("/")
-async def serve_frontend():
-    """Servir o frontend React"""
-    if os.path.exists(frontend_path):
-        index_path = os.path.join(frontend_path, "index.html")
-        if os.path.exists(index_path):
-            return FileResponse(index_path)
-    
-    return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
-
-# Rota para manifest.json
-@app.get("/manifest.json")
-async def serve_manifest():
-    """Servir o manifest.json"""
-    manifest_path = os.path.join(frontend_path, "manifest.json")
-    if os.path.exists(manifest_path):
-        return FileResponse(manifest_path)
-    
-    # Fallback para desenvolvimento
-    dev_manifest_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "manifest.json")
-    if os.path.exists(dev_manifest_path):
-        return FileResponse(dev_manifest_path)
-    
-    raise HTTPException(status_code=404, detail="Manifest não encontrado")
-
+## Configuração para servir arquivos estáticos do frontend
+#frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
+#if os.path.exists(frontend_path):
+#    app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
+#
+## Rota para servir o frontend
+#@app.get("/")
+#async def serve_frontend():
+#    """Servir o frontend React"""
+#    if os.path.exists(frontend_path):
+#        index_path = os.path.join(frontend_path, "index.html")
+#        if os.path.exists(index_path):
+#            return FileResponse(index_path)
+#    
+#    return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
+#
+## Rota para manifest.json
+#@app.get("/manifest.json")
+#async def serve_manifest():
+#    """Servir o manifest.json"""
+#    manifest_path = os.path.join(frontend_path, "manifest.json")
+#    if os.path.exists(manifest_path):
+#        return FileResponse(manifest_path)
+#    
+#    # Fallback para desenvolvimento
+#    dev_manifest_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "manifest.json")
+#    if os.path.exists(dev_manifest_path):
+#        return FileResponse(dev_manifest_path)
+#    
+#    raise HTTPException(status_code=404, detail="Manifest não encontrado")
+#
  #Health check
 @app.get("/health")
 async def health_check():
