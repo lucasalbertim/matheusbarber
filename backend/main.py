@@ -46,20 +46,32 @@ def wait_for_database(max_retries=30, delay=2):
     print("❌ Não foi possível conectar ao banco de dados após várias tentativas")
     return False
 
-# Aguardar banco estar disponível
-if not wait_for_database():
-    print("⚠️ Continuando sem verificação de coluna...")
-
-# Criar tabelas
-try:
-    Base.metadata.create_all(bind=engine)
-    print("✅ Tabelas criadas/verificadas com sucesso!")
-except Exception as e:
-    print(f"⚠️ Erro ao criar tabelas: {e}")
-
-# Função para verificar e adicionar coluna is_first_login se necessário
-def ensure_first_login_column():
-    """Verificar se a coluna is_first_login existe e adicionar se necessário"""
+# Função para inicializar banco de dados de forma segura
+def initialize_database_safely():
+    """Inicializar banco de dados de forma segura, aguardando estar pronto"""
+    print("🔄 Aguardando banco de dados estar disponível...")
+    
+    # Aguardar banco estar disponível
+    if not wait_for_database():
+        print("❌ Não foi possível conectar ao banco de dados. Tentando novamente em 10 segundos...")
+        time.sleep(10)
+        
+        # Segunda tentativa
+        if not wait_for_database():
+            print("❌ Falha definitiva ao conectar ao banco de dados. Abortando inicialização.")
+            return False
+    
+    print("✅ Banco de dados disponível! Iniciando configuração...")
+    
+    # Criar tabelas
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabelas criadas/verificadas com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao criar tabelas: {e}")
+        return False
+    
+    # Verificar e adicionar coluna is_first_login
     try:
         with engine.connect() as conn:
             # Verificar se a coluna existe
@@ -94,16 +106,11 @@ def ensure_first_login_column():
                 print("✅ Coluna is_first_login adicionada com sucesso!")
             else:
                 print("✅ Coluna is_first_login já existe")
-                
     except Exception as e:
-        print(f"⚠️ Aviso: Não foi possível verificar/adicionar coluna is_first_login: {e}")
-
-# Executar verificação da coluna
-ensure_first_login_column()
-
-# Função para criar admin padrão se não existir
-def ensure_default_admin():
-    """Criar admin padrão se não existir"""
+        print(f"❌ Erro ao verificar/adicionar coluna is_first_login: {e}")
+        return False
+    
+    # Criar admin padrão se não existir
     try:
         from security import get_password_hash
         
@@ -126,16 +133,11 @@ def ensure_default_admin():
                 print("   Senha: admin123")
             else:
                 print("✅ Administrador já existe no banco")
-                
     except Exception as e:
-        print(f"⚠️ Aviso: Não foi possível verificar/criar admin padrão: {e}")
-
-# Executar verificação do admin padrão
-ensure_default_admin()
-
-# Função para criar serviços padrão se não existirem
-def ensure_default_services():
-    """Criar serviços padrão se não existirem"""
+        print(f"❌ Erro ao verificar/criar admin padrão: {e}")
+        return False
+    
+    # Criar serviços padrão se não existirem
     try:
         with engine.connect() as conn:
             # Verificar se existem serviços
@@ -169,12 +171,17 @@ def ensure_default_services():
                 print("✅ Serviços padrão criados com sucesso!")
             else:
                 print("✅ Serviços já existem no banco")
-                
     except Exception as e:
-        print(f"⚠️ Aviso: Não foi possível verificar/criar serviços padrão: {e}")
+        print(f"❌ Erro ao verificar/criar serviços padrão: {e}")
+        return False
+    
+    print("🎉 Inicialização do banco de dados concluída com sucesso!")
+    return True
 
-# Executar verificação dos serviços padrão
-ensure_default_services()
+# Executar inicialização do banco de dados
+initialize_database_safely()
+
+# A inicialização dos serviços agora é feita na função initialize_database_safely()
 
 app = FastAPI(
     title="Metheus Barber API",
