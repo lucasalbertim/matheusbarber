@@ -109,6 +109,10 @@ class AttendanceResponse(AttendanceBase):
     class Config:
         from_attributes = True
 
+class AttendanceCreatedResponse(BaseModel):
+    attendance: AttendanceResponse
+    queue_position: int
+
 # Schemas de Relatórios
 class ReportsSummary(BaseModel):
     total_clients: int

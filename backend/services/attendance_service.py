@@ -9,7 +9,7 @@ from schemas import AttendanceCreate, AttendanceUpdate
 from utils.date_utils import get_recife_datetime, get_recife_date
 
 class AttendanceService:
-    def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Attendance:
+    def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Dict[str, Any]:
         # Verificar se cliente existe
         client = db.query(Client).filter(Client.id == attendance.client_id).first()
         if not client:
@@ -46,7 +46,18 @@ class AttendanceService:
         db.commit()
         db.refresh(db_attendance)
         
-        return db_attendance
+        # Calcular posição na fila (quantos estão aguardando antes deste atendimento)
+        queue_position = db.query(Attendance).filter(
+            and_(
+                Attendance.status == "waiting",
+                Attendance.appointment_date < db_attendance.appointment_date
+            )
+        ).count() + 1
+        
+        return {
+            "attendance": db_attendance,
+            "queue_position": queue_position
+        }
     
     def get_attendance(self, db: Session, attendance_id: int) -> Attendance:
         attendance = db.query(Attendance).filter(Attendance.id == attendance_id).first()

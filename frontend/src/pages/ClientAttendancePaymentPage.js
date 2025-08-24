@@ -164,6 +164,74 @@ const SecurityInfo = styled.div`
   margin-bottom: 30px;
 `;
 
+const SuccessCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  max-width: 500px;
+  margin: 0 auto;
+`;
+
+const SuccessIcon = styled.div`
+  width: 80px;
+  height: 80px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+  font-size: 2rem;
+`;
+
+const SuccessTitle = styled.h2`
+  color: var(--success);
+  margin-bottom: 15px;
+  font-size: 1.8rem;
+  font-weight: 700;
+`;
+
+const SuccessMessage = styled.p`
+  color: var(--text);
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+`;
+
+const QueueInfo = styled.div`
+  background: var(--primary-light);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+`;
+
+const QueuePosition = styled.div`
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 10px;
+`;
+
+const QueueText = styled.p`
+  color: var(--text);
+  font-size: 1rem;
+  margin: 0;
+`;
+
+const Countdown = styled.div`
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-top: 20px;
+  padding: 10px;
+  background: var(--background);
+  border-radius: 8px;
+`;
+
 const Actions = styled.div`
   display: flex;
   gap: 15px;
@@ -234,6 +302,9 @@ const ClientAttendancePaymentPage = () => {
   const [selection, setSelection] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [queuePosition, setQueuePosition] = useState(null);
+  const [countdown, setCountdown] = useState(7);
 
   useEffect(() => {
     if (!client) { 
@@ -271,6 +342,16 @@ const ClientAttendancePaymentPage = () => {
     };
   }, [client, navigate]);
 
+  // Countdown para auto logout
+  useEffect(() => {
+    if (showSuccess && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, countdown]);
+
   const handleBack = () => {
     navigate('/cliente/atendimento/resumo');
   };
@@ -284,7 +365,7 @@ const ClientAttendancePaymentPage = () => {
     setIsProcessing(true);
 
     try {
-            await api.post('/attendance/', {
+      const response = await api.post('/attendance/', {
         client_id: client.id,
         appointment_date: getRecifeDateTime(),
         payment_method: selectedMethod,
@@ -292,14 +373,17 @@ const ClientAttendancePaymentPage = () => {
         service_ids: selection.service_ids,
       });
       
-      toast.success('Pagamento confirmado! Atendimento criado com sucesso.');
+      // Mostrar tela de sucesso com posição na fila
+      setQueuePosition(response.data.queue_position);
+      setShowSuccess(true);
+      setCountdown(7);
       
-      // Aguardar um pouco para o usuário ver a mensagem
+      // Auto logout após 7 segundos
       setTimeout(() => {
         sessionStorage.removeItem('attendance_selection');
         logoutClient();
         navigate('/');
-      }, 2000);
+      }, 7000);
       
     } catch (error) {
       console.error('Erro ao confirmar pagamento:', error);
@@ -336,6 +420,32 @@ const ClientAttendancePaymentPage = () => {
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <h3>Carregando...</h3>
         </div>
+      </Container>
+    );
+  }
+
+  if (showSuccess) {
+    return (
+      <Container>
+        <SuccessCard>
+          <SuccessIcon>
+            <FaCheckCircle />
+          </SuccessIcon>
+          <SuccessTitle>Atendimento Criado!</SuccessTitle>
+          <SuccessMessage>
+            Seu atendimento foi criado com sucesso e está na fila de espera.
+          </SuccessMessage>
+          
+          <QueueInfo>
+            <QueuePosition>{queuePosition}º</QueuePosition>
+            <QueueText>Você será o {queuePosition}º a ser atendido</QueueText>
+          </QueueInfo>
+          
+          <Countdown>
+            Redirecionando para a tela inicial em {countdown} segundos...
+          </Countdown>
+        </SuccessCard>
+        <Footer />
       </Container>
     );
   }

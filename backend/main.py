@@ -16,7 +16,7 @@ from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
     AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
     ServiceCreate, ServiceResponse,
-    AttendanceCreate, AttendanceResponse,
+    AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
     AttendanceUpdate, AttendanceCancel
 )
 from services import (
@@ -465,7 +465,7 @@ def delete_service(
     return {"message": "Serviço inativado com sucesso"}
 
 # Rotas de Atendimento
-@app.post("/attendance/", response_model=AttendanceResponse)
+@app.post("/attendance/", response_model=AttendanceCreatedResponse)
 def create_attendance(
     attendance: AttendanceCreate,
     db: Session = Depends(get_db)
