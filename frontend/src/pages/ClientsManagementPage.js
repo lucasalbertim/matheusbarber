@@ -62,6 +62,77 @@ const SearchBar = styled.div`
   gap: 15px;
   margin-bottom: 20px;
   align-items: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const SearchRow = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const ActionsRow = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+`;
+
+const MobileActionsButton = styled.button`
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 100%;
+
+  &:hover {
+    background: var(--primary-dark);
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+    justify-content: center;
+  }
+`;
+
+const MobileActionsDropdown = styled.div`
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 10px;
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const StatusFilter = styled.select`
@@ -542,6 +613,7 @@ const ClientsManagementPage = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [inactiveDays, setInactiveDays] = useState(45);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -701,11 +773,14 @@ ID: ${client.id}
     }
   };
 
-  // Fechar dropdown quando clicar fora
+  // Fechar dropdowns quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showExportDropdown && !event.target.closest('.export-container')) {
         setShowExportDropdown(false);
+      }
+      if (showMobileActions && !event.target.closest('.mobile-actions-container')) {
+        setShowMobileActions(false);
       }
     };
 
@@ -713,7 +788,7 @@ ID: ${client.id}
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showExportDropdown]);
+  }, [showExportDropdown, showMobileActions]);
 
   const handleReactivateClient = async (clientId) => {
     if (!window.confirm('Deseja reativar este cliente?')) {
@@ -761,53 +836,98 @@ ID: ${client.id}
       </Header>
 
       <SearchBar>
-        <SearchInput
-          type="text"
-          placeholder="Buscar por nome, CPF, telefone ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <StatusFilter
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">Todos os Clientes</option>
-          <option value="active">Apenas Ativos</option>
-          <option value="inactive">Apenas Inativos</option>
-        </StatusFilter>
-        <ConfigButton onClick={handleConfigInactiveDays}>
-          <FaCog />
-          Configurar
-        </ConfigButton>
-        <AutoInactivateButton onClick={handleAutoInactivate}>
-          <FaUserTimes />
-          Inativar ({inactiveDays} dias)
-        </AutoInactivateButton>
-        
-        <div className="export-container" style={{ position: 'relative' }}>
-          <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
-            <FaFileExport />
-            Exportar
-          </ExportButton>
+        {/* Busca e Filtros - Sempre visíveis */}
+        <SearchRow>
+          <SearchInput
+            type="text"
+            placeholder="Buscar por nome, CPF, telefone ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <StatusFilter
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Todos os Clientes</option>
+            <option value="active">Apenas Ativos</option>
+            <option value="inactive">Apenas Inativos</option>
+          </StatusFilter>
+        </SearchRow>
+
+        {/* Ações - Responsivas */}
+        <ActionsRow>
+          {/* Desktop: Botões visíveis */}
+          <ConfigButton onClick={handleConfigInactiveDays}>
+            <FaCog />
+            Configurar
+          </ConfigButton>
+          <AutoInactivateButton onClick={handleAutoInactivate}>
+            <FaUserTimes />
+            Inativar ({inactiveDays} dias)
+          </AutoInactivateButton>
           
-          {showExportDropdown && (
-            <ExportDropdown>
-              <ExportOption onClick={handleExportExcel}>
-                <FaFileExcel />
-                Exportar Excel
-              </ExportOption>
-              <ExportOption onClick={handleExportPDF}>
-                <FaFilePdf />
-                Exportar PDF
-              </ExportOption>
-            </ExportDropdown>
-          )}
-        </div>
-        
-        <AddButton onClick={handleAddClient}>
-          <FaPlus />
-          Novo Cliente
-        </AddButton>
+          <div className="export-container" style={{ position: 'relative' }}>
+            <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
+              <FaFileExport />
+              Exportar
+            </ExportButton>
+            
+            {showExportDropdown && (
+              <ExportDropdown>
+                <ExportOption onClick={handleExportExcel}>
+                  <FaFileExcel />
+                  Exportar Excel
+                </ExportOption>
+                <ExportOption onClick={handleExportPDF}>
+                  <FaFilePdf />
+                  Exportar PDF
+                </ExportOption>
+              </ExportDropdown>
+            )}
+          </div>
+          
+          <AddButton onClick={handleAddClient}>
+            <FaPlus />
+            Novo Cliente
+          </AddButton>
+
+          {/* Mobile: Botão de ações */}
+          <div className="mobile-actions-container" style={{ width: '100%' }}>
+            <MobileActionsButton onClick={() => setShowMobileActions(!showMobileActions)}>
+              <FaCog />
+              Ações ({showMobileActions ? 'Fechar' : 'Abrir'})
+            </MobileActionsButton>
+            
+            {showMobileActions && (
+              <MobileActionsDropdown>
+                <ConfigButton onClick={handleConfigInactiveDays}>
+                  <FaCog />
+                  Configurar Inativação
+                </ConfigButton>
+                
+                <AutoInactivateButton onClick={handleAutoInactivate}>
+                  <FaUserTimes />
+                  Inativar ({inactiveDays} dias)
+                </AutoInactivateButton>
+                
+                <ExportButton onClick={handleExportExcel}>
+                  <FaFileExcel />
+                  Exportar Excel
+                </ExportButton>
+                
+                <ExportButton onClick={handleExportPDF}>
+                  <FaFilePdf />
+                  Exportar PDF
+                </ExportButton>
+                
+                <AddButton onClick={handleAddClient}>
+                  <FaPlus />
+                  Novo Cliente
+                </AddButton>
+              </MobileActionsDropdown>
+            )}
+          </div>
+        </ActionsRow>
       </SearchBar>
 
       <ClientsTable>
