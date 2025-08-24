@@ -45,6 +45,39 @@ const BackButton = styled.button`
   }
 `;
 
+const TodayIndicator = styled.div`
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  .date {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .description {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 15px;
+    
+    .date {
+      font-size: 1rem;
+    }
+    
+    .description {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
 const StatsContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -622,14 +655,30 @@ const AttendanceManagementPage = () => {
   return (
     <Container>
       <Header>
-        <Title>Gestão de Atendimentos</Title>
+        <Title>
+          Gestão de Atendimentos - Hoje ({stats.total || 0})
+        </Title>
         <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
           Voltar ao Dashboard
         </BackButton>
-      </Header>
+              </Header>
 
-      <StatsContainer>
+        <TodayIndicator>
+          <div className="date">
+            {new Date().toLocaleDateString('pt-BR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
+          <div className="description">
+            Atendimentos em tempo real - Atualiza automaticamente a cada 5 segundos
+          </div>
+        </TodayIndicator>
+
+        <StatsContainer>
         <StatCard className="total">
           <div className="number">{stats.total}</div>
           <div className="label">Total</div>
