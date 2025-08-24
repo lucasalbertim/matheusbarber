@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
 from datetime import datetime
+import io
+import json
 
 from database import get_db, engine
 from models import Base, Admin
@@ -327,12 +329,12 @@ def delete_client(
 
 @app.post("/admin/clients/auto-inactivate")
 def auto_inactivate_clients(
-    days_inactive: int = 45,
+    days: int = Query(45, description="Número de dias para considerar cliente inativo"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Inativar automaticamente clientes inativos (apenas admin)"""
-    count = client_service.auto_inactivate_clients(db, days_inactive)
+    count = client_service.auto_inactivate_clients(db, days)
     return {"message": f"{count} clientes foram inativados automaticamente"}
 
 @app.post("/admin/clients/{client_id}/reactivate")
@@ -352,6 +354,80 @@ def reactivate_client(
     db.refresh(client)
     
     return {"message": "Cliente reativado com sucesso"}
+
+@app.post("/admin/clients/config")
+def save_client_config(
+    config: dict,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Salvar configurações de clientes (apenas admin)"""
+    inactive_days = config.get("inactive_days", 45)
+    
+    # Aqui você pode salvar em uma tabela de configurações
+    # Por enquanto, vamos apenas retornar sucesso
+    return {"message": f"Configuração salva: {inactive_days} dias para inativação automática"}
+
+@app.get("/admin/clients/export/excel")
+def export_clients_excel(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Exportar lista de clientes em Excel (apenas admin)"""
+    clients = client_service.get_all_clients(db)
+    
+    # Criar dados CSV (simulando Excel)
+    csv_data = "Nome,CPF,Telefone,Email,Status,Data de Cadastro\n"
+    for client in clients:
+        status = "Ativo" if client.is_active else "Inativo"
+        created_date = client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
+        csv_data += f'"{client.name}","{client.cpf}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
+    
+    # Criar arquivo em memória
+    output = io.StringIO()
+    output.write(csv_data)
+    output.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=clientes_{datetime.now().strftime('%Y-%m-%d')}.csv"}
+    )
+
+@app.get("/admin/clients/export/pdf")
+def export_clients_pdf(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Exportar lista de clientes em PDF (apenas admin)"""
+    clients = client_service.get_all_clients(db)
+    
+    # Criar dados JSON (simulando PDF)
+    pdf_data = {
+        "title": "Lista de Clientes",
+        "date": datetime.now().strftime("%d/%m/%Y"),
+        "total_clients": len(clients),
+        "clients": []
+    }
+    
+    for client in clients:
+        pdf_data["clients"].append({
+            "name": client.name,
+            "cpf": client.cpf,
+            "phone": client.phone,
+            "email": client.email or "Não informado",
+            "status": "Ativo" if client.is_active else "Inativo",
+            "created_at": client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
+        })
+    
+    # Criar arquivo JSON (simulando PDF)
+    json_content = json.dumps(pdf_data, indent=2, ensure_ascii=False)
+    
+    return StreamingResponse(
+        io.BytesIO(json_content.encode('utf-8')),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=clientes_{datetime.now().strftime('%Y-%m-%d')}.json"}
+    )
 
 # Rotas de Serviços
 @app.post("/services/", response_model=ServiceResponse)

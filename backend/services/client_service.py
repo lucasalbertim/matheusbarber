@@ -191,6 +191,10 @@ class ClientService:
         
         return query.offset(skip).limit(limit).all()
     
+    def get_all_clients(self, db: Session) -> List[Client]:
+        """Buscar todos os clientes para exportação"""
+        return db.query(Client).order_by(Client.name).all()
+    
     def get_inactive_clients(self, db: Session, days_inactive: int = 45) -> List[Client]:
         """Buscar clientes inativos por X dias"""
         cutoff_date = datetime.utcnow() - timedelta(days=days_inactive)
