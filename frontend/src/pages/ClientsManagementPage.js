@@ -369,11 +369,17 @@ const ClientRow = styled.div`
     flex-direction: column;
     gap: 15px;
     padding: 15px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 15px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
     background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+    }
   }
 `;
 
