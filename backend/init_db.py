@@ -4,12 +4,9 @@ Script para inicializar o banco de dados com dados de exemplo
 Execute este script após a primeira execução do sistema
 """
 
-import os
-import sys
-from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Base, Admin, Service
-from auth import get_password_hash
+from security import get_password_hash
 
 def init_database():
     """Inicializar banco de dados com dados de exemplo"""
@@ -32,7 +29,8 @@ def init_database():
             name="Administrador",
             email="admin@metheusbarber.com",
             password_hash=get_password_hash("admin123"),
-            is_active=True
+            is_active=True,
+            is_first_login=True
         )
         
         db.add(admin)

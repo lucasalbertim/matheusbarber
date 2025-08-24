@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaCalendar, FaCut, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 import api from '../services/api';
 
@@ -10,6 +11,10 @@ const PageContainer = styled.div`
   min-height: 100vh;
   background: var(--background);
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Container = styled.div`
@@ -39,27 +44,21 @@ const BackButton = styled.button`
 `;
 
 const WelcomeSection = styled.div`
-  background: linear-gradient(135deg, var(--primary) 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #20AC9F 0%, #2d2d2d 100%);
   color: var(--accent);
   padding: 40px;
   border-radius: 20px;
   text-align: center;
   margin-bottom: 40px;
-  
-  .welcome-icon {
+
+  img {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    color: var(--primary);
     margin: 0 auto 20px;
     box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
   }
-  
+
   h1 {
     font-size: 2.5rem;
     font-weight: 700;
@@ -70,6 +69,27 @@ const WelcomeSection = styled.div`
     font-size: 1.2rem;
     opacity: 0.9;
   }
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    
+    .welcome-icon {
+      width: 70px;
+      height: 70px;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    
+    h1 {
+      font-size: 2rem;
+    }
+    
+    p {
+      font-size: 1.1rem;
+    }
+  }
 `;
 
 const DashboardGrid = styled.div`
@@ -77,6 +97,12 @@ const DashboardGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const DashboardCard = styled.div`
@@ -99,7 +125,7 @@ const DashboardCard = styled.div`
     .icon {
       width: 50px;
       height: 50px;
-      background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
+      background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -143,6 +169,41 @@ const DashboardCard = styled.div`
         color: var(--primary);
         font-weight: 600;
       }
+      
+      .attendance-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .attendance-header {
+          margin-bottom: 8px;
+          
+          .attendance-date {
+            color: var(--primary);
+            font-size: 0.9rem;
+            
+            strong {
+              font-weight: 700;
+            }
+          }
+        }
+        
+        .attendance-services {
+          .service-item {
+            padding: 2px 0;
+            
+            .service-name {
+              color: var(--text-secondary);
+              font-size: 0.85rem;
+            }
+          }
+        }
+      }
     }
   }
 `;
@@ -161,18 +222,42 @@ const ClientDashboardPage = () => {
     
     const fetchAttendances = async () => {
       try {
-        await api.get(`/clients/${client.id}`);
-        // Aqui você pode implementar a busca de atendimentos do cliente
-        setAttendances([]); // Placeholder
+        const response = await api.get(`/clients/${client.id}/attendances`);
+        setAttendances(response.data);
       } catch (error) {
         console.error('Erro ao buscar atendimentos:', error);
+        setAttendances([]);
       } finally {
         setLoading(false);
       }
     };
     
     fetchAttendances();
-  }, [client, navigate]);
+    
+    // Controle de navegação do navegador - logout automático ao tentar voltar
+    const handleBeforeUnload = (event) => {
+      // Previne que o usuário saia da página sem fazer logout
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    
+    const handlePopState = (event) => {
+      // Quando o usuário clica em voltar no navegador, faz logout automático
+      event.preventDefault();
+      logoutClient();
+      navigate('/');
+    };
+    
+    // Adiciona listeners para controlar a navegação
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remove listeners quando o componente for desmontado
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [client, navigate, logoutClient]);
 
 
 
@@ -203,12 +288,84 @@ const ClientDashboardPage = () => {
         </BackButton>
         
         <WelcomeSection>
-          <div className="welcome-icon">M</div>
+          <img src="/logo.jpeg" alt="Matheus Barber Logo" />
           <h1>Bem-vindo, {client.name}!</h1>
           <p>Gerencie seu perfil e visualize seus atendimentos</p>
         </WelcomeSection>
         
         <DashboardGrid>
+          <DashboardCard>
+            <div className="card-header">
+              <div className="icon">
+                <FaCalendar />
+              </div>
+              <h3>Iniciar Atendimento</h3>
+            </div>
+            <div className="card-content">
+              <p>Selecione serviços e avance até o pagamento para concluir seu atendimento.</p>
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <button 
+                  className="btn" 
+                  onClick={() => navigate('/cliente/atendimento/iniciar')}
+                  style={{
+                    background: 'linear-gradient(135deg, #20AC9F 0%, #1A8C7F 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '15px 30px',
+                    borderRadius: '25px',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(32, 172, 159, 0.3)',
+                    transition: 'all 0.3s ease',
+                    minWidth: '200px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(32, 172, 159, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(32, 172, 159, 0.3)';
+                  }}
+                >
+                  Começar Atendimento
+                </button>
+              </div>
+            </div>
+          </DashboardCard>
+          
+          <DashboardCard>
+            <div className="card-header">
+              <div className="icon">
+                <FaCut />
+              </div>
+              <h3>Histórico de Serviços</h3>
+            </div>
+            <div className="card-content">
+              {attendances.length > 0 ? (
+                attendances.map((attendance) => (
+                  <div key={attendance.id} className="attendance-item">
+                    <div className="attendance-header">
+                      <span className="attendance-date">
+                        <strong>{new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}</strong>
+                      </span>
+                    </div>
+                    <div className="attendance-services">
+                      {attendance.services.map((service, index) => (
+                        <div key={index} className="service-item">
+                          <span className="service-name">• {service.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>Nenhum atendimento encontrado.</p>
+              )}
+            </div>
+          </DashboardCard>
+          
           <DashboardCard>
             <div className="card-header">
               <div className="icon">
@@ -243,42 +400,8 @@ const ClientDashboardPage = () => {
               </div>
             </div>
           </DashboardCard>
-          
-          <DashboardCard>
-            <div className="card-header">
-              <div className="icon">
-                <FaCut />
-              </div>
-              <h3>Histórico de Serviços</h3>
-            </div>
-            <div className="card-content">
-              {attendances.length > 0 ? (
-                attendances.map((attendance) => (
-                  <div key={attendance.id} className="info-item">
-                    <span className="label">{attendance.service.name}</span>
-                    <span className="value">
-                      {new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p>Nenhum atendimento encontrado.</p>
-              )}
-            </div>
-          </DashboardCard>
-          
-          <DashboardCard>
-            <div className="card-header">
-              <div className="icon">
-                <FaCalendar />
-              </div>
-              <h3>Próximos Agendamentos</h3>
-            </div>
-            <div className="card-content">
-              <p>Funcionalidade de agendamento será implementada em breve.</p>
-            </div>
-          </DashboardCard>
         </DashboardGrid>
+        <Footer />
       </Container>
     </PageContainer>
   );

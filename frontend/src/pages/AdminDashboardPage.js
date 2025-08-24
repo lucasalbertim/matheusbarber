@@ -1,20 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle } from 'react-icons/fa';
+import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import Footer from '../components/Footer';
 
 const PageContainer = styled.div`
   min-height: 100vh;
   background: var(--background);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+  flex: 1;
 `;
 
 const PageHeader = styled.div`
@@ -31,13 +40,36 @@ const PageHeader = styled.div`
     color: var(--text-secondary);
     font-size: 1.1rem;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 30px;
+    
+    h1 {
+      font-size: 2rem;
+    }
+    
+    p {
+      font-size: 1rem;
+    }
+  }
 `;
 
 const MetricsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-bottom: 40px;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const MetricCard = styled.div`
@@ -65,6 +97,8 @@ const MetricCard = styled.div`
       align-items: center;
       justify-content: center;
       font-size: 20px;
+      background: rgba(32, 172, 159, 0.1); // Alterado para a nova cor
+      color: #20AC9F; // Alterado para a nova cor
     }
     
     .trend {
@@ -100,9 +134,15 @@ const MetricCard = styled.div`
 
 const QuickActionsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 `;
 
 const QuickActionCard = styled.div`
@@ -143,11 +183,11 @@ const QuickActionCard = styled.div`
       gap: 8px;
       
       &.btn-primary {
-        background: var(--primary);
+        background: #20AC9F; // Alterado para a nova cor
         color: var(--accent);
         
         &:hover {
-          background: #000000;
+          background: #1A8C7F; // Alterado para a nova cor
           transform: translateY(-1px);
         }
       }
@@ -221,6 +261,41 @@ const RecentActivityCard = styled.div`
           font-size: 0.9rem;
           color: var(--text-secondary);
         }
+        
+        .activity-description {
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          margin: 2px 0;
+        }
+      }
+    }
+    
+    .loading-activities {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top: 2px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+    }
+    
+    .no-activities {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      
+      p {
+        margin: 0;
+        font-style: italic;
       }
     }
   }
@@ -230,14 +305,16 @@ const AdminDashboardPage = () => {
   const { admin } = useAuth();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState({
-    total_clients: 0,
-    total_attendances: 0,
-    total_revenue: 0,
-    inactive_clients: 0,
-    today_attendances: 0,
-    pending_payments: 0
+    totalClients: 0,
+    totalAttendances: 0,
+    totalRevenue: 0,
+    inactiveClients: 0,
+    todayAttendances: 0,
+    pendingPayments: 0
   });
   const [loading, setLoading] = useState(true);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
     if (!admin) {
@@ -246,6 +323,7 @@ const AdminDashboardPage = () => {
     }
     
     fetchMetrics();
+    fetchRecentActivities();
   }, [admin, navigate]);
 
   const fetchMetrics = async () => {
@@ -257,6 +335,53 @@ const AdminDashboardPage = () => {
       toast.error('Erro ao carregar métricas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecentActivities = async () => {
+    setLoadingActivities(true);
+    try {
+      const response = await api.get('/admin/reports/recent-activities?limit=5');
+      setRecentActivities(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar atividades recentes:', error);
+      toast.error('Erro ao carregar atividades recentes');
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - activityTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Agora mesmo';
+    if (diffInMinutes < 60) return `Há ${diffInMinutes} min`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Há ${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `Há ${diffInDays} dias`;
+    
+    return activityTime.toLocaleDateString('pt-BR');
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'new_attendance':
+        return <FaUsers style={{ color: 'var(--primary)' }} />;
+      case 'attendance_started':
+        return <FaClock style={{ color: 'var(--secondary)' }} />;
+      case 'attendance_completed':
+        return <FaCheckCircle style={{ color: 'var(--success)' }} />;
+      case 'attendance_finished':
+        return <FaCut style={{ color: 'var(--secondary)' }} />;
+      case 'attendance_updated':
+        return <FaExclamationCircle style={{ color: 'var(--warning)' }} />;
+      default:
+        return <FaUsers />;
     }
   };
 
@@ -287,9 +412,11 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(26, 26, 26, 0.1)', color: 'var(--primary)' }}>
                 <FaUsers />
               </div>
-              <div className="trend positive">+12%</div>
+              <div className={`trend ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
-            <div className="metric-value">{metrics.total_clients}</div>
+            <div className="metric-value">{metrics.totalClients}</div>
             <div className="metric-label">Total de Clientes</div>
           </MetricCard>
           
@@ -298,9 +425,11 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--secondary)' }}>
                 <FaCut />
               </div>
-              <div className="trend positive">+8%</div>
+              <div className={`trend ${(metrics.growthPercentages?.attendancesGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.attendancesGrowth ? `${metrics.growthPercentages.attendancesGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.attendancesGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
-            <div className="metric-value">{metrics.total_attendances}</div>
+            <div className="metric-value">{metrics.totalAttendances}</div>
             <div className="metric-label">Total de Atendimentos</div>
           </MetricCard>
           
@@ -309,9 +438,11 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(40, 167, 69, 0.1)', color: 'var(--success)' }}>
                 <FaDollarSign />
               </div>
-              <div className="trend positive">+15%</div>
+              <div className={`trend ${(metrics.growthPercentages?.revenueGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.growthPercentages?.revenueGrowth ? `${metrics.growthPercentages.revenueGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.revenueGrowth.toFixed(1)}%` : '0%'}
+              </div>
             </div>
-            <div className="metric-value">R$ {metrics.total_revenue.toFixed(2)}</div>
+            <div className="metric-value">R$ {(metrics.totalRevenue || 0).toFixed(2)}</div>
             <div className="metric-label">Receita Total</div>
           </MetricCard>
           
@@ -320,9 +451,11 @@ const AdminDashboardPage = () => {
               <div className="icon" style={{ background: 'rgba(220, 53, 69, 0.1)', color: 'var(--error)' }}>
                 <FaExclamationCircle />
               </div>
-              <div className="trend negative">-5%</div>
+              <div className="trend neutral">
+                {metrics.totalClients > 0 ? `${((metrics.inactiveClients / metrics.totalClients) * 100).toFixed(1)}%` : '0%'}
+              </div>
             </div>
-            <div className="metric-value">{metrics.inactive_clients}</div>
+            <div className="metric-value">{metrics.inactiveClients}</div>
             <div className="metric-label">Clientes Inativos</div>
           </MetricCard>
         </MetricsGrid>
@@ -363,6 +496,24 @@ const AdminDashboardPage = () => {
               </button>
             </div>
           </QuickActionCard>
+
+          <QuickActionCard>
+            <h3>
+              <FaCut className="icon" />
+              Gestão de Serviços
+            </h3>
+            <div className="action-buttons">
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/admin/servicos')}
+              >
+                Ver Serviços
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate('/admin/servicos')}>
+                Novo Serviço
+              </button>
+            </div>
+          </QuickActionCard>
           
           <QuickActionCard>
             <h3>
@@ -389,38 +540,33 @@ const AdminDashboardPage = () => {
             Atividade Recente
           </h3>
           <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaUsers />
+            {loadingActivities ? (
+              <div className="loading-activities">
+                <div className="spinner"></div>
+                Carregando atividades...
               </div>
-              <div className="activity-content">
-                <div className="activity-title">Novo cliente cadastrado</div>
-                <div className="activity-time">Há 2 horas</div>
+            ) : recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <div key={activity.id} className="activity-item">
+                  <div className="activity-icon">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="activity-content">
+                    <div className="activity-title">{activity.title}</div>
+                    <div className="activity-description">{activity.description}</div>
+                    <div className="activity-time">{formatTimeAgo(activity.timestamp)}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-activities">
+                <p>Nenhuma atividade recente</p>
               </div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaCut />
-              </div>
-              <div className="activity-content">
-                <div className="activity-title">Atendimento concluído</div>
-                <div className="activity-time">Há 4 horas</div>
-              </div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon">
-                <FaDollarSign />
-              </div>
-              <div className="activity-content">
-                <div className="activity-title">Pagamento recebido</div>
-                <div className="activity-time">Há 6 horas</div>
-              </div>
-            </div>
+            )}
           </div>
         </RecentActivityCard>
       </Container>
+      <Footer />
     </PageContainer>
   );
 };

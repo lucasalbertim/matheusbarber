@@ -1,15 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title as ChartTitle,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaFilter } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
+
+// Registrar componentes do Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ChartTitle,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
@@ -17,10 +49,17 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
-  color: var(--primary);
+  color: #20AC9F;
   margin: 0;
 `;
 
@@ -62,6 +101,12 @@ const FilterRow = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
 `;
 
 const FilterGroup = styled.div`
@@ -104,11 +149,17 @@ const FilterActions = styled.div`
   display: flex;
   gap: 15px;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
 `;
 
 const FilterButton = styled.button`
   padding: 12px 24px;
-  background: var(--primary);
+  background: #20AC9F;
   color: white;
   border: none;
   border-radius: 8px;
@@ -124,7 +175,7 @@ const FilterButton = styled.button`
 
 const ExportButton = styled.button`
   padding: 12px 24px;
-  background: var(--success);
+  background: #20AC9F;
   color: white;
   border: none;
   border-radius: 8px;
@@ -146,6 +197,12 @@ const MetricsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
 `;
 
 const MetricCard = styled.div`
@@ -156,7 +213,7 @@ const MetricCard = styled.div`
   text-align: center;
   border-left: 4px solid var(--primary);
 
-  &.revenue { border-left-color: var(--success); }
+  &.revenue { border-left-color: #20AC9F; }
   &.clients { border-left-color: var(--info); }
   &.attendances { border-left-color: var(--warning); }
   &.average { border-left-color: var(--secondary); }
@@ -198,7 +255,7 @@ const ChartsSection = styled.div`
   margin-bottom: 30px;
 `;
 
-const ChartTitle = styled.h3`
+const ChartTitleStyled = styled.h3`
   color: var(--text);
   margin-bottom: 20px;
   display: flex;
@@ -294,7 +351,35 @@ const ReportsPage = () => {
     averageTicket: 0
   });
   const [topClients, setTopClients] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
 
+  const fetchReports = useCallback(async () => {
+    try {
+      const params = {
+        period: filters.period
+      };
+      
+      if (filters.startDate && filters.endDate) {
+        params.start_date = filters.startDate;
+        params.end_date = filters.endDate;
+      }
+
+      const [metricsResponse, clientsResponse, revenueResponse] = await Promise.all([
+        api.get('/admin/reports/summary-by-period', { params }),
+        api.get('/admin/reports/top-clients'),
+        api.get('/admin/reports/revenue-chart', { params })
+      ]);
+
+      setMetrics(metricsResponse.data);
+      setTopClients(clientsResponse.data);
+      setRevenueData(revenueResponse.data);
+    } catch (error) {
+      console.error('Erro ao buscar relatórios:', error);
+      toast.error('Erro ao carregar relatórios');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
 
   useEffect(() => {
     if (!isAdmin()) {
@@ -302,25 +387,7 @@ const ReportsPage = () => {
       return;
     }
     fetchReports();
-  }, [isAdmin, navigate]);
-
-  const fetchReports = async () => {
-    try {
-      const [metricsResponse, clientsResponse] = await Promise.all([
-        api.get('/admin/reports/summary'),
-        api.get('/admin/reports/top-clients')
-      ]);
-
-      setMetrics(metricsResponse.data);
-      setTopClients(clientsResponse.data);
-      // setRevenueByPeriod(revenueResponse.data); // Para uso futuro
-    } catch (error) {
-      console.error('Erro ao buscar relatórios:', error);
-      toast.error('Erro ao carregar relatórios');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [isAdmin, navigate, fetchReports]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -454,7 +521,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{formatCurrency(metrics.totalRevenue)}</div>
           <div className="label">Receita Total</div>
-          <div className="change positive">+12.5% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.revenueGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.revenueGrowth ? `${metrics.growthPercentages.revenueGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.revenueGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="clients">
@@ -463,7 +532,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{metrics.totalClients}</div>
           <div className="label">Total de Clientes</div>
-          <div className="change positive">+8.3% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.clientsGrowth ? `${metrics.growthPercentages.clientsGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.clientsGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="attendances">
@@ -472,7 +543,9 @@ const ReportsPage = () => {
           </div>
           <div className="number">{metrics.totalAttendances}</div>
           <div className="label">Total de Atendimentos</div>
-          <div className="change positive">+15.2% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.attendancesGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.attendancesGrowth ? `${metrics.growthPercentages.attendancesGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.attendancesGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
         
         <MetricCard className="average">
@@ -481,22 +554,28 @@ const ReportsPage = () => {
           </div>
           <div className="number">{formatCurrency(metrics.averageTicket)}</div>
           <div className="label">Ticket Médio</div>
-          <div className="change neutral">0% vs mês anterior</div>
+          <div className={`change ${(metrics.growthPercentages?.averageTicketGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
+            {metrics.growthPercentages?.averageTicketGrowth ? `${metrics.growthPercentages.averageTicketGrowth >= 0 ? '+' : ''}${metrics.growthPercentages.averageTicketGrowth.toFixed(1)}%` : '0%'} vs período anterior
+          </div>
         </MetricCard>
       </MetricsGrid>
 
       <ChartsSection>
-        <ChartTitle>
+        <ChartTitleStyled>
           <FaChartBar />
           Receita por Período
-        </ChartTitle>
-        <ChartPlaceholder>
-          <div className="icon">
-            <FaChartBar />
-          </div>
-          <h4>Gráfico de Receita</h4>
-          <p>Este gráfico mostrará a evolução da receita ao longo do tempo.</p>
-        </ChartPlaceholder>
+        </ChartTitleStyled>
+        {revenueData.length > 0 ? (
+          <ModernChart data={revenueData} />
+        ) : (
+          <ChartPlaceholder>
+            <div className="icon">
+              <FaChartBar />
+            </div>
+            <h4>Nenhum dado disponível</h4>
+            <p>Não há dados de receita para o período selecionado.</p>
+          </ChartPlaceholder>
+        )}
       </ChartsSection>
 
       <TableSection>
@@ -540,7 +619,105 @@ const ReportsPage = () => {
           ))
         )}
       </TableSection>
+      <Footer />
     </Container>
+  );
+};
+
+// Componente de gráfico moderno usando Chart.js
+const ModernChart = ({ data }) => {
+  const chartData = {
+    labels: data.map(item => item.label),
+    datasets: [
+      {
+        label: 'Receita (R$)',
+        data: data.map(item => item.revenue),
+        borderColor: '#20AC9F',
+        backgroundColor: 'rgba(32, 172, 159, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#20AC9F',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#20AC9F',
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#28a745',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: function(context) {
+            return `Receita: R$ ${context.parsed.y.toFixed(2)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          borderColor: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          color: '#666',
+          font: {
+            size: 12
+          },
+          maxRotation: 45,
+          minRotation: 45
+        }
+      },
+      y: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          borderColor: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          color: '#666',
+          font: {
+            size: 12
+          },
+          callback: function(value) {
+            return `R$ ${value.toFixed(0)}`;
+          }
+        },
+        beginAtZero: true
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    elements: {
+      point: {
+        hoverRadius: 8
+      }
+    }
+  };
+
+  return (
+    <div style={{ width: '100%', height: '400px', position: 'relative' }}>
+      <Line data={chartData} options={options} />
+    </div>
   );
 };
 

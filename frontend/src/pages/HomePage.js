@@ -1,19 +1,30 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import Footer from '../components/Footer';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background) 0%, #e9ecef 100%);
+  
+  @media (max-width: 768px) {
+    min-height: 100vh;
+  }
 `;
 
 const HeroSection = styled.section`
   padding: 80px 20px;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary) 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #20AC9F 100%);
   color: var(--accent);
   margin-bottom: 60px;
+  
+  @media (max-width: 768px) {
+    padding: 40px 15px;
+    margin-bottom: 40px;
+  }
 `;
 
 const HeroContent = styled.div`
@@ -47,22 +58,15 @@ const LogoDisplay = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 40px;
-  
-  .logo-circle {
+
+  img {
     width: 120px;
     height: 120px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    font-weight: bold;
-    color: var(--primary);
     box-shadow: 0 8px 32px rgba(212, 175, 55, 0.4);
     margin-right: 20px;
   }
-  
+
   .logo-text {
     text-align: left;
     
@@ -70,12 +74,38 @@ const LogoDisplay = styled.div`
       font-size: 2rem;
       font-weight: 700;
       margin: 0;
-      color: var(--secondary);
+      color: var(--title);
     }
     
     span {
       font-size: 1rem;
       opacity: 0.8;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+    
+    .logo-circle {
+      width: 100px;
+      height: 100px;
+      font-size: 40px;
+      margin-right: 0;
+      margin-bottom: 10px;
+    }
+    
+    .logo-text {
+      text-align: center;
+      
+      h2 {
+        font-size: 1.8rem;
+      }
+      
+      span {
+        font-size: 0.9rem;
+      }
     }
   }
 `;
@@ -84,6 +114,10 @@ const MainContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  
+  @media (max-width: 768px) {
+    padding: 0 15px;
+  }
 `;
 
 const OptionsSection = styled.section`
@@ -112,7 +146,7 @@ const OptionCard = styled(Link)`
   &:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    border-color: var(--secondary);
+    border-color: #20AC9F;
   }
   
   .card-header {
@@ -164,6 +198,39 @@ const OptionCard = styled(Link)`
       font-size: 1.1rem;
     }
   }
+  
+  @media (max-width: 768px) {
+    padding: 25px;
+    
+    .card-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      
+      .icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+      }
+      
+      .title h3 {
+        font-size: 1.3rem;
+      }
+    }
+    
+    .card-content {
+      p {
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+      }
+      
+      .action {
+        justify-content: center;
+        font-size: 1rem;
+      }
+    }
+  }
 `;
 
 const FeaturesSection = styled.section`
@@ -176,12 +243,26 @@ const FeaturesSection = styled.section`
     color: var(--primary);
     margin-bottom: 50px;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 60px;
+    
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+    }
+  }
 `;
 
 const FeaturesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 30px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 `;
 
 const FeatureCard = styled.div`
@@ -193,7 +274,7 @@ const FeatureCard = styled.div`
   .icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
+    background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -214,15 +295,46 @@ const FeatureCard = styled.div`
     color: var(--text-secondary);
     line-height: 1.5;
   }
+  
+  @media (max-width: 768px) {
+    padding: 25px 15px;
+    
+    .icon {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+    
+    p {
+      font-size: 0.9rem;
+    }
+  }
 `;
 
 const HomePage = () => {
+  const { admin, logoutAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Se admin estiver logado, fazer logout automático
+    if (admin) {
+      logoutAdmin();
+      // Não redirecionar, deixar na página inicial
+    }
+  }, [admin, logoutAdmin]);
+
   return (
     <HomeContainer>
       <HeroSection>
         <HeroContent>
           <LogoDisplay>
-            <div className="logo-circle">M</div>
+            <img src="/logo.jpeg" alt="Matheus Barber Logo" />
             <div className="logo-text">
               <h2>Matheus Barber</h2>
               <span>Desde 2018</span>
@@ -317,6 +429,7 @@ const HomePage = () => {
             </FeatureCard>
           </FeaturesGrid>
         </FeaturesSection>
+        <Footer />
       </MainContent>
     </HomeContainer>
   );

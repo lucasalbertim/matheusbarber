@@ -37,12 +37,19 @@ class AdminResponse(AdminBase):
     id: int
     created_at: datetime
     is_active: bool
+    is_first_login: bool
     
     class Config:
         from_attributes = True
 
 class AdminLogin(BaseModel):
     username: str
+    password: str
+
+class AdminUpdate(BaseModel):
+    username: str
+    name: str
+    email: EmailStr
     password: str
 
 class AdminToken(BaseModel):
@@ -71,13 +78,12 @@ class ServiceResponse(ServiceBase):
 # Schemas de Atendimento
 class AttendanceBase(BaseModel):
     client_id: int
-    service_id: int
     appointment_date: datetime
     payment_method: Optional[str] = None
     notes: Optional[str] = None
 
 class AttendanceCreate(AttendanceBase):
-    pass
+    service_ids: List[int]
 
 class AttendanceUpdate(BaseModel):
     status: Optional[str] = None
@@ -85,17 +91,27 @@ class AttendanceUpdate(BaseModel):
     payment_status: Optional[str] = None
     notes: Optional[str] = None
 
+class AttendanceCancel(BaseModel):
+    cancellation_reason: str
+
 class AttendanceResponse(AttendanceBase):
     id: int
     status: str
     payment_status: str
+    cancellation_reason: Optional[str] = None
+    cancelled_by: Optional[str] = None
+    cancelled_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     client: ClientResponse
-    service: ServiceResponse
+    services: List[ServiceResponse]
     
     class Config:
         from_attributes = True
+
+class AttendanceCreatedResponse(BaseModel):
+    attendance: AttendanceResponse
+    queue_position: int
 
 # Schemas de Relatórios
 class ReportsSummary(BaseModel):
