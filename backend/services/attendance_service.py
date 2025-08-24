@@ -426,7 +426,7 @@ class AttendanceService:
                 start = today - timedelta(days=12 * 7)  # Últimas 12 semanas
                 end = today
             elif period == 'month':
-                start = today.replace(day=1) - timedelta(days=365)  # Últimos 12 meses
+                start = today - timedelta(days=365)  # Últimos 12 meses
                 end = today
             elif period == 'quarter':
                 start = today - timedelta(days=4 * 90)  # Últimos 4 trimestres
@@ -444,43 +444,49 @@ class AttendanceService:
         
         while current <= end:
             if period == 'day':
-                # Dados diários
+                # Dados diários - simplificado
+                day_start = current
+                day_end = current
+                
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
                         Attendance.status != "cancelled",
-                        func.date(Attendance.appointment_date) == current
+                        func.date(Attendance.appointment_date) == day_start
                     )
                 ).scalar() or 0.0
                 
                 data_points.append({
-                    "date": current.isoformat(),
+                    "date": day_start.isoformat(),
                     "revenue": float(revenue),
                     "label": current.strftime('%d/%m')
                 })
                 current += timedelta(days=1)
                 
             elif period == 'week':
-                # Dados semanais
-                week_end = min(current + timedelta(days=6), end)
+                # Dados semanais - simplificado
+                week_start = current
+                week_end = current + timedelta(days=6)
+                
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
                         Attendance.status != "cancelled",
-                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) >= week_start,
                         func.date(Attendance.appointment_date) <= week_end
                     )
                 ).scalar() or 0.0
                 
                 data_points.append({
-                    "date": current.isoformat(),
+                    "date": week_start.isoformat(),
                     "revenue": float(revenue),
                     "label": f"Sem {current.strftime('%U')}"
                 })
                 current += timedelta(days=7)
                 
             elif period == 'month':
-                # Dados mensais
+                # Dados mensais - simplificado
+                month_start = current.replace(day=1)
                 if current.month == 12:
                     month_end = current.replace(year=current.year + 1, month=1, day=1) - timedelta(days=1)
                 else:
@@ -490,13 +496,13 @@ class AttendanceService:
                     and_(
                         Attendance.payment_status == "paid",
                         Attendance.status != "cancelled",
-                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) >= month_start,
                         func.date(Attendance.appointment_date) <= month_end
                     )
                 ).scalar() or 0.0
                 
                 data_points.append({
-                    "date": current.isoformat(),
+                    "date": month_start.isoformat(),
                     "revenue": float(revenue),
                     "label": current.strftime('%b/%Y')
                 })
@@ -507,45 +513,55 @@ class AttendanceService:
                     current = current.replace(month=current.month + 1, day=1)
                     
             elif period == 'quarter':
-                # Dados trimestrais
-                quarter_end_month = ((current.month - 1) // 3) * 3 + 3
-                if quarter_end_month > 12:
-                    quarter_end = current.replace(year=current.year + 1, month=quarter_end_month - 12, day=1) - timedelta(days=1)
+                # Dados trimestrais - simplificado
+                # Calcular o fim do trimestre atual
+                quarter = (current.month - 1) // 3
+                quarter_start_month = quarter * 3 + 1
+                quarter_end_month = quarter_start_month + 2
+                
+                quarter_start = current.replace(month=quarter_start_month, day=1)
+                if quarter_end_month == 12:
+                    quarter_end = current.replace(month=12, day=31)
                 else:
-                    quarter_end = current.replace(month=quarter_end_month, day=1) - timedelta(days=1)
+                    quarter_end = current.replace(month=quarter_end_month + 1, day=1) - timedelta(days=1)
                 
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
                         Attendance.status != "cancelled",
-                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) >= quarter_start,
                         func.date(Attendance.appointment_date) <= quarter_end
                     )
                 ).scalar() or 0.0
                 
                 data_points.append({
-                    "date": current.isoformat(),
+                    "date": quarter_start.isoformat(),
                     "revenue": float(revenue),
-                    "label": f"T{((current.month - 1) // 3) + 1}/{current.year}"
+                    "label": f"T{quarter + 1}/{current.year}"
                 })
                 
-                current = quarter_end + timedelta(days=1)
+                # Avançar para o próximo trimestre
+                if quarter_end_month == 12:
+                    current = current.replace(year=current.year + 1, month=1, day=1)
+                else:
+                    current = current.replace(month=quarter_end_month + 1, day=1)
                 
             elif period == 'year':
-                # Dados anuais
+                # Dados anuais - simplificado
+                year_start = current.replace(month=1, day=1)
                 year_end = current.replace(month=12, day=31)
                 
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
                         Attendance.status != "cancelled",
-                        func.date(Attendance.appointment_date) >= current,
+                        func.date(Attendance.appointment_date) >= year_start,
                         func.date(Attendance.appointment_date) <= year_end
                     )
                 ).scalar() or 0.0
                 
                 data_points.append({
-                    "date": current.isoformat(),
+                    "date": year_start.isoformat(),
                     "revenue": float(revenue),
                     "label": str(current.year)
                 })
