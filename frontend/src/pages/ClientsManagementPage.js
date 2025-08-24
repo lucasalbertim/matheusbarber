@@ -147,9 +147,54 @@ const ExportButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
+  position: relative;
 
   &:hover {
     background: var(--success-dark);
+  }
+`;
+
+const ExportDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 150px;
+  margin-top: 5px;
+`;
+
+const ExportOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: var(--background);
+  }
+
+  &:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--border);
   }
 `;
 
@@ -434,6 +479,7 @@ const ClientsManagementPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [inactiveDays, setInactiveDays] = useState(45);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -548,6 +594,7 @@ ID: ${client.id}
       window.URL.revokeObjectURL(url);
       
       toast.success('Lista de clientes exportada com sucesso!');
+      setShowExportDropdown(false);
     } catch (error) {
       console.error('Erro ao exportar Excel:', error);
       toast.error('Erro ao exportar lista de clientes');
@@ -570,6 +617,7 @@ ID: ${client.id}
       window.URL.revokeObjectURL(url);
       
       toast.success('Lista de clientes exportada com sucesso!');
+      setShowExportDropdown(false);
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
       toast.error('Erro ao exportar lista de clientes');
@@ -590,6 +638,20 @@ ID: ${client.id}
       toast.error('Erro ao salvar configuração');
     }
   };
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-container')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   const handleReactivateClient = async (clientId) => {
     if (!window.confirm('Deseja reativar este cliente?')) {
@@ -659,14 +721,27 @@ ID: ${client.id}
           <FaUserTimes />
           Inativar ({inactiveDays} dias)
         </AutoInactivateButton>
-        <ExportButton onClick={handleExportExcel}>
-          <FaFileExcel />
-          Excel
-        </ExportButton>
-        <ExportButton onClick={handleExportPDF}>
-          <FaFilePdf />
-          PDF
-        </ExportButton>
+        
+        <div className="export-container" style={{ position: 'relative' }}>
+          <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
+            <FaFileExcel />
+            Exportar
+          </ExportButton>
+          
+          {showExportDropdown && (
+            <ExportDropdown>
+              <ExportOption onClick={handleExportExcel}>
+                <FaFileExcel />
+                Exportar Excel
+              </ExportOption>
+              <ExportOption onClick={handleExportPDF}>
+                <FaFilePdf />
+                Exportar PDF
+              </ExportOption>
+            </ExportDropdown>
+          )}
+        </div>
+        
         <AddButton onClick={handleAddClient}>
           <FaPlus />
           Novo Cliente
