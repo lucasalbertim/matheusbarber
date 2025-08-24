@@ -17,7 +17,7 @@ from schemas import (
     AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
     ServiceCreate, ServiceResponse,
     AttendanceCreate, AttendanceResponse,
-    AttendanceUpdate
+    AttendanceUpdate, AttendanceCancel
 )
 from services import (
     client_service, admin_service, service_service,
@@ -497,6 +497,25 @@ def delete_attendance(
     """Excluir atendimento (apenas admin)"""
     attendance_service.delete_attendance(db, attendance_id)
     return {"message": "Atendimento excluído com sucesso"}
+
+@app.put("/admin/attendance/{attendance_id}/cancel", response_model=AttendanceResponse)
+def cancel_attendance_admin(
+    attendance_id: int,
+    cancellation: AttendanceCancel,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Cancelar atendimento (apenas admin)"""
+    return attendance_service.cancel_attendance_admin(db, attendance_id, cancellation.cancellation_reason)
+
+@app.put("/attendance/{attendance_id}/cancel", response_model=AttendanceResponse)
+def cancel_attendance_client(
+    attendance_id: int,
+    cancellation: AttendanceCancel,
+    db: Session = Depends(get_db)
+):
+    """Cancelar atendimento (apenas cliente)"""
+    return attendance_service.cancel_attendance_client(db, attendance_id, cancellation.cancellation_reason)
 
 # Rotas de Relatórios
 @app.get("/admin/reports/summary")

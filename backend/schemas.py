@@ -91,10 +91,16 @@ class AttendanceUpdate(BaseModel):
     payment_status: Optional[str] = None
     notes: Optional[str] = None
 
+class AttendanceCancel(BaseModel):
+    cancellation_reason: str
+
 class AttendanceResponse(AttendanceBase):
     id: int
     status: str
     payment_status: str
+    cancellation_reason: Optional[str] = None
+    cancelled_by: Optional[str] = None
+    cancelled_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     client: ClientResponse

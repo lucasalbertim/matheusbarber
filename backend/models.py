@@ -62,6 +62,9 @@ class Attendance(Base):
     payment_method = Column(String(50), nullable=True)  # cash, card, pix
     payment_status = Column(String(20), default="pending")  # pending, paid, cancelled
     notes = Column(Text, nullable=True)
+    cancellation_reason = Column(Text, nullable=True)
+    cancelled_by = Column(String(20), nullable=True)  # admin, client
+    cancelled_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

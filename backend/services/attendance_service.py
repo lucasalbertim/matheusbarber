@@ -546,4 +546,46 @@ class AttendanceService:
             "message": "Exportação simulada - implementar geração de arquivo Excel"
         }
 
+    def cancel_attendance_admin(self, db: Session, attendance_id: int, cancellation_reason: str) -> Attendance:
+        """Cancelar atendimento (apenas admin)"""
+        db_attendance = self.get_attendance(db, attendance_id)
+        
+        if db_attendance.status == "finished":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não é possível cancelar um atendimento finalizado"
+            )
+        
+        db_attendance.status = "cancelled"
+        db_attendance.cancellation_reason = cancellation_reason
+        db_attendance.cancelled_by = "admin"
+        db_attendance.cancelled_at = get_recife_datetime()
+        db_attendance.updated_at = get_recife_datetime()
+        
+        db.commit()
+        db.refresh(db_attendance)
+        
+        return db_attendance
+
+    def cancel_attendance_client(self, db: Session, attendance_id: int, cancellation_reason: str) -> Attendance:
+        """Cancelar atendimento (apenas cliente)"""
+        db_attendance = self.get_attendance(db, attendance_id)
+        
+        if db_attendance.status != "waiting":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cliente só pode cancelar atendimentos que ainda não foram iniciados"
+            )
+        
+        db_attendance.status = "cancelled"
+        db_attendance.cancellation_reason = cancellation_reason
+        db_attendance.cancelled_by = "client"
+        db_attendance.cancelled_at = get_recife_datetime()
+        db_attendance.updated_at = get_recife_datetime()
+        
+        db.commit()
+        db.refresh(db_attendance)
+        
+        return db_attendance
+
 attendance_service = AttendanceService()
