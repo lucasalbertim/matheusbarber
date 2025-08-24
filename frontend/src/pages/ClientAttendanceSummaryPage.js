@@ -236,7 +236,29 @@ const ClientAttendanceSummaryPage = () => {
         navigate('/cliente/atendimento/iniciar');
       }
     };
+    
     load();
+    
+    // Controle de navegação do navegador - redireciona para dashboard ao tentar voltar
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    
+    const handlePopState = (event) => {
+      event.preventDefault();
+      navigate('/cliente/dashboard');
+    };
+    
+    // Adiciona listeners para controlar a navegação
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remove listeners quando o componente for desmontado
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [client, navigate]);
 
   const handleBack = () => {

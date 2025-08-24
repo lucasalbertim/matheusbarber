@@ -233,7 +233,31 @@ const ClientDashboardPage = () => {
     };
     
     fetchAttendances();
-  }, [client, navigate]);
+    
+    // Controle de navegação do navegador - logout automático ao tentar voltar
+    const handleBeforeUnload = (event) => {
+      // Previne que o usuário saia da página sem fazer logout
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    
+    const handlePopState = (event) => {
+      // Quando o usuário clica em voltar no navegador, faz logout automático
+      event.preventDefault();
+      logoutClient();
+      navigate('/');
+    };
+    
+    // Adiciona listeners para controlar a navegação
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remove listeners quando o componente for desmontado
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [client, navigate, logoutClient]);
 
 
 
@@ -273,34 +297,40 @@ const ClientDashboardPage = () => {
           <DashboardCard>
             <div className="card-header">
               <div className="icon">
-                <FaUser />
+                <FaCalendar />
               </div>
-              <h3>Informações Pessoais</h3>
+              <h3>Iniciar Atendimento</h3>
             </div>
             <div className="card-content">
-              <div className="info-item">
-                <span className="label">Nome:</span>
-                <span className="value">{client.name}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">CPF:</span>
-                <span className="value">{client.cpf}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Telefone:</span>
-                <span className="value">{client.phone}</span>
-              </div>
-              {client.email && (
-                <div className="info-item">
-                  <span className="label">Email:</span>
-                  <span className="value">{client.email}</span>
-                </div>
-              )}
-              <div className="info-item">
-                <span className="label">Cliente desde:</span>
-                <span className="value">
-                  {new Date(client.created_at).toLocaleDateString('pt-BR')}
-                </span>
+              <p>Selecione serviços e avance até o pagamento para concluir seu atendimento.</p>
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <button 
+                  className="btn" 
+                  onClick={() => navigate('/cliente/atendimento/iniciar')}
+                  style={{
+                    background: 'linear-gradient(135deg, #20AC9F 0%, #1A8C7F 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '15px 30px',
+                    borderRadius: '25px',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(32, 172, 159, 0.3)',
+                    transition: 'all 0.3s ease',
+                    minWidth: '200px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(32, 172, 159, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(32, 172, 159, 0.3)';
+                  }}
+                >
+                  Começar Atendimento
+                </button>
               </div>
             </div>
           </DashboardCard>
@@ -339,15 +369,35 @@ const ClientDashboardPage = () => {
           <DashboardCard>
             <div className="card-header">
               <div className="icon">
-                <FaCalendar />
+                <FaUser />
               </div>
-              <h3>Iniciar Atendimento</h3>
+              <h3>Informações Pessoais</h3>
             </div>
             <div className="card-content">
-              <p>Selecione serviços e avance até o pagamento para concluir seu atendimento.</p>
-              <button className="btn" onClick={() => navigate('/cliente/atendimento/iniciar')}>
-                Começar
-              </button>
+              <div className="info-item">
+                <span className="label">Nome:</span>
+                <span className="value">{client.name}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">CPF:</span>
+                <span className="value">{client.cpf}</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Telefone:</span>
+                <span className="value">{client.phone}</span>
+              </div>
+              {client.email && (
+                <div className="info-item">
+                  <span className="label">Email:</span>
+                  <span className="value">{client.email}</span>
+                </div>
+              )}
+              <div className="info-item">
+                <span className="label">Cliente desde:</span>
+                <span className="value">
+                  {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
             </div>
           </DashboardCard>
         </DashboardGrid>

@@ -74,6 +74,9 @@ docker-compose exec backend python init_db.py
 # Você deve ver:
 # ✅ Administrador criado com sucesso!
 # ✅ Serviços de exemplo criados com sucesso!
+
+# Se você já tem um banco existente, execute a migração:
+docker-compose exec backend python migrate_add_first_login.py
 ```
 
 ### 6. Acesso ao Sistema
@@ -95,8 +98,27 @@ docker-compose exec backend python init_db.py
 - **Credenciais padrão**:
   - Username: `admin`
   - Senha: `admin123`
+- **Primeiro Login**: Será redirecionado para configuração inicial
 
 ## 🧪 Testando o Sistema
+
+### 🔐 Primeiro Login do Administrador
+1. **Acesse**: http://localhost:3000/admin/login
+2. **Use as credenciais padrão**:
+   - Username: `admin`
+   - Senha: `admin123`
+3. **Será redirecionado** para a tela de configuração inicial
+4. **Configure suas informações**:
+   - Username personalizado
+   - Nome completo
+   - Email válido
+   - Nova senha segura
+5. **Após salvar**, será redirecionado para o dashboard
+
+### ⚠️ Importante
+- O primeiro login é obrigatório para segurança
+- As credenciais padrão devem ser alteradas
+- Após a configuração, o sistema funcionará normalmente
 
 ### Teste 1: Fluxo do Cliente
 1. Acesse http://localhost:3000

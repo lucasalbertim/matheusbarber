@@ -1,7 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaUserTie, FaArrowRight, FaCut, FaStar, FaClock } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
 
 const HomeContainer = styled.div`
@@ -317,6 +318,17 @@ const FeatureCard = styled.div`
 `;
 
 const HomePage = () => {
+  const { admin, logoutAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Se admin estiver logado, fazer logout automático
+    if (admin) {
+      logoutAdmin();
+      // Não redirecionar, deixar na página inicial
+    }
+  }, [admin, logoutAdmin]);
+
   return (
     <HomeContainer>
       <HeroSection>

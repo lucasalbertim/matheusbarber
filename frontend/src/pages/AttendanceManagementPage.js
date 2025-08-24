@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown, FaMoneyBillWave, FaCreditCard, FaQrcode } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown, FaMoneyBillWave, FaCreditCard, FaQrcode, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +45,39 @@ const BackButton = styled.button`
   }
 `;
 
+const TodayIndicator = styled.div`
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  .date {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .description {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 15px;
+    
+    .date {
+      font-size: 1rem;
+    }
+    
+    .description {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
 const StatsContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -80,6 +113,7 @@ const StatCard = styled.div`
   &.waiting .number { color: var(--warning); }
   &.progress .number { color: var(--info); }
   &.finished .number { color: var(--success); }
+  &.cancelled .number { color: var(--error); }
   &.total .number { color: var(--primary); }
 
   @media (max-width: 768px) {
@@ -310,6 +344,11 @@ const StatusBadge = styled.span`
     color: var(--success);
   }
 
+  &.cancelled {
+    background: var(--error-light);
+    color: var(--error);
+  }
+
   @media (max-width: 768px) {
     padding: 8px 16px;
     font-size: 13px;
@@ -402,6 +441,15 @@ const ActionButton = styled.button`
     }
   }
 
+  &.cancel {
+    background: var(--error);
+    color: white;
+
+    &:hover {
+      background: var(--error-dark);
+    }
+  }
+
   @media (max-width: 768px) {
     padding: 12px;
     font-size: 14px;
@@ -440,7 +488,8 @@ const AttendanceManagementPage = () => {
     total: 0,
     waiting: 0,
     progress: 0,
-    finished: 0
+    finished: 0,
+    cancelled: 0
   });
 
   useEffect(() => {
@@ -487,12 +536,15 @@ const AttendanceManagementPage = () => {
   }, [activeFilter, attendances, sortField, sortDirection]);
 
   const calculateStats = (data) => {
-    const total = data.length;
+    // Total apenas de atendimentos finalizados
+    const total = data.filter(a => a.status === 'finished').length;
+    
     const waiting = data.filter(a => a.status === 'waiting').length;
     const progress = data.filter(a => a.status === 'progress').length;
     const finished = data.filter(a => a.status === 'finished').length;
+    const cancelled = data.filter(a => a.status === 'cancelled').length;
 
-    setStats({ total, waiting, progress, finished });
+    setStats({ total, waiting, progress, finished, cancelled });
   };
 
   const sortAttendances = (data, field, direction) => {
@@ -556,6 +608,33 @@ const AttendanceManagementPage = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleCancelAttendance = async (attendance) => {
+    const reason = prompt('Motivo do cancelamento:');
+    if (!reason || reason.trim() === '') {
+      toast.error('Motivo do cancelamento é obrigatório');
+      return;
+    }
+
+    if (!window.confirm(`Confirmar cancelamento do atendimento #${attendance.id}?\n\nMotivo: ${reason}`)) {
+      return;
+    }
+
+    try {
+      await api.put(`/admin/attendance/${attendance.id}/cancel`, {
+        cancellation_reason: reason.trim()
+      });
+      
+      toast.success('Atendimento cancelado com sucesso');
+      // Recarregar atendimentos
+      const response = await api.get('/attendance/today');
+      setAttendances(response.data);
+      calculateStats(response.data);
+    } catch (error) {
+      console.error('Erro ao cancelar atendimento:', error);
+      toast.error(error.response?.data?.detail || 'Erro ao cancelar atendimento');
+    }
+  };
+
   const handleBackClick = () => {
     navigate('/admin/dashboard');
   };
@@ -564,7 +643,8 @@ const AttendanceManagementPage = () => {
     const labels = {
       waiting: 'Aguardando',
       progress: 'Em Andamento',
-      finished: 'Finalizado'
+      finished: 'Finalizado',
+      cancelled: 'Cancelado'
     };
     return labels[status] || status;
   };
@@ -622,14 +702,30 @@ const AttendanceManagementPage = () => {
   return (
     <Container>
       <Header>
-        <Title>Gestão de Atendimentos</Title>
+        <Title>
+          Gestão de Atendimentos - Hoje
+        </Title>
         <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
           Voltar ao Dashboard
         </BackButton>
-      </Header>
+              </Header>
 
-      <StatsContainer>
+        <TodayIndicator>
+          <div className="date">
+            {new Date().toLocaleDateString('pt-BR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
+          <div className="description">
+            Atendimentos em tempo real - Atualiza automaticamente a cada 5 segundos
+          </div>
+        </TodayIndicator>
+
+        <StatsContainer>
         <StatCard className="total">
           <div className="number">{stats.total}</div>
           <div className="label">Total</div>
@@ -645,6 +741,10 @@ const AttendanceManagementPage = () => {
         <StatCard className="finished">
           <div className="number">{stats.finished}</div>
           <div className="label">Finalizados</div>
+        </StatCard>
+        <StatCard className="cancelled">
+          <div className="number">{stats.cancelled}</div>
+          <div className="label">Cancelados</div>
         </StatCard>
       </StatsContainer>
 
@@ -672,6 +772,12 @@ const AttendanceManagementPage = () => {
           onClick={() => setActiveFilter('finished')}
         >
           Finalizados ({stats.finished})
+        </FilterButton>
+        <FilterButton
+          className={activeFilter === 'cancelled' ? 'active' : ''}
+          onClick={() => setActiveFilter('cancelled')}
+        >
+          Cancelados ({stats.cancelled})
         </FilterButton>
       </FilterBar>
 
@@ -746,7 +852,7 @@ const AttendanceManagementPage = () => {
               </PaymentBadge>
               
               <ActionButtons>
-                {attendance.status !== 'finished' && (
+                {attendance.status !== 'finished' && attendance.status !== 'cancelled' && (
                   <ActionButton
                     className="edit"
                     title={attendance.status === 'waiting' ? 'Colocar em Atendimento' : 'Finalizar Atendimento'}
@@ -755,6 +861,17 @@ const AttendanceManagementPage = () => {
                     {attendance.status === 'waiting' ? 'Iniciar' : 'Finalizar'}
                   </ActionButton>
                 )}
+                
+                {attendance.status !== 'finished' && attendance.status !== 'cancelled' && (
+                  <ActionButton
+                    className="cancel"
+                    title="Cancelar Atendimento"
+                    onClick={() => handleCancelAttendance(attendance)}
+                  >
+                    <FaTimes />
+                  </ActionButton>
+                )}
+                
                 <ActionButton
                   className="view"
                   title="Visualizar"
