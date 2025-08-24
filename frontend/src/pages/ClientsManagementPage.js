@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog, FaFileExport } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR } from '../utils/formatters';
@@ -724,7 +724,7 @@ ID: ${client.id}
         
         <div className="export-container" style={{ position: 'relative' }}>
           <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
-            <FaFileExcel />
+            <FaFileExport />
             Exportar
           </ExportButton>
           
