@@ -656,7 +656,7 @@ const AttendanceManagementPage = () => {
     <Container>
       <Header>
         <Title>
-          Gestão de Atendimentos - Hoje ({stats.total || 0})
+          Gestão de Atendimentos - Hoje
         </Title>
         <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
