@@ -310,6 +310,10 @@ const TableHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const ClientRow = styled.div`
@@ -360,14 +364,16 @@ const ClientInfo = styled.div`
   }
 
   @media (max-width: 768px) {
+    text-align: right;
+    
     .name {
-      font-size: 1.1rem;
-      margin-bottom: 8px;
+      font-size: 1rem;
+      margin-bottom: 4px;
       white-space: normal;
     }
     
     .details {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       white-space: normal;
     }
   }
@@ -384,6 +390,38 @@ const ClientField = styled.div`
     white-space: normal;
     font-size: 1rem;
     padding: 8px 0;
+  }
+`;
+
+const MobileField = styled.div`
+  @media (max-width: 768px) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+`;
+
+const MobileLabel = styled.span`
+  @media (max-width: 768px) {
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+`;
+
+const MobileValue = styled.span`
+  @media (max-width: 768px) {
+    color: var(--text);
+    font-size: 1rem;
+    text-align: right;
+    flex: 1;
   }
 `;
 
@@ -790,28 +828,53 @@ ID: ${client.id}
         ) : (
           filteredClients.map((client) => (
             <ClientRow key={client.id}>
-              <ClientInfo>
-                <div className="name">{client.name}</div>
-                <div className="details">ID: {client.id}</div>
-              </ClientInfo>
+              <MobileField>
+                <MobileLabel>Nome:</MobileLabel>
+                <MobileValue>
+                  <ClientInfo>
+                    <div className="name">{client.name}</div>
+                    <div className="details">ID: {client.id}</div>
+                  </ClientInfo>
+                </MobileValue>
+              </MobileField>
               
-              <ClientField>
-                {formatCPF(client.cpf)}
-              </ClientField>
+              <MobileField>
+                <MobileLabel>CPF:</MobileLabel>
+                <MobileValue>
+                  <ClientField>
+                    {formatCPF(client.cpf)}
+                  </ClientField>
+                </MobileValue>
+              </MobileField>
               
-              <ClientField>
-                {formatPhoneBR(client.phone)}
-              </ClientField>
+              <MobileField>
+                <MobileLabel>Telefone:</MobileLabel>
+                <MobileValue>
+                  <ClientField>
+                    {formatPhoneBR(client.phone)}
+                  </ClientField>
+                </MobileValue>
+              </MobileField>
               
-              <ClientField>
-                {client.email || 'Não informado'}
-              </ClientField>
+              <MobileField>
+                <MobileLabel>Email:</MobileLabel>
+                <MobileValue>
+                  <ClientField>
+                    {client.email || 'Não informado'}
+                  </ClientField>
+                </MobileValue>
+              </MobileField>
               
-              <ClientStatus>
-                <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
-                  {client.is_active ? 'Ativo' : 'Inativo'}
-                </StatusBadge>
-              </ClientStatus>
+              <MobileField>
+                <MobileLabel>Status:</MobileLabel>
+                <MobileValue>
+                  <ClientStatus>
+                    <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
+                      {client.is_active ? 'Ativo' : 'Inativo'}
+                    </StatusBadge>
+                  </ClientStatus>
+                </MobileValue>
+              </MobileField>
               
               <ActionButtons>
                 <ActionButton
