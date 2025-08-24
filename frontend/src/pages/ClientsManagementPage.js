@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR } from '../utils/formatters';
@@ -134,6 +134,121 @@ const AutoInactivateButton = styled.button`
   }
 `;
 
+const ExportButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background: var(--success-dark);
+  }
+`;
+
+const ConfigButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background: var(--primary-dark);
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+
+  h3 {
+    margin: 0;
+    color: var(--text);
+  }
+
+  button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-light);
+    
+    &:hover {
+      color: var(--text);
+    }
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 20px;
+
+  p {
+    margin: 0 0 15px 0;
+    color: var(--text);
+  }
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+
+  button {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+
+    &:hover {
+      background: var(--background);
+    }
+  }
+`;
+
 const ClientsTable = styled.div`
   background: white;
   border-radius: 10px;
@@ -167,6 +282,18 @@ const ClientRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 `;
 
 const ClientInfo = styled.div`
@@ -174,11 +301,30 @@ const ClientInfo = styled.div`
     font-weight: 600;
     color: var(--text);
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .details {
     font-size: 14px;
     color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 768px) {
+    .name {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      white-space: normal;
+    }
+    
+    .details {
+      font-size: 0.9rem;
+      white-space: normal;
+    }
   }
 `;
 
@@ -286,6 +432,8 @@ const ClientsManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [inactiveDays, setInactiveDays] = useState(45);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -370,17 +518,76 @@ ID: ${client.id}
   };
 
   const handleAutoInactivate = async () => {
-    if (!window.confirm('Deseja inativar automaticamente os clientes que não vieram há 45 dias?')) {
+    if (!window.confirm(`Deseja inativar automaticamente os clientes que não vieram há ${inactiveDays} dias?`)) {
       return;
     }
 
     try {
-      const response = await api.post('/admin/clients/auto-inactivate');
+      const response = await api.post(`/admin/clients/auto-inactivate?days=${inactiveDays}`);
       toast.success(response.data.message);
       fetchClients();
     } catch (error) {
       console.error('Erro ao inativar clientes:', error);
       toast.error('Erro ao executar inativação automática');
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const response = await api.get('/admin/clients/export/excel', {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Lista de clientes exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar lista de clientes');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await api.get('/admin/clients/export/pdf', {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Lista de clientes exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar lista de clientes');
+    }
+  };
+
+  const handleConfigInactiveDays = () => {
+    setShowConfigModal(true);
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      await api.post('/admin/clients/config', { inactive_days: inactiveDays });
+      toast.success('Configuração salva com sucesso!');
+      setShowConfigModal(false);
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+      toast.error('Erro ao salvar configuração');
     }
   };
 
@@ -444,10 +651,22 @@ ID: ${client.id}
           <option value="active">Apenas Ativos</option>
           <option value="inactive">Apenas Inativos</option>
         </StatusFilter>
+        <ConfigButton onClick={handleConfigInactiveDays}>
+          <FaCog />
+          Configurar
+        </ConfigButton>
         <AutoInactivateButton onClick={handleAutoInactivate}>
           <FaUserTimes />
-          Inativar Inativos (45 dias)
+          Inativar ({inactiveDays} dias)
         </AutoInactivateButton>
+        <ExportButton onClick={handleExportExcel}>
+          <FaFileExcel />
+          Excel
+        </ExportButton>
+        <ExportButton onClick={handleExportPDF}>
+          <FaFilePdf />
+          PDF
+        </ExportButton>
         <AddButton onClick={handleAddClient}>
           <FaPlus />
           Novo Cliente
@@ -545,6 +764,43 @@ ID: ${client.id}
           ))
         )}
       </ClientsTable>
+
+      {/* Modal de Configuração */}
+      {showConfigModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <h3>Configurar Inativação Automática</h3>
+              <button onClick={() => setShowConfigModal(false)}>&times;</button>
+            </ModalHeader>
+            <ModalBody>
+              <p>Configure quantos dias um cliente deve ficar sem atendimento para ser automaticamente inativado:</p>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={inactiveDays}
+                onChange={(e) => setInactiveDays(parseInt(e.target.value) || 45)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid var(--border)',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  marginTop: '10px'
+                }}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <button onClick={() => setShowConfigModal(false)}>Cancelar</button>
+              <button onClick={handleSaveConfig} style={{ background: 'var(--primary)', color: 'white' }}>
+                Salvar
+              </button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
       <Footer />
     </Container>
   );
