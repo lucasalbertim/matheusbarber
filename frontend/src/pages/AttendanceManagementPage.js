@@ -536,7 +536,10 @@ const AttendanceManagementPage = () => {
   }, [activeFilter, attendances, sortField, sortDirection]);
 
   const calculateStats = (data) => {
-    const total = data.length;
+    // Total apenas de atendimentos efetivos (não cancelados)
+    const effectiveAttendances = data.filter(a => a.status !== 'cancelled');
+    const total = effectiveAttendances.length;
+    
     const waiting = data.filter(a => a.status === 'waiting').length;
     const progress = data.filter(a => a.status === 'progress').length;
     const finished = data.filter(a => a.status === 'finished').length;

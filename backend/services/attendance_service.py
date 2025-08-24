@@ -103,28 +103,39 @@ class AttendanceService:
         # Total de clientes
         total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
         
-        # Total de atendimentos
-        total_attendances = db.query(func.count(Attendance.id)).scalar()
+        # Total de atendimentos (excluindo cancelados)
+        total_attendances = db.query(func.count(Attendance.id)).filter(
+            Attendance.status != "cancelled"
+        ).scalar()
         
-        # Receita total (soma de serviços dos atendimentos pagos)
+        # Receita total (soma de serviços dos atendimentos pagos, excluindo cancelados)
         total_revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
-            Attendance.payment_status == "paid"
+            and_(
+                Attendance.payment_status == "paid",
+                Attendance.status != "cancelled"
+            )
         ).scalar() or 0.0
         
         # Clientes inativos (marcados como inativos no banco)
         inactive_clients = db.query(func.count(Client.id)).filter(Client.is_active == False).scalar()
         
-        # Atendimentos de hoje
+        # Atendimentos de hoje (excluindo cancelados)
         today_attendances = db.query(func.count(Attendance.id)).filter(
-            func.date(Attendance.appointment_date) == today
+            and_(
+                func.date(Attendance.appointment_date) == today,
+                Attendance.status != "cancelled"
+            )
         ).scalar()
         
-        # Pagamentos pendentes
+        # Pagamentos pendentes (excluindo cancelados)
         pending_payments = db.query(func.count(Attendance.id)).filter(
-            Attendance.payment_status == "pending"
+            and_(
+                Attendance.payment_status == "pending",
+                Attendance.status != "cancelled"
+            )
         ).scalar()
         
-        # Calcular ticket médio
+        # Calcular ticket médio (baseado em atendimentos efetivos)
         average_ticket = total_revenue / total_attendances if total_attendances > 0 else 0.0
         
         # Calcular porcentagens de crescimento (mês atual vs mês anterior)
@@ -173,7 +184,12 @@ class AttendanceService:
             func.max(Attendance.appointment_date).label('last_visit')
         ).join(Attendance, Client.id == Attendance.client_id)\
          .join(Attendance.services)\
-         .filter(Attendance.payment_status == "paid")\
+         .filter(
+             and_(
+                 Attendance.payment_status == "paid",
+                 Attendance.status != "cancelled"
+             )
+         )\
          .group_by(Client.id, Client.name, Client.phone)\
          .order_by(desc('attendance_count'))\
          .limit(10)\
@@ -432,6 +448,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
+                        Attendance.status != "cancelled",
                         func.date(Attendance.appointment_date) == current
                     )
                 ).scalar() or 0.0
@@ -449,6 +466,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
+                        Attendance.status != "cancelled",
                         func.date(Attendance.appointment_date) >= current,
                         func.date(Attendance.appointment_date) <= week_end
                     )
@@ -471,6 +489,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
+                        Attendance.status != "cancelled",
                         func.date(Attendance.appointment_date) >= current,
                         func.date(Attendance.appointment_date) <= month_end
                     )
@@ -498,6 +517,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
+                        Attendance.status != "cancelled",
                         func.date(Attendance.appointment_date) >= current,
                         func.date(Attendance.appointment_date) <= quarter_end
                     )
@@ -518,6 +538,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
+                        Attendance.status != "cancelled",
                         func.date(Attendance.appointment_date) >= current,
                         func.date(Attendance.appointment_date) <= year_end
                     )
