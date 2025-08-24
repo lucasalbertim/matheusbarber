@@ -373,6 +373,30 @@ const ClientInfo = styled.div`
   }
 `;
 
+const ClientField = styled.div`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  color: var(--text);
+
+  @media (max-width: 768px) {
+    white-space: normal;
+    font-size: 1rem;
+    padding: 8px 0;
+  }
+`;
+
+const ClientStatus = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+  }
+`;
+
 const ActionButtons = styled.div`
   display: flex;
   gap: 8px;
@@ -771,26 +795,23 @@ ID: ${client.id}
                 <div className="details">ID: {client.id}</div>
               </ClientInfo>
               
-              <ClientInfo>
-                <div className="name">{formatCPF(client.cpf)}</div>
-                <div className="details">CPF</div>
-              </ClientInfo>
+              <ClientField>
+                {formatCPF(client.cpf)}
+              </ClientField>
               
-              <ClientInfo>
-                <div className="name">{formatPhoneBR(client.phone)}</div>
-                <div className="details">Telefone</div>
-              </ClientInfo>
+              <ClientField>
+                {formatPhoneBR(client.phone)}
+              </ClientField>
               
-              <ClientInfo>
-                <div className="name">{client.email || 'Não informado'}</div>
-                <div className="details">Email</div>
-              </ClientInfo>
+              <ClientField>
+                {client.email || 'Não informado'}
+              </ClientField>
               
-              <div>
+              <ClientStatus>
                 <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
                   {client.is_active ? 'Ativo' : 'Inativo'}
                 </StatusBadge>
-              </div>
+              </ClientStatus>
               
               <ActionButtons>
                 <ActionButton
