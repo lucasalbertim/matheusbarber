@@ -10,6 +10,7 @@ import ClientRegisterPage from './pages/ClientRegisterPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminSetupPage from './pages/AdminSetupPage';
 import ClientsManagementPage from './pages/ClientsManagementPage';
 import AddClientPage from './pages/AddClientPage';
 import EditClientPage from './pages/EditClientPage';
@@ -21,7 +22,7 @@ import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
 import ServicesManagementPage from './pages/ServicesManagementPage';
 
 // Contextos
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -33,6 +34,19 @@ const MainContent = styled.main`
   min-height: calc(100vh - 80px);
 `;
 
+// Componente para proteger rotas de clientes logados
+const ProtectedHomeRoute = () => {
+  const { client } = useAuth();
+  
+  // Se o cliente estiver logado, redireciona para o dashboard
+  if (client) {
+    return <Navigate to="/cliente/dashboard" replace />;
+  }
+  
+  // Se não estiver logado, permite acesso à página inicial
+  return <HomePage />;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -41,7 +55,7 @@ function App() {
         <MainContent>
           <Routes>
             {/* Rotas públicas */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<ProtectedHomeRoute />} />
             <Route path="/cliente/login" element={<ClientLoginPage />} />
             <Route path="/cliente/cadastro" element={<ClientRegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -54,6 +68,7 @@ function App() {
             
             {/* Rotas do administrador */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/setup" element={<AdminSetupPage />} />
                     <Route path="/admin/clientes" element={<ClientsManagementPage />} />
         <Route path="/admin/clientes/novo" element={<AddClientPage />} />
         <Route path="/admin/clientes/:clientId/editar" element={<EditClientPage />} />

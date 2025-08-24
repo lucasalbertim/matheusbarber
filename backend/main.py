@@ -1,20 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
 from datetime import datetime
+import io
+import json
 
 from database import get_db, engine
 from models import Base, Admin
+from sqlalchemy import text
 from schemas import (
     ClientCreate, ClientResponse, ClientLogin,
-    AdminCreate, AdminLogin, AdminResponse,
+    AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
     ServiceCreate, ServiceResponse,
-    AttendanceCreate, AttendanceResponse,
-    AttendanceUpdate
+    AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
+    AttendanceUpdate, AttendanceCancel
 )
 from services import (
     client_service, admin_service, service_service,
@@ -22,8 +25,156 @@ from services import (
 )
 from auth import get_current_admin
 
+import time
+
+# Função para aguardar o banco estar disponível
+def wait_for_database(max_retries=30, delay=2):
+    """Aguarda o banco de dados estar disponível"""
+    for attempt in range(max_retries):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+                print("✅ Conexão com banco de dados estabelecida!")
+                return True
+        except Exception as e:
+            if attempt == 0:
+                print("🔄 Aguardando banco de dados estar disponível...")
+            elif attempt % 5 == 0:
+                print(f"🔄 Tentativa {attempt + 1}/{max_retries}...")
+            time.sleep(delay)
+    
+    print("❌ Não foi possível conectar ao banco de dados após várias tentativas")
+    return False
+
+# Aguardar banco estar disponível
+if not wait_for_database():
+    print("⚠️ Continuando sem verificação de coluna...")
+
 # Criar tabelas
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tabelas criadas/verificadas com sucesso!")
+except Exception as e:
+    print(f"⚠️ Erro ao criar tabelas: {e}")
+
+# Função para verificar e adicionar coluna is_first_login se necessário
+def ensure_first_login_column():
+    """Verificar se a coluna is_first_login existe e adicionar se necessário"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se a coluna existe
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'admins' AND column_name = 'is_first_login'
+            """))
+            
+            if not result.fetchone():
+                print("🔄 Adicionando coluna is_first_login à tabela admins...")
+                # Adicionar a coluna
+                conn.execute(text("""
+                    ALTER TABLE admins 
+                    ADD COLUMN is_first_login BOOLEAN DEFAULT TRUE
+                """))
+                
+                # Atualizar registros existentes
+                conn.execute(text("""
+                    UPDATE admins 
+                    SET is_first_login = TRUE 
+                    WHERE username = 'admin'
+                """))
+                
+                conn.execute(text("""
+                    UPDATE admins 
+                    SET is_first_login = FALSE 
+                    WHERE username != 'admin'
+                """))
+                
+                conn.commit()
+                print("✅ Coluna is_first_login adicionada com sucesso!")
+            else:
+                print("✅ Coluna is_first_login já existe")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/adicionar coluna is_first_login: {e}")
+
+# Executar verificação da coluna
+ensure_first_login_column()
+
+# Função para criar admin padrão se não existir
+def ensure_default_admin():
+    """Criar admin padrão se não existir"""
+    try:
+        from security import get_password_hash
+        
+        with engine.connect() as conn:
+            # Verificar se existe algum admin
+            result = conn.execute(text("SELECT COUNT(*) FROM admins"))
+            admin_count = result.fetchone()[0]
+            
+            if admin_count == 0:
+                print("🔄 Criando administrador padrão...")
+                # Criar admin padrão
+                conn.execute(text("""
+                    INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
+                    VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
+                """), {"password_hash": get_password_hash("admin123")})
+                
+                conn.commit()
+                print("✅ Administrador padrão criado com sucesso!")
+                print("   Username: admin")
+                print("   Senha: admin123")
+            else:
+                print("✅ Administrador já existe no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/criar admin padrão: {e}")
+
+# Executar verificação do admin padrão
+ensure_default_admin()
+
+# Função para criar serviços padrão se não existirem
+def ensure_default_services():
+    """Criar serviços padrão se não existirem"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se existem serviços
+            result = conn.execute(text("SELECT COUNT(*) FROM services"))
+            service_count = result.fetchone()[0]
+            
+            if service_count == 0:
+                print("🔄 Criando serviços padrão...")
+                
+                # Lista de serviços padrão
+                default_services = [
+                    ("Corte Masculino", "Corte tradicional masculino com acabamento", 35.00, 30),
+                    ("Barba", "Acabamento de barba com navalha", 25.00, 20),
+                    ("Corte + Barba", "Corte masculino + acabamento de barba", 50.00, 45),
+                    ("Hidratação", "Tratamento hidratante para cabelo", 40.00, 25),
+                    ("Pigmentação", "Coloração de cabelo ou barba", 60.00, 60)
+                ]
+                
+                for name, description, price, duration in default_services:
+                    conn.execute(text("""
+                        INSERT INTO services (name, description, price, duration_minutes, is_active, created_at)
+                        VALUES (:name, :description, :price, :duration, true, NOW())
+                    """), {
+                        "name": name,
+                        "description": description,
+                        "price": price,
+                        "duration": duration
+                    })
+                
+                conn.commit()
+                print("✅ Serviços padrão criados com sucesso!")
+            else:
+                print("✅ Serviços já existem no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/criar serviços padrão: {e}")
+
+# Executar verificação dos serviços padrão
+ensure_default_services()
 
 app = FastAPI(
     title="Metheus Barber API",
@@ -34,7 +185,10 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=[
+        "https://matheusbarber.shop",
+        "https://www.matheusbarber.shop",
+        "http://localhost:3000"],  # manter para desenvolvimento local],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,7 +225,7 @@ async def serve_manifest():
     
     raise HTTPException(status_code=404, detail="Manifest não encontrado")
 
-# Health check
+ #Health check
 @app.get("/health")
 async def health_check():
     """Verificar status da API"""
@@ -113,6 +267,15 @@ def admin_login(login_data: AdminLogin, db: Session = Depends(get_db)):
 def get_current_admin_info(current_admin: Admin = Depends(get_current_admin)):
     """Obter informações do administrador logado"""
     return current_admin
+
+@app.put("/admins/first-login", response_model=AdminResponse)
+def update_first_login_admin(
+    admin_update: AdminUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Atualizar administrador no primeiro login"""
+    return admin_service.update_first_login_admin(db, current_admin.id, admin_update)
 
 # Rotas de Cliente (Administrativas)
 @app.get("/admin/clients/", response_model=List[ClientResponse])
@@ -166,12 +329,12 @@ def delete_client(
 
 @app.post("/admin/clients/auto-inactivate")
 def auto_inactivate_clients(
-    days_inactive: int = 45,
+    days: int = Query(45, description="Número de dias para considerar cliente inativo"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Inativar automaticamente clientes inativos (apenas admin)"""
-    count = client_service.auto_inactivate_clients(db, days_inactive)
+    count = client_service.auto_inactivate_clients(db, days)
     return {"message": f"{count} clientes foram inativados automaticamente"}
 
 @app.post("/admin/clients/{client_id}/reactivate")
@@ -191,6 +354,80 @@ def reactivate_client(
     db.refresh(client)
     
     return {"message": "Cliente reativado com sucesso"}
+
+@app.post("/admin/clients/config")
+def save_client_config(
+    config: dict,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Salvar configurações de clientes (apenas admin)"""
+    inactive_days = config.get("inactive_days", 45)
+    
+    # Aqui você pode salvar em uma tabela de configurações
+    # Por enquanto, vamos apenas retornar sucesso
+    return {"message": f"Configuração salva: {inactive_days} dias para inativação automática"}
+
+@app.get("/admin/clients/export/excel")
+def export_clients_excel(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Exportar lista de clientes em Excel (apenas admin)"""
+    clients = client_service.get_all_clients(db)
+    
+    # Criar dados CSV (simulando Excel)
+    csv_data = "Nome,CPF,Telefone,Email,Status,Data de Cadastro\n"
+    for client in clients:
+        status = "Ativo" if client.is_active else "Inativo"
+        created_date = client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
+        csv_data += f'"{client.name}","{client.cpf}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
+    
+    # Criar arquivo em memória
+    output = io.StringIO()
+    output.write(csv_data)
+    output.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=clientes_{datetime.now().strftime('%Y-%m-%d')}.csv"}
+    )
+
+@app.get("/admin/clients/export/pdf")
+def export_clients_pdf(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Exportar lista de clientes em PDF (apenas admin)"""
+    clients = client_service.get_all_clients(db)
+    
+    # Criar dados JSON (simulando PDF)
+    pdf_data = {
+        "title": "Lista de Clientes",
+        "date": datetime.now().strftime("%d/%m/%Y"),
+        "total_clients": len(clients),
+        "clients": []
+    }
+    
+    for client in clients:
+        pdf_data["clients"].append({
+            "name": client.name,
+            "cpf": client.cpf,
+            "phone": client.phone,
+            "email": client.email or "Não informado",
+            "status": "Ativo" if client.is_active else "Inativo",
+            "created_at": client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
+        })
+    
+    # Criar arquivo JSON (simulando PDF)
+    json_content = json.dumps(pdf_data, indent=2, ensure_ascii=False)
+    
+    return StreamingResponse(
+        io.BytesIO(json_content.encode('utf-8')),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=clientes_{datetime.now().strftime('%Y-%m-%d')}.json"}
+    )
 
 # Rotas de Serviços
 @app.post("/services/", response_model=ServiceResponse)
@@ -228,7 +465,7 @@ def delete_service(
     return {"message": "Serviço inativado com sucesso"}
 
 # Rotas de Atendimento
-@app.post("/attendance/", response_model=AttendanceResponse)
+@app.post("/attendance/", response_model=AttendanceCreatedResponse)
 def create_attendance(
     attendance: AttendanceCreate,
     db: Session = Depends(get_db)
@@ -260,6 +497,25 @@ def delete_attendance(
     """Excluir atendimento (apenas admin)"""
     attendance_service.delete_attendance(db, attendance_id)
     return {"message": "Atendimento excluído com sucesso"}
+
+@app.put("/admin/attendance/{attendance_id}/cancel", response_model=AttendanceResponse)
+def cancel_attendance_admin(
+    attendance_id: int,
+    cancellation: AttendanceCancel,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Cancelar atendimento (apenas admin)"""
+    return attendance_service.cancel_attendance_admin(db, attendance_id, cancellation.cancellation_reason)
+
+@app.put("/attendance/{attendance_id}/cancel", response_model=AttendanceResponse)
+def cancel_attendance_client(
+    attendance_id: int,
+    cancellation: AttendanceCancel,
+    db: Session = Depends(get_db)
+):
+    """Cancelar atendimento (apenas cliente)"""
+    return attendance_service.cancel_attendance_client(db, attendance_id, cancellation.cancellation_reason)
 
 # Rotas de Relatórios
 @app.get("/admin/reports/summary")

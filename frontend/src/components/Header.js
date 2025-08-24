@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaHome } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaBars, FaTimes, FaChartBar, FaUsers, FaClipboardList } from 'react-icons/fa';
 
 const HeaderContainer = styled.header`
   position: fixed;
@@ -23,6 +23,12 @@ const HeaderContent = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  
+  @media (max-width: 768px) {
+    padding: 0 15px;
+    justify-content: space-between;
+    gap: 10px;
+  }
 `;
 
 const Logo = styled.div`
@@ -52,6 +58,18 @@ const Logo = styled.div`
       font-weight: 500;
     }
   }
+  
+  @media (max-width: 768px) {
+    .logo-text {
+      h1 {
+        font-size: 1.2rem;
+      }
+      
+      span {
+        font-size: 0.8rem;
+      }
+    }
+  }
 `;
 
 const Navigation = styled.nav`
@@ -60,7 +78,114 @@ const Navigation = styled.nav`
   gap: 20px;
   
   @media (max-width: 768px) {
-    gap: 12px;
+    display: none;
+  }
+`;
+
+const MobileMenuButton = styled.button`
+  display: none;
+  background: #333;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  width: 44px;
+  height: 44px;
+  position: relative;
+  
+  &:hover {
+    background-color: #555;
+    color: #fff;
+  }
+  
+  @media (max-width: 768px) {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    position: relative;
+    margin-left: 10px;
+  }
+`;
+
+const MobileMenu = styled.div`
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--border);
+  z-index: 999;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  
+  &.open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  @media (max-width: 768px) {
+    display: block;
+  }
+`;
+
+const MobileNavLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--background);
+    color: var(--primary);
+  }
+  
+  &.active {
+    background-color: var(--primary);
+    color: var(--accent);
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const MobileButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 500;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--background);
+    color: var(--primary);
+  }
+  
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
@@ -77,11 +202,11 @@ const NavLink = styled(Link)`
   
   &:hover {
     background-color: var(--background);
-    color: #20AC9F; // Alterado para a nova cor
+    color: #20AC9F;
   }
   
   &.active {
-    background-color: #20AC9F; // Alterado para a nova cor
+    background-color: #20AC9F;
     color: var(--primary);
   }
 `;
@@ -91,6 +216,10 @@ const UserSection = styled.div`
   align-items: center;
   gap: 16px;
   
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+  
   .user-info {
     display: flex;
     align-items: center;
@@ -99,6 +228,11 @@ const UserSection = styled.div`
     background-color: var(--background);
     border-radius: 8px;
     font-weight: 500;
+    
+    @media (max-width: 768px) {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
     
     .user-icon {
       color: var(--secondary);
@@ -110,7 +244,7 @@ const UserSection = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background-color: #20AC9F; // Alterado para a nova cor
+    background-color: #20AC9F;
     color: var(--accent);
     border: none;
     border-radius: 6px;
@@ -118,8 +252,13 @@ const UserSection = styled.div`
     font-weight: 500;
     transition: all 0.2s ease;
     
+    @media (max-width: 768px) {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+    
     &:hover {
-      background-color: #1A8C7F; // Alterado para a nova cor
+      background-color: #1A8C7F;
       transform: translateY(-1px);
     }
   }
@@ -129,6 +268,7 @@ const Header = () => {
   const { client, admin, logoutClient, logoutAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     if (client) {
@@ -138,9 +278,21 @@ const Header = () => {
       logoutAdmin();
       navigate('/');
     }
+    setMobileMenuOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  // Verificar se há usuário logado
+  const isLoggedIn = client || admin;
 
   return (
     <HeaderContainer>
@@ -153,12 +305,8 @@ const Header = () => {
           </div>
         </Logo>
 
+        {/* Navegação Desktop */}
         <Navigation>
-          <NavLink to="/" className={isActive('/') ? 'active' : ''}>
-            <FaHome />
-            Início
-          </NavLink>
-          
           {client && (
             <NavLink to="/cliente/dashboard" className={isActive('/cliente/dashboard') ? 'active' : ''}>
               <FaUser />
@@ -166,7 +314,7 @@ const Header = () => {
             </NavLink>
           )}
           
-          {admin && (
+          {admin && !admin.is_first_login && (
             <>
               <NavLink to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>
                 Dashboard
@@ -184,19 +332,82 @@ const Header = () => {
           )}
         </Navigation>
 
-        {(client || admin) && (
-          <UserSection>
-            <div className="user-info">
-              <FaUser className="user-icon" />
-              {client ? client.name : admin.name}
-            </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              <FaSignOutAlt />
-              Sair
-            </button>
-          </UserSection>
+        {/* Seção do usuário e botão mobile */}
+        {isLoggedIn && (
+          <>
+            <UserSection>
+              <div className="user-info">
+                <FaUser className="user-icon" />
+                {client ? client.name : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name || 'Usuário')}
+              </div>
+              <button className="logout-btn" onClick={handleLogout}>
+                <FaSignOutAlt />
+                Sair
+              </button>
+            </UserSection>
+
+            {/* Botão do menu mobile */}
+            <MobileMenuButton onClick={toggleMobileMenu} aria-label="Menu">
+              {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+            </MobileMenuButton>
+          </>
         )}
       </HeaderContent>
+
+      {/* Menu mobile */}
+      <MobileMenu className={mobileMenuOpen ? 'open' : ''}>
+        {client && (
+          <MobileNavLink 
+            to="/cliente/dashboard" 
+            className={isActive('/cliente/dashboard') ? 'active' : ''}
+            onClick={closeMobileMenu}
+          >
+            <FaUser />
+            Meu Perfil
+          </MobileNavLink>
+        )}
+        
+        {admin && !admin.is_first_login && (
+          <>
+            <MobileNavLink 
+              to="/admin/dashboard" 
+              className={isActive('/admin/dashboard') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              Dashboard
+            </MobileNavLink>
+            <MobileNavLink 
+              to="/admin/clientes" 
+              className={isActive('/admin/clientes') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaUsers />
+              Clientes
+            </MobileNavLink>
+            <MobileNavLink 
+              to="/admin/atendimentos" 
+              className={isActive('/admin/atendimentos') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaClipboardList />
+              Atendimentos
+            </MobileNavLink>
+            <MobileNavLink 
+              to="/admin/relatorios" 
+              className={isActive('/admin/relatorios') ? 'active' : ''}
+              onClick={closeMobileMenu}
+            >
+              <FaChartBar />
+              Relatórios
+            </MobileNavLink>
+          </>
+        )}
+        
+        <MobileButton onClick={handleLogout}>
+          <FaSignOutAlt />
+          Sair
+        </MobileButton>
+      </MobileMenu>
     </HeaderContainer>
   );
 };

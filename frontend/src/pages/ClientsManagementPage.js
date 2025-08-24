@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog, FaFileExport } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { formatCPF, formatPhoneBR } from '../utils/formatters';
@@ -62,7 +62,39 @@ const SearchBar = styled.div`
   gap: 15px;
   margin-bottom: 20px;
   align-items: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
+
+const SearchRow = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const ActionsRow = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+`;
+
+
 
 const StatusFilter = styled.select`
   padding: 12px;
@@ -134,6 +166,166 @@ const AutoInactivateButton = styled.button`
   }
 `;
 
+const ExportButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  position: relative;
+
+  &:hover {
+    background: var(--success-dark);
+  }
+`;
+
+const ExportDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 150px;
+  margin-top: 5px;
+`;
+
+const ExportOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: var(--background);
+  }
+
+  &:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+`;
+
+const ConfigButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background: var(--primary-dark);
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+
+  h3 {
+    margin: 0;
+    color: var(--text);
+  }
+
+  button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-light);
+    
+    &:hover {
+      color: var(--text);
+    }
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 20px;
+
+  p {
+    margin: 0 0 15px 0;
+    color: var(--text);
+  }
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+
+  button {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+
+    &:hover {
+      background: var(--background);
+    }
+  }
+`;
+
 const ClientsTable = styled.div`
   background: white;
   border-radius: 10px;
@@ -150,6 +342,10 @@ const TableHeader = styled.div`
   font-weight: 600;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const ClientRow = styled.div`
@@ -167,6 +363,24 @@ const ClientRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+    }
+  }
 `;
 
 const ClientInfo = styled.div`
@@ -174,11 +388,96 @@ const ClientInfo = styled.div`
     font-weight: 600;
     color: var(--text);
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .details {
     font-size: 14px;
     color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 768px) {
+    text-align: right;
+    
+    .name {
+      font-size: 1rem;
+      margin-bottom: 4px;
+      white-space: normal;
+    }
+    
+    .details {
+      font-size: 0.8rem;
+      white-space: normal;
+    }
+  }
+`;
+
+const ClientField = styled.div`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  color: var(--text);
+
+  @media (max-width: 768px) {
+    white-space: normal;
+    font-size: 1rem;
+    padding: 8px 0;
+  }
+`;
+
+const MobileField = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+`;
+
+const MobileLabel = styled.span`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: inline;
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+`;
+
+const MobileValue = styled.span`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: inline;
+    color: var(--text);
+    font-size: 1rem;
+    text-align: right;
+    flex: 1;
+  }
+`;
+
+const ClientStatus = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    justify-content: flex-start;
   }
 `;
 
@@ -286,6 +585,9 @@ const ClientsManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [inactiveDays, setInactiveDays] = useState(45);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -370,12 +672,12 @@ ID: ${client.id}
   };
 
   const handleAutoInactivate = async () => {
-    if (!window.confirm('Deseja inativar automaticamente os clientes que não vieram há 45 dias?')) {
+    if (!window.confirm(`Deseja inativar automaticamente os clientes que não vieram há ${inactiveDays} dias?`)) {
       return;
     }
 
     try {
-      const response = await api.post('/admin/clients/auto-inactivate');
+      const response = await api.post(`/admin/clients/auto-inactivate?days=${inactiveDays}`);
       toast.success(response.data.message);
       fetchClients();
     } catch (error) {
@@ -383,6 +685,81 @@ ID: ${client.id}
       toast.error('Erro ao executar inativação automática');
     }
   };
+
+  const handleExportExcel = async () => {
+    try {
+      const response = await api.get('/admin/clients/export/excel', {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Lista de clientes exportada com sucesso!');
+      setShowExportDropdown(false);
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar lista de clientes');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await api.get('/admin/clients/export/pdf', {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Lista de clientes exportada com sucesso!');
+      setShowExportDropdown(false);
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar lista de clientes');
+    }
+  };
+
+  const handleConfigInactiveDays = () => {
+    setShowConfigModal(true);
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      await api.post('/admin/clients/config', { inactive_days: inactiveDays });
+      toast.success('Configuração salva com sucesso!');
+      setShowConfigModal(false);
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+      toast.error('Erro ao salvar configuração');
+    }
+  };
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-container')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   const handleReactivateClient = async (clientId) => {
     if (!window.confirm('Deseja reativar este cliente?')) {
@@ -430,28 +807,63 @@ ID: ${client.id}
       </Header>
 
       <SearchBar>
-        <SearchInput
-          type="text"
-          placeholder="Buscar por nome, CPF, telefone ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <StatusFilter
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">Todos os Clientes</option>
-          <option value="active">Apenas Ativos</option>
-          <option value="inactive">Apenas Inativos</option>
-        </StatusFilter>
-        <AutoInactivateButton onClick={handleAutoInactivate}>
-          <FaUserTimes />
-          Inativar Inativos (45 dias)
-        </AutoInactivateButton>
-        <AddButton onClick={handleAddClient}>
-          <FaPlus />
-          Novo Cliente
-        </AddButton>
+        {/* Busca e Filtros - Sempre visíveis */}
+        <SearchRow>
+          <SearchInput
+            type="text"
+            placeholder="Buscar por nome, CPF, telefone ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <StatusFilter
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Todos os Clientes</option>
+            <option value="active">Apenas Ativos</option>
+            <option value="inactive">Apenas Inativos</option>
+          </StatusFilter>
+        </SearchRow>
+
+        {/* Ações - Responsivas */}
+        <ActionsRow>
+          {/* Desktop: Botões visíveis */}
+          <ConfigButton onClick={handleConfigInactiveDays}>
+            <FaCog />
+            Configurar
+          </ConfigButton>
+          <AutoInactivateButton onClick={handleAutoInactivate}>
+            <FaUserTimes />
+            Inativar ({inactiveDays} dias)
+          </AutoInactivateButton>
+          
+          <div className="export-container" style={{ position: 'relative' }}>
+            <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
+              <FaFileExport />
+              Exportar
+            </ExportButton>
+            
+            {showExportDropdown && (
+              <ExportDropdown>
+                <ExportOption onClick={handleExportExcel}>
+                  <FaFileExcel />
+                  Exportar Excel
+                </ExportOption>
+                <ExportOption onClick={handleExportPDF}>
+                  <FaFilePdf />
+                  Exportar PDF
+                </ExportOption>
+              </ExportDropdown>
+            )}
+          </div>
+          
+          <AddButton onClick={handleAddClient}>
+            <FaPlus />
+            Novo Cliente
+          </AddButton>
+
+
+        </ActionsRow>
       </SearchBar>
 
       <ClientsTable>
@@ -477,26 +889,23 @@ ID: ${client.id}
                 <div className="details">ID: {client.id}</div>
               </ClientInfo>
               
-              <ClientInfo>
-                <div className="name">{formatCPF(client.cpf)}</div>
-                <div className="details">CPF</div>
-              </ClientInfo>
+              <ClientField>
+                {formatCPF(client.cpf)}
+              </ClientField>
               
-              <ClientInfo>
-                <div className="name">{formatPhoneBR(client.phone)}</div>
-                <div className="details">Telefone</div>
-              </ClientInfo>
+              <ClientField>
+                {formatPhoneBR(client.phone)}
+              </ClientField>
               
-              <ClientInfo>
-                <div className="name">{client.email || 'Não informado'}</div>
-                <div className="details">Email</div>
-              </ClientInfo>
+              <ClientField>
+                {client.email || 'Não informado'}
+              </ClientField>
               
-              <div>
+              <ClientStatus>
                 <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
                   {client.is_active ? 'Ativo' : 'Inativo'}
                 </StatusBadge>
-              </div>
+              </ClientStatus>
               
               <ActionButtons>
                 <ActionButton
@@ -545,6 +954,43 @@ ID: ${client.id}
           ))
         )}
       </ClientsTable>
+
+      {/* Modal de Configuração */}
+      {showConfigModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <h3>Configurar Inativação Automática</h3>
+              <button onClick={() => setShowConfigModal(false)}>&times;</button>
+            </ModalHeader>
+            <ModalBody>
+              <p>Configure quantos dias um cliente deve ficar sem atendimento para ser automaticamente inativado:</p>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={inactiveDays}
+                onChange={(e) => setInactiveDays(parseInt(e.target.value) || 45)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid var(--border)',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  marginTop: '10px'
+                }}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <button onClick={() => setShowConfigModal(false)}>Cancelar</button>
+              <button onClick={handleSaveConfig} style={{ background: 'var(--primary)', color: 'white' }}>
+                Salvar
+              </button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
       <Footer />
     </Container>
   );

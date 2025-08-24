@@ -19,9 +19,10 @@ root.render(
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
-        draggable
+        draggable={false}
         pauseOnHover
         theme="light"
+        limit={3}
       />
     </BrowserRouter>
   </React.StrictMode>

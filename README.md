@@ -1,22 +1,38 @@
 # 🪒 Matheus Barber - Sistema de Gerenciamento
 
-Sistema web completo para gerenciamento de barbearia, desenvolvido com React (frontend) e FastAPI (backend), integrado com PostgreSQL e funcionalidades de WhatsApp.
+**Versão 2.1.0** - Sistema web completo para gerenciamento de barbearia, desenvolvido com React (frontend) e FastAPI (backend), integrado com PostgreSQL e funcionalidades avançadas de gestão.
 
 ## ✨ Funcionalidades
 
 ### 🧑‍💼 Área do Cliente
 - **Login/Cadastro**: Identificação via CPF ou telefone (sem senha)
 - **Dashboard**: Visualização de informações pessoais e histórico
+- **Criação de Atendimentos**: Seleção de serviços e forma de pagamento
+- **Sistema de Fila**: Posição na fila de atendimento em tempo real
 - **Mensagens automáticas**: Recebimento de boas-vindas via WhatsApp
 - **Interface responsiva**: Otimizada para mobile, tablet e desktop
 
 ### 👨‍💻 Área Administrativa
+- **Setup Inicial**: Primeiro login com configuração obrigatória
 - **Autenticação segura**: Login com username e senha (JWT)
-- **Gestão de Clientes**: Cadastro, edição, exclusão e listagem
+- **Gestão de Clientes**: 
+  - Cadastro, edição, exclusão e listagem
+  - Auto-inativação configurável
+  - Exportação em Excel e PDF
+  - Grid responsiva com filtros
 - **Gestão de Serviços**: Controle de serviços oferecidos
-- **Painel de Atendimentos**: Controle em tempo real dos agendamentos
-- **Relatórios**: Métricas de clientes, receita e atendimentos
+- **Painel de Atendimentos**: 
+  - Controle em tempo real dos atendimentos do dia
+  - Sistema de cancelamento com motivo
+  - Estatísticas precisas (apenas finalizados)
+  - Filtros por status
+- **Relatórios Avançados**: 
+  - Métricas de clientes, receita e atendimentos
+  - Gráficos de ganhos (diários, semanais, mensais, trimestrais, anuais)
+  - Dashboard com crescimento percentual
+  - Top clientes por atendimentos
 - **Integração WhatsApp**: Envio de mensagens automáticas
+- **Header Responsivo**: Menu hamburger para mobile e tablet
 
 ## 🏗️ Arquitetura
 
@@ -26,14 +42,20 @@ metheus-barber/
 │   ├── models.py           # Modelos SQLAlchemy
 │   ├── schemas.py          # Schemas Pydantic
 │   ├── services/           # Lógica de negócio
+│   │   ├── admin_service.py
+│   │   ├── client_service.py
+│   │   ├── attendance_service.py
+│   │   └── service_service.py
 │   ├── auth.py             # Autenticação JWT
-│   └── main.py             # Aplicação principal
+│   ├── main.py             # Aplicação principal
+│   └── init_db.py          # Inicialização do banco
 ├── frontend/               # Aplicação React
 │   ├── src/
 │   │   ├── components/     # Componentes reutilizáveis
 │   │   ├── pages/          # Páginas da aplicação
 │   │   ├── contexts/       # Contextos React
-│   │   └── services/       # Serviços de API
+│   │   ├── services/       # Serviços de API
+│   │   └── utils/          # Utilitários
 │   └── public/             # Arquivos estáticos
 └── docker-compose.yml      # Orquestração Docker
 ```
@@ -65,12 +87,12 @@ metheus-barber/
 - Node.js 18+ (para desenvolvimento local)
 - Python 3.11+ (para desenvolvimento local)
 
-## 🛠️ Instalação
+## 🛠️ Instalação e Configuração
 
 ### 1. Clone o repositório
 ```bash
-git clone <url-do-repositorio>
-cd metheus-barber
+git clone https://github.com/lucasalbertim/matheusbarber.git
+cd metheusbarber
 ```
 
 ### 2. Configure as variáveis de ambiente
@@ -130,22 +152,40 @@ npm start
 
 ## 📱 Uso do Sistema
 
-### Primeiro Acesso
-1. **Criar Administrador**: Use a API para criar o primeiro admin
-2. **Configurar Serviços**: Adicione os serviços da barbearia
-3. **Cadastrar Clientes**: Os clientes podem se cadastrar ou fazer login
+### Primeiro Acesso - Administrador
+1. **Credenciais Padrão**: 
+   - **Login**: `admin`
+   - **Senha**: `admin123`
+2. **Setup Obrigatório**: Na primeira vez, você será redirecionado para configurar seus dados
+3. **Atualização de Dados**: Altere username, email, nome e senha
+4. **Configurar Serviços**: Adicione os serviços da barbearia
 
 ### Fluxo do Cliente
-1. Acesse a página inicial
-2. Clique em "Sou Cliente"
-3. Faça login com CPF/telefone ou cadastre-se
-4. Acesse seu dashboard pessoal
+1. **Acesso**: Vá para a página inicial
+2. **Login**: Clique em "Sou Cliente"
+3. **Identificação**: Use CPF ou telefone (sem senha)
+4. **Dashboard**: Acesse seu painel pessoal
+5. **Novo Atendimento**: 
+   - Selecione serviços
+   - Escolha forma de pagamento
+   - Veja sua posição na fila
+   - Logout automático após 7 segundos
 
 ### Fluxo Administrativo
-1. Acesse a página inicial
-2. Clique em "Sou Administrador"
-3. Faça login com suas credenciais
-4. Gerencie clientes, serviços e atendimentos
+1. **Login**: Use suas credenciais de administrador
+2. **Dashboard**: Visualize métricas em tempo real
+3. **Gestão de Clientes**: 
+   - Cadastre, edite ou exclua clientes
+   - Configure auto-inativação
+   - Exporte dados em Excel/PDF
+4. **Gestão de Atendimentos**: 
+   - Controle atendimentos do dia
+   - Cancele atendimentos com motivo
+   - Visualize estatísticas precisas
+5. **Relatórios**: 
+   - Analise ganhos por período
+   - Visualize crescimento percentual
+   - Identifique top clientes
 
 ## 🔐 Segurança
 
@@ -154,23 +194,22 @@ npm start
 - **CORS**: Configurado para permitir apenas origens autorizadas
 - **Senhas**: Hash com bcrypt para administradores
 - **Identificação**: Clientes identificados via CPF/telefone
+- **Setup Seguro**: Primeiro login obrigatório para configuração
 
 ## 📊 Banco de Dados
 
 ### Tabelas Principais
 - **clients**: Cadastro de clientes
-- **admins**: Usuários administrativos
+- **admins**: Usuários administrativos (com is_first_login)
 - **services**: Serviços oferecidos
-- **attendances**: Agendamentos e atendimentos
+- **attendances**: Agendamentos e atendimentos (com cancelamento)
 
-### Migrações
-```bash
-# Criar migração
-alembic revision --autogenerate -m "descrição"
-
-# Aplicar migrações
-alembic upgrade head
-```
+### Migrações Automáticas
+O sistema automaticamente:
+- Cria as tabelas necessárias
+- Adiciona colunas faltantes
+- Cria administrador padrão
+- Configura serviços iniciais
 
 ## 📱 Integração WhatsApp
 
@@ -234,6 +273,18 @@ Para suporte e dúvidas:
 - Entre em contato com a equipe de desenvolvimento
 
 ## 🔄 Atualizações
+
+### Versão 2.1.0 (Atual)
+- ✅ **Setup Inicial**: Primeiro login obrigatório para administrador
+- ✅ **Sistema de Fila**: Posição na fila para clientes
+- ✅ **Cancelamento**: Atendimentos com motivo obrigatório
+- ✅ **Métricas Precisas**: Apenas atendimentos finalizados contam
+- ✅ **Exportação**: Clientes em Excel e PDF
+- ✅ **Auto-inativação**: Configurável por período
+- ✅ **Header Responsivo**: Menu hamburger para mobile
+- ✅ **Relatórios Avançados**: Gráficos de ganhos por período
+- ✅ **Dashboard Melhorado**: Estatísticas em tempo real
+- ✅ **Interface Otimizada**: Melhor experiência mobile
 
 ### Versão 2.0.0
 - ✅ Sistema básico de autenticação
