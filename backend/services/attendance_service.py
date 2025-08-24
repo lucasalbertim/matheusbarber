@@ -103,9 +103,9 @@ class AttendanceService:
         # Total de clientes
         total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
         
-        # Total de atendimentos (excluindo cancelados)
+        # Total de atendimentos (apenas finalizados)
         total_attendances = db.query(func.count(Attendance.id)).filter(
-            Attendance.status != "cancelled"
+            Attendance.status == "finished"
         ).scalar()
         
         # Receita total (soma de serviços dos atendimentos finalizados e pagos)
@@ -331,26 +331,29 @@ class AttendanceService:
         # Total de clientes ativos (sempre total, não por período)
         total_clients = db.query(func.count(Client.id)).filter(Client.is_active == True).scalar()
         
-        # Clientes que fizeram atendimentos no período
+        # Clientes que fizeram atendimentos no período (apenas finalizados)
         clients_in_period = db.query(func.count(func.distinct(Attendance.client_id))).filter(
             and_(
                 func.date(Attendance.appointment_date) >= start_date,
-                func.date(Attendance.appointment_date) <= end_date
+                func.date(Attendance.appointment_date) <= end_date,
+                Attendance.status == "finished"
             )
         ).scalar()
         
-        # Atendimentos no período
+        # Atendimentos no período (apenas finalizados)
         attendances_in_period = db.query(func.count(Attendance.id)).filter(
             and_(
                 func.date(Attendance.appointment_date) >= start_date,
-                func.date(Attendance.appointment_date) <= end_date
+                func.date(Attendance.appointment_date) <= end_date,
+                Attendance.status == "finished"
             )
         ).scalar()
         
-        # Receita no período
+        # Receita no período (apenas finalizados e pagos)
         revenue_in_period = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
             and_(
                 Attendance.payment_status == "paid",
+                Attendance.status == "finished",
                 func.date(Attendance.appointment_date) >= start_date,
                 func.date(Attendance.appointment_date) <= end_date
             )
