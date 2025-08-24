@@ -94,46 +94,7 @@ const ActionsRow = styled.div`
   }
 `;
 
-const MobileActionsButton = styled.button`
-  display: none;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  width: 100%;
 
-  &:hover {
-    background: var(--primary-dark);
-  }
-
-  @media (max-width: 768px) {
-    display: flex;
-    justify-content: center;
-  }
-`;
-
-const MobileActionsDropdown = styled.div`
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  padding: 15px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-top: 10px;
-
-  @media (max-width: 768px) {
-    display: flex;
-  }
-`;
 
 const StatusFilter = styled.select`
   padding: 12px;
@@ -465,6 +426,8 @@ const ClientField = styled.div`
 `;
 
 const MobileField = styled.div`
+  display: none;
+  
   @media (max-width: 768px) {
     display: flex;
     justify-content: space-between;
@@ -479,7 +442,10 @@ const MobileField = styled.div`
 `;
 
 const MobileLabel = styled.span`
+  display: none;
+  
   @media (max-width: 768px) {
+    display: inline;
     font-weight: 600;
     color: var(--text-light);
     font-size: 0.9rem;
@@ -488,7 +454,10 @@ const MobileLabel = styled.span`
 `;
 
 const MobileValue = styled.span`
+  display: none;
+  
   @media (max-width: 768px) {
+    display: inline;
     color: var(--text);
     font-size: 1rem;
     text-align: right;
@@ -613,7 +582,6 @@ const ClientsManagementPage = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [inactiveDays, setInactiveDays] = useState(45);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [showMobileActions, setShowMobileActions] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -773,14 +741,11 @@ ID: ${client.id}
     }
   };
 
-  // Fechar dropdowns quando clicar fora
+  // Fechar dropdown quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showExportDropdown && !event.target.closest('.export-container')) {
         setShowExportDropdown(false);
-      }
-      if (showMobileActions && !event.target.closest('.mobile-actions-container')) {
-        setShowMobileActions(false);
       }
     };
 
@@ -788,7 +753,7 @@ ID: ${client.id}
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showExportDropdown, showMobileActions]);
+  }, [showExportDropdown]);
 
   const handleReactivateClient = async (clientId) => {
     if (!window.confirm('Deseja reativar este cliente?')) {
@@ -891,42 +856,7 @@ ID: ${client.id}
             Novo Cliente
           </AddButton>
 
-          {/* Mobile: Botão de ações */}
-          <div className="mobile-actions-container" style={{ width: '100%' }}>
-            <MobileActionsButton onClick={() => setShowMobileActions(!showMobileActions)}>
-              <FaCog />
-              Ações ({showMobileActions ? 'Fechar' : 'Abrir'})
-            </MobileActionsButton>
-            
-            {showMobileActions && (
-              <MobileActionsDropdown>
-                <ConfigButton onClick={handleConfigInactiveDays}>
-                  <FaCog />
-                  Configurar Inativação
-                </ConfigButton>
-                
-                <AutoInactivateButton onClick={handleAutoInactivate}>
-                  <FaUserTimes />
-                  Inativar ({inactiveDays} dias)
-                </AutoInactivateButton>
-                
-                <ExportButton onClick={handleExportExcel}>
-                  <FaFileExcel />
-                  Exportar Excel
-                </ExportButton>
-                
-                <ExportButton onClick={handleExportPDF}>
-                  <FaFilePdf />
-                  Exportar PDF
-                </ExportButton>
-                
-                <AddButton onClick={handleAddClient}>
-                  <FaPlus />
-                  Novo Cliente
-                </AddButton>
-              </MobileActionsDropdown>
-            )}
-          </div>
+
         </ActionsRow>
       </SearchBar>
 
@@ -948,53 +878,28 @@ ID: ${client.id}
         ) : (
           filteredClients.map((client) => (
             <ClientRow key={client.id}>
-              <MobileField>
-                <MobileLabel>Nome:</MobileLabel>
-                <MobileValue>
-                  <ClientInfo>
-                    <div className="name">{client.name}</div>
-                    <div className="details">ID: {client.id}</div>
-                  </ClientInfo>
-                </MobileValue>
-              </MobileField>
+              <ClientInfo>
+                <div className="name">{client.name}</div>
+                <div className="details">ID: {client.id}</div>
+              </ClientInfo>
               
-              <MobileField>
-                <MobileLabel>CPF:</MobileLabel>
-                <MobileValue>
-                  <ClientField>
-                    {formatCPF(client.cpf)}
-                  </ClientField>
-                </MobileValue>
-              </MobileField>
+              <ClientField>
+                {formatCPF(client.cpf)}
+              </ClientField>
               
-              <MobileField>
-                <MobileLabel>Telefone:</MobileLabel>
-                <MobileValue>
-                  <ClientField>
-                    {formatPhoneBR(client.phone)}
-                  </ClientField>
-                </MobileValue>
-              </MobileField>
+              <ClientField>
+                {formatPhoneBR(client.phone)}
+              </ClientField>
               
-              <MobileField>
-                <MobileLabel>Email:</MobileLabel>
-                <MobileValue>
-                  <ClientField>
-                    {client.email || 'Não informado'}
-                  </ClientField>
-                </MobileValue>
-              </MobileField>
+              <ClientField>
+                {client.email || 'Não informado'}
+              </ClientField>
               
-              <MobileField>
-                <MobileLabel>Status:</MobileLabel>
-                <MobileValue>
-                  <ClientStatus>
-                    <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
-                      {client.is_active ? 'Ativo' : 'Inativo'}
-                    </StatusBadge>
-                  </ClientStatus>
-                </MobileValue>
-              </MobileField>
+              <ClientStatus>
+                <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
+                  {client.is_active ? 'Ativo' : 'Inativo'}
+                </StatusBadge>
+              </ClientStatus>
               
               <ActionButtons>
                 <ActionButton
