@@ -108,26 +108,26 @@ class AttendanceService:
             Attendance.status != "cancelled"
         ).scalar()
         
-        # Receita total (soma de serviços dos atendimentos pagos, excluindo cancelados)
+        # Receita total (soma de serviços dos atendimentos finalizados e pagos)
         total_revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
             and_(
                 Attendance.payment_status == "paid",
-                Attendance.status != "cancelled"
+                Attendance.status == "finished"
             )
         ).scalar() or 0.0
         
         # Clientes inativos (marcados como inativos no banco)
         inactive_clients = db.query(func.count(Client.id)).filter(Client.is_active == False).scalar()
         
-        # Atendimentos de hoje (excluindo cancelados)
+        # Atendimentos de hoje (apenas finalizados)
         today_attendances = db.query(func.count(Attendance.id)).filter(
             and_(
                 func.date(Attendance.appointment_date) == today,
-                Attendance.status != "cancelled"
+                Attendance.status == "finished"
             )
         ).scalar()
         
-        # Pagamentos pendentes (excluindo cancelados)
+        # Pagamentos pendentes (apenas não cancelados)
         pending_payments = db.query(func.count(Attendance.id)).filter(
             and_(
                 Attendance.payment_status == "pending",
@@ -187,7 +187,7 @@ class AttendanceService:
          .filter(
              and_(
                  Attendance.payment_status == "paid",
-                 Attendance.status != "cancelled"
+                 Attendance.status == "finished"
              )
          )\
          .group_by(Client.id, Client.name, Client.phone)\
@@ -451,7 +451,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
-                        Attendance.status != "cancelled",
+                        Attendance.status == "finished",
                         func.date(Attendance.appointment_date) == day_start
                     )
                 ).scalar() or 0.0
@@ -471,7 +471,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
-                        Attendance.status != "cancelled",
+                        Attendance.status == "finished",
                         func.date(Attendance.appointment_date) >= week_start,
                         func.date(Attendance.appointment_date) <= week_end
                     )
@@ -495,7 +495,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
-                        Attendance.status != "cancelled",
+                        Attendance.status == "finished",
                         func.date(Attendance.appointment_date) >= month_start,
                         func.date(Attendance.appointment_date) <= month_end
                     )
@@ -528,7 +528,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
-                        Attendance.status != "cancelled",
+                        Attendance.status == "finished",
                         func.date(Attendance.appointment_date) >= quarter_start,
                         func.date(Attendance.appointment_date) <= quarter_end
                     )
@@ -554,7 +554,7 @@ class AttendanceService:
                 revenue = db.query(func.sum(Service.price)).select_from(Attendance).join(Attendance.services).filter(
                     and_(
                         Attendance.payment_status == "paid",
-                        Attendance.status != "cancelled",
+                        Attendance.status == "finished",
                         func.date(Attendance.appointment_date) >= year_start,
                         func.date(Attendance.appointment_date) <= year_end
                     )
