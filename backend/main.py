@@ -221,7 +221,8 @@ for attempt in range(max_attempts):
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
-    version="2.1.0"
+    version="2.1.0",
+    root_path="/api"
 )
 
 # CORS
