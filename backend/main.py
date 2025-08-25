@@ -122,19 +122,38 @@ def initialize_database_safely():
             if admin_count == 0:
                 print("🔄 Criando administrador padrão...")
                 # Criar admin padrão
-                conn.execute(text("""
-                    INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
-                    VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
-                """), {"password_hash": get_password_hash("admin123")})
+                
+                # Verificar se a coluna is_first_login existe antes de inserir
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'admins' AND column_name = 'is_first_login'
+                """))
+                
+                if result.fetchone():
+                    # Coluna existe, usar INSERT completo
+                    conn.execute(text("""
+                        INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
+                        VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
+                    """), {"password_hash": get_password_hash("admin123")})
+                else:
+                    # Coluna não existe, usar INSERT sem is_first_login
+                    conn.execute(text("""
+                        INSERT INTO admins (username, name, email, password_hash, is_active, created_at)
+                        VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, NOW())
+                    """), {"password_hash": get_password_hash("admin123")})
                 
                 conn.commit()
                 print("✅ Administrador padrão criado com sucesso!")
                 print("   Username: admin")
                 print("   Senha: admin123")
+                print("   ⚠️  IMPORTANTE: Altere a senha após o primeiro login!")
             else:
                 print("✅ Administrador já existe no banco")
     except Exception as e:
         print(f"❌ Erro ao verificar/criar admin padrão: {e}")
+        import traceback
+        traceback.print_exc()
         return False
     
     # Criar serviços padrão se não existirem
@@ -179,7 +198,23 @@ def initialize_database_safely():
     return True
 
 # Executar inicialização do banco de dados
-initialize_database_safely()
+print("🚀 Iniciando aplicação Matheus Barber...")
+
+# Tentar inicialização várias vezes se necessário
+max_attempts = 3
+for attempt in range(max_attempts):
+    print(f"🔄 Tentativa {attempt + 1}/{max_attempts} de inicialização...")
+    
+    if initialize_database_safely():
+        print("✅ Inicialização concluída com sucesso!")
+        break
+    else:
+        if attempt < max_attempts - 1:
+            print(f"⚠️  Tentativa {attempt + 1} falhou. Aguardando 10 segundos...")
+            time.sleep(10)
+        else:
+            print("❌ Todas as tentativas de inicialização falharam!")
+            print("⚠️  A aplicação continuará, mas pode haver problemas com o banco de dados")
 
 # A inicialização dos serviços agora é feita na função initialize_database_safely()
 
