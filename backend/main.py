@@ -234,8 +234,7 @@ app.add_middleware(
         "http://localhost:3000"],  # manter para desenvolvimento local],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-    root_path="/api"
+    allow_headers=["*"]
 )
 
 ## Configuração para servir arquivos estáticos do frontend
