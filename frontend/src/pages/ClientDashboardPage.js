@@ -1,218 +1,224 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUser, FaCalendar, FaCut, FaArrowLeft } from 'react-icons/fa';
+import { FaCut, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPhone, FaWhatsapp, FaUser, FaHistory, FaPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
+import { Button, Card, Loading } from '../components';
+import { formatDate, formatDateTime, formatCurrency } from '../utils';
 
-import api from '../services/api';
-
-const PageContainer = styled.div`
-  min-height: 100vh;
-  background: var(--background);
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   
   @media (max-width: 768px) {
     padding: 15px;
   }
 `;
 
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--background);
-  color: var(--text-primary);
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 30px;
-  
-  &:hover {
-    background: var(--primary);
-    color: var(--accent);
-    border-color: var(--primary);
-  }
-`;
-
-const WelcomeSection = styled.div`
-  background: linear-gradient(135deg, #20AC9F 0%, #2d2d2d 100%);
-  color: var(--accent);
-  padding: 40px;
-  border-radius: 20px;
+const Header = styled.div`
   text-align: center;
   margin-bottom: 40px;
-
-  img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin: 0 auto 20px;
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
-  }
-
+  
   h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
+    color: var(--primary);
     margin-bottom: 10px;
+    font-size: 2.5rem;
   }
   
   p {
-    font-size: 1.2rem;
-    opacity: 0.9;
-  }
-  
-  @media (max-width: 768px) {
-    padding: 25px;
-    border-radius: 16px;
-    margin-bottom: 30px;
-    
-    .welcome-icon {
-      width: 70px;
-      height: 70px;
-      font-size: 28px;
-      margin-bottom: 15px;
-    }
-    
-    h1 {
-      font-size: 2rem;
-    }
-    
-    p {
-      font-size: 1.1rem;
-    }
+    color: var(--text-secondary);
+    font-size: 1.1rem;
   }
 `;
 
-const DashboardGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 40px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-`;
-
-const DashboardCard = styled.div`
-  background: var(--surface);
-  border-radius: 16px;
+const WelcomeSection = styled(Card)`
+  text-align: center;
   padding: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
   
-  &:hover {
-    transform: translateY(-4px);
+  h2 {
+    margin-bottom: 10px;
+    font-size: 1.8rem;
   }
   
-  .card-header {
+  p {
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+`;
+
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+`;
+
+const StatCard = styled(Card)`
+  text-align: center;
+  padding: 24px;
+  
+  .stat-icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 16px;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  
+  .stat-label {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+`;
+
+const QuickActions = styled(Card)`
+  padding: 24px;
+  margin-bottom: 30px;
+  
+  h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
+    gap: 10px;
+  }
+  
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
+  }
+`;
+
+const RecentAttendances = styled(Card)`
+  padding: 24px;
+  margin-bottom: 30px;
+  
+  h3 {
+    color: var(--primary);
     margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+`;
+
+const AttendanceItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .attendance-info {
+    flex: 1;
     
-    .icon {
-      width: 50px;
-      height: 50px;
-      background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: var(--primary);
+    .service-name {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
     }
     
-    h3 {
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: var(--primary);
-      margin: 0;
+    .attendance-date {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
     }
   }
   
-  .card-content {
-    p {
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin-bottom: 16px;
+  .attendance-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    
+    &.waiting {
+      background: var(--warning-light);
+      color: var(--warning);
     }
     
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      .label {
-        color: var(--text-secondary);
-        font-weight: 500;
-      }
-      
-      .value {
-        color: var(--primary);
-        font-weight: 600;
-      }
-      
-      .attendance-item {
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 8px;
-        
-        &:last-child {
-          margin-bottom: 0;
-        }
-        
-        .attendance-header {
-          margin-bottom: 8px;
-          
-          .attendance-date {
-            color: var(--primary);
-            font-size: 0.9rem;
-            
-            strong {
-              font-weight: 700;
-            }
-          }
-        }
-        
-        .attendance-services {
-          .service-item {
-            padding: 2px 0;
-            
-            .service-name {
-              color: var(--text-secondary);
-              font-size: 0.85rem;
-            }
-          }
-        }
-      }
+    &.progress {
+      background: var(--info-light);
+      color: var(--info);
     }
+    
+    &.finished {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    
+    &.cancelled {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+  }
+  
+  .attendance-price {
+    font-weight: 600;
+    color: var(--primary);
+    margin-left: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    
+    .attendance-price {
+      margin-left: 0;
+    }
+  }
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+  
+  p {
+    margin-bottom: 20px;
   }
 `;
 
 const ClientDashboardPage = () => {
-  const { client, logoutClient } = useAuth();
   const navigate = useNavigate();
-  const [attendances, setAttendances] = useState([]);
+  const { client, logoutClient } = useAuth();
+  
+  const [recentAttendances, setRecentAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalAttendances: 0,
+    completedAttendances: 0,
+    pendingAttendances: 0,
+    totalSpent: 0
+  });
 
   useEffect(() => {
     if (!client) {
@@ -220,190 +226,188 @@ const ClientDashboardPage = () => {
       return;
     }
     
-    const fetchAttendances = async () => {
-      try {
-        const response = await api.get(`/clients/${client.id}/attendances`);
-        setAttendances(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar atendimentos:', error);
-        setAttendances([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAttendances();
-    
-    // Controle de navegação do navegador - logout automático ao tentar voltar
-    const handleBeforeUnload = (event) => {
-      // Previne que o usuário saia da página sem fazer logout
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    
-    const handlePopState = (event) => {
-      // Quando o usuário clica em voltar no navegador, faz logout automático
-      event.preventDefault();
-      logoutClient();
-      navigate('/');
-    };
-    
-    // Adiciona listeners para controlar a navegação
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-    
-    // Remove listeners quando o componente for desmontado
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [client, navigate, logoutClient]);
+    fetchClientData();
+  }, [client, navigate]);
 
+  const fetchClientData = async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar atendimentos do cliente
+      const attendancesResponse = await api.get(`/clients/${client.id}/attendances`);
+      const attendances = attendancesResponse.data;
+      
+      // Calcular estatísticas
+      const totalAttendances = attendances.length;
+      const completedAttendances = attendances.filter(a => a.status === 'finished').length;
+      const pendingAttendances = attendances.filter(a => ['waiting', 'progress'].includes(a.status)).length;
+      const totalSpent = attendances
+        .filter(a => a.status === 'finished')
+        .reduce((sum, a) => sum + (a.service?.price || 0), 0);
+      
+      setStats({
+        totalAttendances,
+        completedAttendances,
+        pendingAttendances,
+        totalSpent
+      });
+      
+      // Últimos 5 atendimentos
+      setRecentAttendances(attendances.slice(0, 5));
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados do cliente:', error);
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleNewAttendance = () => {
+    navigate('/cliente/atendimento/iniciar');
+  };
+
+  const handleViewHistory = () => {
+    // Implementar página de histórico
+    toast.info('Funcionalidade em desenvolvimento');
+  };
+
+  const handleContact = () => {
+    const phone = '11999999999'; // Telefone da barbearia
+    const whatsappUrl = `https://wa.me/55${phone}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleLogout = () => {
     logoutClient();
     navigate('/');
   };
 
+  const getStatusText = (status) => {
+    const statusMap = {
+      waiting: 'Aguardando',
+      progress: 'Em Andamento',
+      finished: 'Concluído',
+      cancelled: 'Cancelado'
+    };
+    return statusMap[status] || status;
+  };
+
   if (loading) {
     return (
-      <PageContainer>
-        <Container>
-          <div className="loading">
-            <div className="spinner"></div>
-            Carregando...
-          </div>
-        </Container>
-      </PageContainer>
+      <Container>
+        <Loading text="Carregando seu dashboard..." />
+      </Container>
     );
   }
 
   return (
-    <PageContainer>
-      <Container>
-        <BackButton onClick={handleLogout}>
-          <FaArrowLeft />
-          Sair da Conta
-        </BackButton>
+    <Container>
+      <Header>
+        <h1>Dashboard do Cliente</h1>
+        <p>Bem-vindo de volta, {client?.name}!</p>
+      </Header>
+
+      <WelcomeSection>
+        <h2>👋 Olá, {client?.name}!</h2>
+        <p>Estamos felizes em vê-lo novamente. Agende seu próximo corte ou acompanhe seus atendimentos.</p>
+      </WelcomeSection>
+
+      <StatsGrid>
+        <StatCard>
+          <div className="stat-icon">📊</div>
+          <div className="stat-number">{stats.totalAttendances}</div>
+          <div className="stat-label">Total de Visitas</div>
+        </StatCard>
         
-        <WelcomeSection>
-          <img src="/logo.jpeg" alt="Matheus Barber Logo" />
-          <h1>Bem-vindo, {client.name}!</h1>
-          <p>Gerencie seu perfil e visualize seus atendimentos</p>
-        </WelcomeSection>
+        <StatCard>
+          <div className="stat-icon">✅</div>
+          <div className="stat-number">{stats.completedAttendances}</div>
+          <div className="stat-label">Cortes Realizados</div>
+        </StatCard>
         
-        <DashboardGrid>
-          <DashboardCard>
-            <div className="card-header">
-              <div className="icon">
-                <FaCalendar />
-              </div>
-              <h3>Iniciar Atendimento</h3>
-            </div>
-            <div className="card-content">
-              <p>Selecione serviços e avance até o pagamento para concluir seu atendimento.</p>
-              <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                <button 
-                  className="btn" 
-                  onClick={() => navigate('/cliente/atendimento/iniciar')}
-                  style={{
-                    background: 'linear-gradient(135deg, #20AC9F 0%, #1A8C7F 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '15px 30px',
-                    borderRadius: '25px',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 15px rgba(32, 172, 159, 0.3)',
-                    transition: 'all 0.3s ease',
-                    minWidth: '200px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(32, 172, 159, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 15px rgba(32, 172, 159, 0.3)';
-                  }}
-                >
-                  Começar Atendimento
-                </button>
-              </div>
-            </div>
-          </DashboardCard>
+        <StatCard>
+          <div className="stat-icon">⏳</div>
+          <div className="stat-number">{stats.pendingAttendances}</div>
+          <div className="stat-label">Agendamentos Pendentes</div>
+        </StatCard>
+        
+        <StatCard>
+          <div className="stat-icon">💰</div>
+          <div className="stat-number">{formatCurrency(stats.totalSpent)}</div>
+          <div className="stat-label">Total Investido</div>
+        </StatCard>
+      </StatsGrid>
+
+      <QuickActions>
+        <h3>
+          <FaPlus />
+          Ações Rápidas
+        </h3>
+        <div className="actions-grid">
+          <Button variant="primary" onClick={handleNewAttendance} fullWidth>
+            <FaCut />
+            Agendar Corte
+          </Button>
           
-          <DashboardCard>
-            <div className="card-header">
-              <div className="icon">
-                <FaCut />
-              </div>
-              <h3>Histórico de Serviços</h3>
-            </div>
-            <div className="card-content">
-              {attendances.length > 0 ? (
-                attendances.map((attendance) => (
-                  <div key={attendance.id} className="attendance-item">
-                    <div className="attendance-header">
-                      <span className="attendance-date">
-                        <strong>{new Date(attendance.appointment_date).toLocaleDateString('pt-BR')}</strong>
-                      </span>
-                    </div>
-                    <div className="attendance-services">
-                      {attendance.services.map((service, index) => (
-                        <div key={index} className="service-item">
-                          <span className="service-name">• {service.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>Nenhum atendimento encontrado.</p>
-              )}
-            </div>
-          </DashboardCard>
+          <Button variant="secondary" onClick={handleViewHistory} fullWidth>
+            <FaHistory />
+            Ver Histórico
+          </Button>
           
-          <DashboardCard>
-            <div className="card-header">
-              <div className="icon">
-                <FaUser />
-              </div>
-              <h3>Informações Pessoais</h3>
-            </div>
-            <div className="card-content">
-              <div className="info-item">
-                <span className="label">Nome:</span>
-                <span className="value">{client.name}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">CPF:</span>
-                <span className="value">{client.cpf}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Telefone:</span>
-                <span className="value">{client.phone}</span>
-              </div>
-              {client.email && (
-                <div className="info-item">
-                  <span className="label">Email:</span>
-                  <span className="value">{client.email}</span>
+          <Button variant="outline" onClick={handleContact} fullWidth>
+            <FaWhatsapp />
+            Falar Conosco
+          </Button>
+          
+          <Button variant="ghost" onClick={handleLogout} fullWidth>
+            <FaUser />
+            Sair
+          </Button>
+        </div>
+      </QuickActions>
+
+      <RecentAttendances>
+        <h3>
+          <FaHistory />
+          Atendimentos Recentes
+        </h3>
+        
+        {recentAttendances.length > 0 ? (
+          recentAttendances.map(attendance => (
+            <AttendanceItem key={attendance.id}>
+              <div className="attendance-info">
+                <div className="service-name">
+                  {attendance.service?.name || 'Serviço não especificado'}
                 </div>
-              )}
-              <div className="info-item">
-                <span className="label">Cliente desde:</span>
-                <span className="value">
-                  {new Date(client.created_at).toLocaleDateString('pt-BR')}
-                </span>
+                <div className="attendance-date">
+                  {formatDateTime(attendance.appointment_date)}
+                </div>
               </div>
-            </div>
-          </DashboardCard>
-        </DashboardGrid>
-        <Footer />
-      </Container>
-    </PageContainer>
+              
+              <div className="attendance-status" className={`attendance-status ${attendance.status}`}>
+                {getStatusText(attendance.status)}
+              </div>
+              
+              <div className="attendance-price">
+                {attendance.service?.price ? formatCurrency(attendance.service.price) : 'N/A'}
+              </div>
+            </AttendanceItem>
+          ))
+        ) : (
+          <EmptyState>
+            <div className="empty-icon">✂️</div>
+            <p>Você ainda não tem atendimentos registrados.</p>
+            <Button variant="primary" onClick={handleNewAttendance}>
+              <FaPlus />
+              Agendar Primeiro Corte
+            </Button>
+          </EmptyState>
+        )}
+      </RecentAttendances>
+
+      <Footer />
+    </Container>
   );
 };
 

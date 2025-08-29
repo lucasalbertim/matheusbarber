@@ -1,0 +1,1 @@
+import styled from "styled-components"; const Card = styled.div`background: var(--surface); border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); transition: transform 0.2s ease; &:hover { transform: translateY(-4px); } @media (max-width: 768px) { padding: 16px; }`; export default Card;

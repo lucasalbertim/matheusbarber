@@ -1,6 +1,11 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import styled from 'styled-components';
+import { ThemeProvider } from 'styled-components';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Estilos globais
+import { GlobalStyles, theme } from './styles';
 
 // Componentes
 import Header from './components/Header';
@@ -49,39 +54,56 @@ const ProtectedHomeRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContainer>
-        <Header />
-        <MainContent>
-          <Routes>
-            {/* Rotas públicas */}
-            <Route path="/" element={<ProtectedHomeRoute />} />
-            <Route path="/cliente/login" element={<ClientLoginPage />} />
-            <Route path="/cliente/cadastro" element={<ClientRegisterPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
-            
-            {/* Rotas do cliente */}
-            <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
-            <Route path="/cliente/atendimento/iniciar" element={<ClientStartAttendancePage />} />
-            <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
-            <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />
-            
-            {/* Rotas do administrador */}
-            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-            <Route path="/admin/setup" element={<AdminSetupPage />} />
-                    <Route path="/admin/clientes" element={<ClientsManagementPage />} />
-        <Route path="/admin/clientes/novo" element={<AddClientPage />} />
-        <Route path="/admin/clientes/:clientId/editar" element={<EditClientPage />} />
-        <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
-        <Route path="/admin/relatorios" element={<ReportsPage />} />
-            <Route path="/admin/servicos" element={<ServicesManagementPage />} />
-            
-            {/* Rota padrão */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </MainContent>
-      </AppContainer>
-    </AuthProvider>
+    <ThemeProvider theme={theme}>
+      <GlobalStyles />
+      <AuthProvider>
+        <AppContainer>
+          <Header />
+          <MainContent>
+            <Routes>
+              {/* Rotas públicas */}
+              <Route path="/" element={<ProtectedHomeRoute />} />
+              <Route path="/cliente/login" element={<ClientLoginPage />} />
+              <Route path="/cliente/cadastro" element={<ClientRegisterPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              
+              {/* Rotas do cliente */}
+              <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
+              <Route path="/cliente/atendimento/iniciar" element={<ClientStartAttendancePage />} />
+              <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
+              <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />
+              
+              {/* Rotas do administrador */}
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/admin/setup" element={<AdminSetupPage />} />
+              <Route path="/admin/clientes" element={<ClientsManagementPage />} />
+              <Route path="/admin/clientes/novo" element={<AddClientPage />} />
+              <Route path="/admin/clientes/:clientId/editar" element={<EditClientPage />} />
+              <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
+              <Route path="/admin/relatorios" element={<ReportsPage />} />
+              <Route path="/admin/servicos" element={<ServicesManagementPage />} />
+              
+              {/* Rota padrão */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </MainContent>
+          
+          {/* Toast notifications */}
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
+        </AppContainer>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
