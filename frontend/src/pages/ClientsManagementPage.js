@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog, FaFileExport } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaPlus, FaWhatsapp, FaEye, FaUserTimes, FaUserCheck, FaFileExcel, FaFilePdf, FaCog } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
-import { formatCPF, formatPhoneBR } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
+import { Button, Card, Input, Loading, Modal, ConfirmationModal, FilterBar, Pagination, Table, Th, Td, Tr } from '../components';
+import { formatCPF, formatPhone, formatDate } from '../utils';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -57,433 +58,18 @@ const BackButton = styled.button`
   }
 `;
 
-const SearchBar = styled.div`
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  align-items: center;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 10px;
-  }
-`;
-
-const SearchRow = styled.div`
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  width: 100%;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 10px;
-  }
-`;
-
 const ActionsRow = styled.div`
   display: flex;
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
+  margin-bottom: 20px;
 
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 10px;
     width: 100%;
   }
-`;
-
-
-
-const StatusFilter = styled.select`
-  padding: 12px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  font-size: 16px;
-  background: white;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  padding: 12px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  font-size: 16px;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
-`;
-
-const AddButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: #20AC9F;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background: var(--primary-dark);
-  }
-`;
-
-const AutoInactivateButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--warning);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background: var(--warning-dark);
-  }
-
-  &:disabled {
-    background: var(--border);
-    cursor: not-allowed;
-  }
-`;
-
-const ExportButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--success);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  position: relative;
-
-  &:hover {
-    background: var(--success-dark);
-  }
-`;
-
-const ExportDropdown = styled.div`
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  min-width: 150px;
-  margin-top: 5px;
-`;
-
-const ExportOption = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text);
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: var(--background);
-  }
-
-  &:first-child {
-    border-radius: 8px 8px 0 0;
-  }
-
-  &:last-child {
-    border-radius: 0 0 8px 8px;
-  }
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--border);
-  }
-`;
-
-const ConfigButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background: var(--primary-dark);
-  }
-`;
-
-const Modal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
-
-  h3 {
-    margin: 0;
-    color: var(--text);
-  }
-
-  button {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--text-light);
-    
-    &:hover {
-      color: var(--text);
-    }
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 20px;
-
-  p {
-    margin: 0 0 15px 0;
-    color: var(--text);
-  }
-`;
-
-const ModalFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 20px;
-  border-top: 1px solid var(--border);
-
-  button {
-    padding: 10px 20px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.3s;
-
-    &:hover {
-      background: var(--background);
-    }
-  }
-`;
-
-const ClientsTable = styled.div`
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-`;
-
-const TableHeader = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 80px 120px;
-  gap: 20px;
-  padding: 20px;
-  background: var(--background);
-  font-weight: 600;
-  color: var(--text);
-  border-bottom: 2px solid var(--border);
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const ClientRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 80px 120px;
-  gap: 20px;
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-
-  &:hover {
-    background: var(--background);
-  }
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  @media (max-width: 768px) {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 20px;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-
-    &:hover {
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-      transform: translateY(-2px);
-    }
-  }
-`;
-
-const ClientInfo = styled.div`
-  .name {
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .details {
-    font-size: 14px;
-    color: var(--text-light);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  @media (max-width: 768px) {
-    text-align: right;
-    
-    .name {
-      font-size: 1rem;
-      margin-bottom: 4px;
-      white-space: normal;
-    }
-    
-    .details {
-      font-size: 0.8rem;
-      white-space: normal;
-    }
-  }
-`;
-
-const ClientField = styled.div`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 14px;
-  color: var(--text);
-
-  @media (max-width: 768px) {
-    white-space: normal;
-    font-size: 1rem;
-    padding: 8px 0;
-  }
-`;
-
-const MobileField = styled.div`
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-`;
-
-const MobileLabel = styled.span`
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: inline;
-    font-weight: 600;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    min-width: 80px;
-  }
-`;
-
-const MobileValue = styled.span`
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: inline;
-    color: var(--text);
-    font-size: 1rem;
-    text-align: right;
-    flex: 1;
-  }
-`;
-
-const ClientStatus = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  @media (max-width: 768px) {
-    justify-content: flex-start;
-  }
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 8px;
 `;
 
 const StatusBadge = styled.span`
@@ -499,106 +85,128 @@ const StatusBadge = styled.span`
   }
   
   &.inactive {
-    background: var(--error-light);
-    color: var(--error);
+    background: var(--danger-light);
+    color: var(--danger);
   }
 `;
 
 const ActionButton = styled.button`
-  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.edit {
-    background: var(--warning);
-    color: white;
-
-    &:hover {
-      background: var(--warning-dark);
-    }
-  }
-
-  &.delete {
-    background: var(--error);
-    color: white;
-
-    &:hover {
-      background: var(--error-dark);
-    }
-  }
-
+  transition: all 0.2s ease;
+  font-size: 14px;
+  
   &.view {
-    background: var(--info);
-    color: white;
-
-    &:hover {
-      background: var(--info-dark);
-    }
+    background: var(--info-light);
+    color: var(--info);
+    &:hover { background: var(--info); color: white; }
   }
-
+  
+  &.edit {
+    background: var(--warning-light);
+    color: var(--warning);
+    &:hover { background: var(--warning); color: white; }
+  }
+  
   &.whatsapp {
     background: #25D366;
     color: white;
-
-    &:hover {
-      background: #128C7E;
-    }
+    &:hover { background: #128C7E; }
   }
-
+  
   &.reactivate {
-    background: #20AC9F;
-    color: white;
-
-    &:hover {
-      background: var(--success-dark);
-    }
+    background: var(--success-light);
+    color: var(--success);
+    &:hover { background: var(--success); color: white; }
+  }
+  
+  &.delete {
+    background: var(--danger-light);
+    color: var(--danger);
+    &:hover { background: var(--danger); color: white; }
   }
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-light);
-
-  h3 {
-    margin-bottom: 10px;
-    color: var(--text);
-  }
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
 `;
 
-const LoadingState = styled.div`
+const StatCard = styled(Card)`
   text-align: center;
-  padding: 60px 20px;
-  color: var(--text-light);
+  padding: 20px;
+  
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  
+  .stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
 `;
 
 const ClientsManagementPage = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
   const [inactiveDays, setInactiveDays] = useState(45);
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0
+  });
+
+  const filters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      value: statusFilter,
+      options: [
+        { value: 'all', label: 'Todos' },
+        { value: 'active', label: 'Ativos' },
+        { value: 'inactive', label: 'Inativos' }
+      ]
+    }
+  ];
 
   const fetchClients = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await api.get(`/admin/clients/?status=${statusFilter}`);
       setClients(response.data);
-      setFilteredClients(response.data);
+      
+      const total = response.data.length;
+      const active = response.data.filter(c => c.is_active).length;
+      const inactive = total - active;
+      setStats({ total, active, inactive });
     } catch (error) {
-      console.error('Erro ao buscar clientes:', error);
+      console.error('Erro ao carregar clientes:', error);
       toast.error('Erro ao carregar clientes');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [statusFilter]);
 
@@ -627,22 +235,34 @@ const ClientsManagementPage = () => {
     };
     
     filterClients();
+    setCurrentPage(1);
   }, [searchTerm, clients]);
 
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentClients = filteredClients.slice(startIndex, endIndex);
 
+  const handleFilterChange = (key, value) => {
+    if (key === 'status') {
+      setStatusFilter(value);
+    }
+  };
 
-
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+  };
 
   const handleViewClient = (clientId) => {
-    // Por enquanto, vamos mostrar os detalhes em um modal ou alert
     const client = clients.find(c => c.id === clientId);
     if (client) {
       const details = `
 Nome: ${client.name}
 CPF: ${formatCPF(client.cpf)}
-Telefone: ${formatPhoneBR(client.phone)}
+Telefone: ${formatPhone(client.phone)}
 Email: ${client.email || 'Não informado'}
-ID: ${client.id}
+Status: ${client.is_active ? 'Ativo' : 'Inativo'}
+Data de Cadastro: ${formatDate(client.created_at)}
       `;
       alert(details);
     }
@@ -652,15 +272,19 @@ ID: ${client.id}
     navigate(`/admin/clientes/${clientId}/editar`);
   };
 
-  const handleDeleteClient = async (clientId) => {
-    if (!window.confirm('⚠️ ATENÇÃO: Você está excluindo definitivamente o cliente do banco de dados. Esta ação não pode ser desfeita. Deseja continuar?')) {
-      return;
-    }
+  const handleDeleteClient = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    setClientToDelete(client);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteClient = async () => {
     try {
-      await api.delete(`/admin/clients/${clientId}`);
-      toast.success('Cliente excluído definitivamente com sucesso');
+      await api.delete(`/admin/clients/${clientToDelete.id}`);
+      toast.success('Cliente excluído com sucesso');
       fetchClients();
+      setShowDeleteModal(false);
+      setClientToDelete(null);
     } catch (error) {
       console.error('Erro ao excluir cliente:', error);
       toast.error('Erro ao excluir cliente');
@@ -672,10 +296,6 @@ ID: ${client.id}
   };
 
   const handleAutoInactivate = async () => {
-    if (!window.confirm(`Deseja inativar automaticamente os clientes que não vieram há ${inactiveDays} dias?`)) {
-      return;
-    }
-
     try {
       const response = await api.post(`/admin/clients/auto-inactivate?days=${inactiveDays}`);
       toast.success(response.data.message);
@@ -684,6 +304,23 @@ ID: ${client.id}
       console.error('Erro ao inativar clientes:', error);
       toast.error('Erro ao executar inativação automática');
     }
+  };
+
+  const handleReactivateClient = async (clientId) => {
+    try {
+      await api.post(`/admin/clients/${clientId}/reactivate`);
+      toast.success('Cliente reativado com sucesso');
+      fetchClients();
+    } catch (error) {
+      console.error('Erro ao reativar cliente:', error);
+      toast.error('Erro ao reativar cliente');
+    }
+  };
+
+  const handleWhatsApp = (phone) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/55${cleanPhone}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleExportExcel = async () => {
@@ -700,12 +337,10 @@ ID: ${client.id}
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
-      toast.success('Lista de clientes exportada com sucesso!');
-      setShowExportDropdown(false);
+      toast.success('Exportação realizada com sucesso');
     } catch (error) {
-      console.error('Erro ao exportar Excel:', error);
-      toast.error('Erro ao exportar lista de clientes');
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar dados');
     }
   };
 
@@ -723,23 +358,17 @@ ID: ${client.id}
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
-      toast.success('Lista de clientes exportada com sucesso!');
-      setShowExportDropdown(false);
+      toast.success('Exportação realizada com sucesso');
     } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
-      toast.error('Erro ao exportar lista de clientes');
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar dados');
     }
-  };
-
-  const handleConfigInactiveDays = () => {
-    setShowConfigModal(true);
   };
 
   const handleSaveConfig = async () => {
     try {
       await api.post('/admin/clients/config', { inactive_days: inactiveDays });
-      toast.success('Configuração salva com sucesso!');
+      toast.success('Configuração salva com sucesso');
       setShowConfigModal(false);
     } catch (error) {
       console.error('Erro ao salvar configuração:', error);
@@ -747,51 +376,10 @@ ID: ${client.id}
     }
   };
 
-  // Fechar dropdown quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showExportDropdown && !event.target.closest('.export-container')) {
-        setShowExportDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showExportDropdown]);
-
-  const handleReactivateClient = async (clientId) => {
-    if (!window.confirm('Deseja reativar este cliente?')) {
-      return;
-    }
-
-    try {
-      await api.post(`/admin/clients/${clientId}/reactivate`);
-      toast.success('Cliente reativado com sucesso');
-      fetchClients();
-    } catch (error) {
-      console.error('Erro ao reativar cliente:', error);
-      toast.error('Erro ao reativar cliente');
-    }
-  };
-
-  const handleWhatsApp = (phone) => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/55${cleanPhone}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleBackClick = () => {
-    navigate('/admin/dashboard');
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <Container>
-        <LoadingState>
-          <h3>Carregando clientes...</h3>
-        </LoadingState>
+        <Loading text="Carregando clientes..." />
       </Container>
     );
   }
@@ -799,197 +387,190 @@ ID: ${client.id}
   return (
     <Container>
       <Header>
-        <Title>Gestão de Clientes</Title>
-        <BackButton onClick={handleBackClick}>
-          <FaArrowLeft />
-          Voltar ao Dashboard
-        </BackButton>
+        <div>
+          <BackButton onClick={() => navigate('/admin/dashboard')}>
+            <FaArrowLeft />
+            Voltar ao Dashboard
+          </BackButton>
+          <Title>Gerenciamento de Clientes</Title>
+        </div>
       </Header>
 
-      <SearchBar>
-        {/* Busca e Filtros - Sempre visíveis */}
-        <SearchRow>
-          <SearchInput
-            type="text"
-            placeholder="Buscar por nome, CPF, telefone ou email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+      <StatsGrid>
+        <StatCard>
+          <div className="stat-number">{stats.total}</div>
+          <div className="stat-label">Total de Clientes</div>
+        </StatCard>
+        <StatCard>
+          <div className="stat-number">{stats.active}</div>
+          <div className="stat-label">Clientes Ativos</div>
+        </StatCard>
+        <StatCard>
+          <div className="stat-number">{stats.inactive}</div>
+          <div className="stat-label">Clientes Inativos</div>
+        </StatCard>
+      </StatsGrid>
+
+      <FilterBar
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        searchPlaceholder="Buscar por nome, CPF, telefone ou email..."
+      />
+
+      <ActionsRow>
+        <Button variant="primary" onClick={handleAddClient}>
+          <FaPlus />
+          Novo Cliente
+        </Button>
+        
+        <Button variant="warning" onClick={handleAutoInactivate}>
+          <FaUserTimes />
+          Inativação Automática
+        </Button>
+        
+        <Button variant="success" onClick={handleExportExcel}>
+          <FaFileExcel />
+          Exportar Excel
+        </Button>
+        
+        <Button variant="secondary" onClick={handleExportPDF}>
+          <FaFilePdf />
+          Exportar PDF
+        </Button>
+        
+        <Button variant="ghost" onClick={() => setShowConfigModal(true)}>
+          <FaCog />
+          Configurações
+        </Button>
+      </ActionsRow>
+
+      <Card>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Nome</Th>
+              <Th>CPF</Th>
+              <Th>Telefone</Th>
+              <Th>Email</Th>
+              <Th>Status</Th>
+              <Th>Ações</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentClients.map(client => (
+              <Tr key={client.id}>
+                <Td>
+                  <div>
+                    <strong>{client.name}</strong>
+                    <br />
+                    <small>ID: {client.id}</small>
+                  </div>
+                </Td>
+                <Td>{formatCPF(client.cpf)}</Td>
+                <Td>{formatPhone(client.phone)}</Td>
+                <Td>{client.email || 'Não informado'}</Td>
+                <Td>
+                  <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
+                    {client.is_active ? 'Ativo' : 'Inativo'}
+                  </StatusBadge>
+                </Td>
+                <Td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <ActionButton
+                      className="view"
+                      title="Visualizar"
+                      onClick={() => handleViewClient(client.id)}
+                    >
+                      <FaEye />
+                    </ActionButton>
+                    
+                    <ActionButton
+                      className="edit"
+                      title="Editar"
+                      onClick={() => handleEditClient(client.id)}
+                    >
+                      <FaEdit />
+                    </ActionButton>
+                    
+                    <ActionButton
+                      className="whatsapp"
+                      title="WhatsApp"
+                      onClick={() => handleWhatsApp(client.phone)}
+                      >
+                      <FaWhatsapp />
+                    </ActionButton>
+                    
+                    {!client.is_active && (
+                      <ActionButton
+                        className="reactivate"
+                        title="Reativar"
+                        onClick={() => handleReactivateClient(client.id)}
+                      >
+                        <FaUserCheck />
+                      </ActionButton>
+                    )}
+                    
+                    <ActionButton
+                      className="delete"
+                      title="Excluir"
+                      onClick={() => handleDeleteClient(client.id)}
+                    >
+                      <FaTrash />
+                    </ActionButton>
+                  </div>
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </Table>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
-          <StatusFilter
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">Todos os Clientes</option>
-            <option value="active">Apenas Ativos</option>
-            <option value="inactive">Apenas Inativos</option>
-          </StatusFilter>
-        </SearchRow>
-
-        {/* Ações - Responsivas */}
-        <ActionsRow>
-          {/* Desktop: Botões visíveis */}
-          <ConfigButton onClick={handleConfigInactiveDays}>
-            <FaCog />
-            Configurar
-          </ConfigButton>
-          <AutoInactivateButton onClick={handleAutoInactivate}>
-            <FaUserTimes />
-            Inativar ({inactiveDays} dias)
-          </AutoInactivateButton>
-          
-          <div className="export-container" style={{ position: 'relative' }}>
-            <ExportButton onClick={() => setShowExportDropdown(!showExportDropdown)}>
-              <FaFileExport />
-              Exportar
-            </ExportButton>
-            
-            {showExportDropdown && (
-              <ExportDropdown>
-                <ExportOption onClick={handleExportExcel}>
-                  <FaFileExcel />
-                  Exportar Excel
-                </ExportOption>
-                <ExportOption onClick={handleExportPDF}>
-                  <FaFilePdf />
-                  Exportar PDF
-                </ExportOption>
-              </ExportDropdown>
-            )}
-          </div>
-          
-          <AddButton onClick={handleAddClient}>
-            <FaPlus />
-            Novo Cliente
-          </AddButton>
-
-
-        </ActionsRow>
-      </SearchBar>
-
-      <ClientsTable>
-        <TableHeader>
-          <div>Nome</div>
-          <div>CPF</div>
-          <div>Telefone</div>
-          <div>Email</div>
-          <div>Status</div>
-          <div>Ações</div>
-        </TableHeader>
-
-        {filteredClients.length === 0 ? (
-          <EmptyState>
-            <h3>Nenhum cliente encontrado</h3>
-            <p>Comece cadastrando o primeiro cliente ou ajuste os filtros de busca.</p>
-          </EmptyState>
-        ) : (
-          filteredClients.map((client) => (
-            <ClientRow key={client.id}>
-              <ClientInfo>
-                <div className="name">{client.name}</div>
-                <div className="details">ID: {client.id}</div>
-              </ClientInfo>
-              
-              <ClientField>
-                {formatCPF(client.cpf)}
-              </ClientField>
-              
-              <ClientField>
-                {formatPhoneBR(client.phone)}
-              </ClientField>
-              
-              <ClientField>
-                {client.email || 'Não informado'}
-              </ClientField>
-              
-              <ClientStatus>
-                <StatusBadge className={client.is_active ? 'active' : 'inactive'}>
-                  {client.is_active ? 'Ativo' : 'Inativo'}
-                </StatusBadge>
-              </ClientStatus>
-              
-              <ActionButtons>
-                <ActionButton
-                  className="view"
-                  title="Visualizar"
-                  onClick={() => handleViewClient(client.id)}
-                >
-                  <FaEye />
-                </ActionButton>
-                
-                <ActionButton
-                  className="edit"
-                  title="Editar"
-                  onClick={() => handleEditClient(client.id)}
-                >
-                  <FaEdit />
-                </ActionButton>
-                
-                <ActionButton
-                  className="whatsapp"
-                  title="WhatsApp"
-                  onClick={() => handleWhatsApp(client.phone)}
-                >
-                  <FaWhatsapp />
-                </ActionButton>
-                
-                {!client.is_active && (
-                  <ActionButton
-                    className="reactivate"
-                    title="Reativar"
-                    onClick={() => handleReactivateClient(client.id)}
-                  >
-                    <FaUserCheck />
-                  </ActionButton>
-                )}
-                
-                <ActionButton
-                  className="delete"
-                  title="Excluir"
-                  onClick={() => handleDeleteClient(client.id)}
-                >
-                  <FaTrash />
-                </ActionButton>
-              </ActionButtons>
-            </ClientRow>
-          ))
         )}
-      </ClientsTable>
+      </Card>
 
-      {/* Modal de Configuração */}
-      {showConfigModal && (
-        <Modal>
-          <ModalContent>
-            <ModalHeader>
-              <h3>Configurar Inativação Automática</h3>
-              <button onClick={() => setShowConfigModal(false)}>&times;</button>
-            </ModalHeader>
-            <ModalBody>
-              <p>Configure quantos dias um cliente deve ficar sem atendimento para ser automaticamente inativado:</p>
-              <input
-                type="number"
-                min="1"
-                max="365"
-                value={inactiveDays}
-                onChange={(e) => setInactiveDays(parseInt(e.target.value) || 45)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid var(--border)',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  marginTop: '10px'
-                }}
-              />
-            </ModalBody>
-            <ModalFooter>
-              <button onClick={() => setShowConfigModal(false)}>Cancelar</button>
-              <button onClick={handleSaveConfig} style={{ background: 'var(--primary)', color: 'white' }}>
-                Salvar
-              </button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        isOpen={showConfigModal}
+        onClose={() => setShowConfigModal(false)}
+        title="Configurar Inativação Automática"
+      >
+        <div style={{ padding: '20px' }}>
+          <p>Configure quantos dias um cliente deve ficar sem atendimento para ser automaticamente inativado:</p>
+          <Input
+            type="number"
+            min="1"
+            max="365"
+            value={inactiveDays}
+            onChange={(e) => setInactiveDays(parseInt(e.target.value) || 45)}
+            placeholder="Número de dias"
+            style={{ marginTop: '16px' }}
+          />
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <Button variant="ghost" onClick={() => setShowConfigModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" onClick={handleSaveConfig}>
+              Salvar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteClient}
+        title="Confirmar Exclusão"
+        message={`Tem certeza que deseja excluir o cliente "${clientToDelete?.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+      />
 
       <Footer />
     </Container>

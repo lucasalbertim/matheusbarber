@@ -1,25 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaClock, FaMoneyBillWave, FaCut, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaCalendarAlt, FaClock, FaCut, FaCheck, FaInfoCircle } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
 import Footer from '../components/Footer';
+import { Button, Card, Input, Loading, Modal } from '../components';
+import { formatDate, formatTime, formatDuration, formatCurrency } from '../utils';
 
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--background) 0%, #f8f9fa 100%);
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
+  text-align: center;
   margin-bottom: 30px;
+  
+  h1 {
+    color: var(--primary);
+    margin-bottom: 10px;
+  }
+  
+  p {
+    color: var(--text-secondary);
+  }
 `;
 
 const BackButton = styled.button`
@@ -33,404 +47,633 @@ const BackButton = styled.button`
   font-size: 16px;
   font-weight: 600;
   transition: color 0.3s;
-  padding: 8px 12px;
-  border-radius: 8px;
+  margin-bottom: 20px;
 
   &:hover {
     color: var(--primary);
-    background: rgba(0, 0, 0, 0.05);
   }
 `;
 
-const Title = styled.h1`
-  color: var(--primary);
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-`;
-
-const Subtitle = styled.p`
-  color: var(--text-light);
-  margin: 0;
-  font-size: 1.1rem;
-`;
-
-const ServicesCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  margin-bottom: 30px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-`;
-
-const ServicesList = styled.div`
-  margin-bottom: 30px;
-`;
-
-const ServiceItem = styled.div`
+const StepIndicator = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background: ${props => props.selected ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' : 'var(--background)'};
-  border-radius: 16px;
-  margin-bottom: 16px;
-  border: 2px solid ${props => props.selected ? 'var(--primary)' : 'rgba(0, 0, 0, 0.05)'};
-  transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    border-color: ${props => props.selected ? 'var(--primary)' : 'var(--primary)'};
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${props => props.selected ? 'rgba(255, 255, 255, 0.1)' : 'transparent'};
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover::before {
-    opacity: 1;
-  }
-`;
-
-const ServiceInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex: 1;
-`;
-
-const ServiceIcon = styled.div`
-  width: 50px;
-  height: 50px;
-  background: ${props => props.selected ? 'rgba(255, 255, 255, 0.2)' : 'var(--primary)'};
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  color: ${props => props.selected ? 'white' : 'white'};
-  font-size: 20px;
-  transition: all 0.3s ease;
-`;
-
-const ServiceDetails = styled.div`
-  flex: 1;
+  margin-bottom: 30px;
   
-  .service-name {
-    font-weight: 700;
-    color: ${props => props.selected ? 'white' : 'var(--text)'};
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-    transition: color 0.3s ease;
-  }
-
-  .service-info {
-    color: ${props => props.selected ? 'rgba(255, 255, 255, 0.9)' : 'var(--text-light)'};
-    font-size: 0.95rem;
+  .step {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: color 0.3s ease;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    &.completed {
+      background: var(--success);
+      color: white;
+    }
+    
+    &.pending {
+      background: var(--surface);
+      color: var(--text-secondary);
+      border: 2px solid var(--border);
+    }
+  }
+  
+  .step-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    margin: 0 10px;
+    
+    &.completed {
+      background: var(--success);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    
+    .step-connector {
+      width: 2px;
+      height: 20px;
+    }
   }
 `;
 
-const ServicePrice = styled.div`
-  font-weight: 700;
-  color: ${props => props.selected ? 'white' : 'var(--primary)'};
-  font-size: 1.3rem;
-  transition: color 0.3s ease;
-`;
-
-const SelectionIndicator = styled.div`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid ${props => props.selected ? 'white' : 'var(--border)'};
-  background: ${props => props.selected ? 'white' : 'transparent'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  margin-left: 20px;
-
-  svg {
+const ServiceSelection = styled(Card)`
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
     color: var(--primary);
-    font-size: 12px;
-    opacity: ${props => props.selected ? '1' : '0'};
-    transition: opacity 0.3s ease;
-  }
-`;
-
-const SummarySection = styled.div`
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  border-radius: 16px;
-  padding: 25px;
-  color: white;
-  margin-bottom: 30px;
-  text-align: center;
-`;
-
-const SummaryTitle = styled.h3`
-  margin: 0 0 15px 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-`;
-
-const SummaryInfo = styled.div`
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  gap: 20px;
-`;
-
-const SummaryItem = styled.div`
-  text-align: center;
-  
-  .label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   
-  .value {
-    font-size: 1.4rem;
-    font-weight: 700;
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
   }
 `;
 
-const Actions = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-`;
-
-const Button = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 32px;
-  border: none;
+const ServiceCard = styled.div`
+  border: 2px solid var(--border);
   border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 180px;
-  justify-content: center;
-
-  &.primary {
-    background: var(--primary);
-    color: white;
-
-    &:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
+  transition: all 0.2s ease;
+  
+  &.selected {
+    border-color: var(--primary);
+    background: rgba(32, 172, 159, 0.05);
+    box-shadow: 0 4px 12px rgba(32, 172, 159, 0.2);
   }
-
-  &.secondary {
-    background: var(--background);
+  
+  &:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  
+  .service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  
+  .service-name {
+    font-weight: 600;
+    font-size: 1.1rem;
     color: var(--text);
-    border: 2px solid var(--border);
+  }
+  
+  .service-price {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.2rem;
+  }
+  
+  .service-description {
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+  }
+  
+  .service-duration {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+`;
 
-    &:hover {
-      background: var(--border);
-      transform: translateY(-2px);
+const DateSelection = styled(Card)`
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .calendar-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 8px;
+  }
+  
+  .calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    
+    &:hover:not(.disabled) {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+    
+    &.selected {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    &.disabled {
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
+    &.today {
+      border-color: var(--primary);
+      font-weight: 700;
     }
   }
+`;
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+const TimeSelection = styled(Card)`
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+  }
+  
+  .time-slot {
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    
+    &:hover:not(.disabled) {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    
+    &.selected {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    &.disabled {
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+`;
+
+const Summary = styled(Card)`
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    
+    &:last-child {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+  }
+  
+  .summary-label {
+    color: var(--text-secondary);
+  }
+  
+  .summary-value {
+    font-weight: 600;
+    color: var(--text);
+  }
+`;
+
+const NavigationButtons = styled.div`
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
   }
 `;
 
 const ClientStartAttendancePage = () => {
-  const { client } = useAuth();
   const navigate = useNavigate();
+  const { client } = useAuth();
+  
+  const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const steps = [
+    { id: 1, name: 'Serviço', icon: FaCut },
+    { id: 2, name: 'Data', icon: FaCalendarAlt },
+    { id: 3, name: 'Horário', icon: FaClock },
+    { id: 4, name: 'Resumo', icon: FaCheck }
+  ];
 
   useEffect(() => {
-    if (!client) { navigate('/cliente/login'); return; }
+    if (!client) {
+      navigate('/cliente/login');
+      return;
+    }
     
-    const load = async () => {
-      try {
-        const { data } = await api.get('/services/');
-        setServices(data);
-      } catch (e) {
-        toast.error('Erro ao carregar serviços');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    load();
-    
-    // Controle de navegação do navegador - logout automático ao tentar voltar
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    
-    const handlePopState = (event) => {
-      event.preventDefault();
-      // Redireciona para o dashboard em vez de fazer logout direto
-      navigate('/cliente/dashboard');
-    };
-    
-    // Adiciona listeners para controlar a navegação
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-    
-    // Remove listeners quando o componente for desmontado
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
+    fetchServices();
   }, [client, navigate]);
 
-  const toggle = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/services/');
+      setServices(response.data.filter(service => service.is_active));
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+      toast.error('Erro ao carregar serviços');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleNext = () => {
-    if (selected.length === 0) { toast.warn('Selecione pelo menos um serviço'); return; }
-    const chosen = services.filter(s => selected.includes(s.id));
-    const totalPrice = chosen.reduce((acc, s) => acc + s.price, 0);
-    const totalMinutes = chosen.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
-    sessionStorage.setItem('attendance_selection', JSON.stringify({ service_ids: selected, totalPrice, totalMinutes }));
-    navigate('/cliente/atendimento/resumo');
+  const generateAvailableSlots = (date) => {
+    const slots = [];
+    const startHour = 8; // 8:00
+    const endHour = 20; // 20:00
+    const slotDuration = 30; // 30 minutos
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += slotDuration) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(time);
+      }
+    }
+    
+    setAvailableSlots(slots);
   };
 
-  const handleBack = () => {
-    navigate('/cliente/dashboard');
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    setCurrentStep(2);
   };
 
-  const totalPrice = services.filter(s => selected.includes(s.id)).reduce((acc, s) => acc + s.price, 0);
-  const totalMinutes = services.filter(s => selected.includes(s.id)).reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    generateAvailableSlots(date);
+    setCurrentStep(3);
+  };
+
+  const handleTimeSelect = (time) => {
+    setSelectedTime(time);
+    setCurrentStep(4);
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleNextStep = () => {
+    if (currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedService || !selectedDate || !selectedTime) {
+      toast.error('Por favor, complete todas as etapas');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      const appointmentDate = new Date(selectedDate);
+      const [hours, minutes] = selectedTime.split(':');
+      appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const attendanceData = {
+        client_id: client.id,
+        service_id: selectedService.id,
+        appointment_date: appointmentDate.toISOString(),
+        status: 'waiting'
+      };
+      
+      const response = await api.post('/attendance/', attendanceData);
+      
+      toast.success('Agendamento realizado com sucesso!');
+      navigate('/cliente/atendimento/resumo', { 
+        state: { attendance: response.data } 
+      });
+      
+    } catch (error) {
+      console.error('Erro ao criar agendamento:', error);
+      toast.error('Erro ao realizar agendamento');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const generateCalendarDays = () => {
+    const days = [];
+    const today = new Date();
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    // Dias da semana
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    weekdays.forEach(day => {
+      days.push({ type: 'header', label: day });
+    });
+    
+    // Dias vazios no início
+    for (let i = 0; i < currentMonth.getDay(); i++) {
+      days.push({ type: 'empty' });
+    }
+    
+    // Dias do mês
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const date = new Date(today.getFullYear(), today.getMonth(), day);
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today;
+      
+      days.push({
+        type: 'day',
+        day,
+        date,
+        isToday,
+        isPast
+      });
+    }
+    
+    return days;
+  };
 
   if (loading) {
     return (
       <Container>
-        <div style={{ textAlign: 'center', padding: '50px 20px' }}>
-          <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Carregando serviços...</div>
-        </div>
+        <Loading text="Carregando serviços..." />
       </Container>
     );
   }
 
   return (
     <Container>
+      <BackButton onClick={() => navigate('/cliente/dashboard')}>
+        <FaArrowLeft />
+        Voltar ao Dashboard
+      </BackButton>
+
       <Header>
-        <BackButton onClick={handleBack}>
-          <FaArrowLeft />
-          Voltar
-        </BackButton>
-        <div>
-          <Title>Escolha seus serviços</Title>
-          <Subtitle>Selecione um ou mais serviços para seu atendimento</Subtitle>
-        </div>
+        <h1>Agendar Atendimento</h1>
+        <p>Escolha o serviço, data e horário para seu agendamento</p>
       </Header>
 
-      <ServicesCard>
-        <ServicesList>
-          {services.map(service => {
-            const isSelected = selected.includes(service.id);
-            return (
-              <ServiceItem 
-                key={service.id} 
-                selected={isSelected}
-                onClick={() => toggle(service.id)}
-              >
-                <ServiceInfo>
-                  <ServiceIcon selected={isSelected}>
-                    <FaCut />
-                  </ServiceIcon>
-                  <ServiceDetails selected={isSelected}>
-                    <div className="service-name">{service.name}</div>
-                    <div className="service-info">
-                      <FaClock />
-                      {service.duration_minutes} min
-                    </div>
-                  </ServiceDetails>
-                </ServiceInfo>
-                
-                <ServicePrice selected={isSelected}>
-                  R$ {service.price.toFixed(2)}
-                </ServicePrice>
-                
-                <SelectionIndicator selected={isSelected}>
-                  <FaCheck />
-                </SelectionIndicator>
-              </ServiceItem>
-            );
-          })}
-        </ServicesList>
-      </ServicesCard>
+      <StepIndicator>
+        {steps.map((step, index) => (
+          <React.Fragment key={step.id}>
+            <div className={`step ${currentStep === step.id ? 'active' : currentStep > step.id ? 'completed' : 'pending'}`}>
+              <step.icon />
+              {step.name}
+            </div>
+            {index < steps.length - 1 && (
+              <div className={`step-connector ${currentStep > step.id ? 'completed' : ''}`} />
+            )}
+          </React.Fragment>
+        ))}
+      </StepIndicator>
 
-      {selected.length > 0 && (
-        <SummarySection>
-          <SummaryTitle>Resumo da Seleção</SummaryTitle>
-          <SummaryInfo>
-            <SummaryItem>
-              <div className="label">Serviços</div>
-              <div className="value">{selected.length}</div>
-            </SummaryItem>
-            <SummaryItem>
-              <div className="label">Tempo Total</div>
-              <div className="value">{totalMinutes} min</div>
-            </SummaryItem>
-            <SummaryItem>
-              <div className="label">Valor Total</div>
-              <div className="value">R$ {totalPrice.toFixed(2)}</div>
-            </SummaryItem>
-          </SummaryInfo>
-        </SummarySection>
+      {currentStep === 1 && (
+        <ServiceSelection>
+          <h3>
+            <FaCut />
+            Escolha o Serviço
+          </h3>
+          <div className="services-grid">
+            {services.map(service => (
+              <ServiceCard
+                key={service.id}
+                onClick={() => handleServiceSelect(service)}
+              >
+                <div className="service-header">
+                  <div className="service-name">{service.name}</div>
+                  <div className="service-price">{formatCurrency(service.price)}</div>
+                </div>
+                <div className="service-description">{service.description}</div>
+                <div className="service-duration">
+                  <FaClock />
+                  {formatDuration(service.duration_minutes)}
+                </div>
+              </ServiceCard>
+            ))}
+          </div>
+        </ServiceSelection>
       )}
 
-      <Actions>
-        <Button 
-          className="secondary" 
-          onClick={handleBack}
-        >
-          <FaArrowLeft />
-          Voltar
-        </Button>
-        <Button 
-          className="primary" 
-          onClick={handleNext}
-          disabled={selected.length === 0}
-        >
-          <FaMoneyBillWave />
-          {selected.length === 0 ? 'Selecione serviços' : 'Avançar'}
-        </Button>
-      </Actions>
-      
+      {currentStep === 2 && selectedService && (
+        <DateSelection>
+          <h3>
+            <FaCalendarAlt />
+            Escolha a Data
+          </h3>
+          <div className="calendar-grid">
+            {generateCalendarDays().map((day, index) => {
+              if (day.type === 'header') {
+                return (
+                  <div key={index} className="calendar-header">
+                    {day.label}
+                  </div>
+                );
+              }
+              
+              if (day.type === 'empty') {
+                return <div key={index} />;
+              }
+              
+              return (
+                <div
+                  key={index}
+                  className={`calendar-day ${day.isToday ? 'today' : ''} ${day.isPast ? 'disabled' : ''}`}
+                  onClick={() => !day.isPast && handleDateSelect(day.date)}
+                >
+                  {day.day}
+                </div>
+              );
+            })}
+          </div>
+        </DateSelection>
+      )}
+
+      {currentStep === 3 && selectedService && selectedDate && (
+        <TimeSelection>
+          <h3>
+            <FaClock />
+            Escolha o Horário
+          </h3>
+          <div className="time-slots">
+            {availableSlots.map(time => (
+              <div
+                key={time}
+                className={`time-slot ${selectedTime === time ? 'selected' : ''}`}
+                onClick={() => handleTimeSelect(time)}
+              >
+                {time}
+              </div>
+            ))}
+          </div>
+        </TimeSelection>
+      )}
+
+      {currentStep === 4 && selectedService && selectedDate && selectedTime && (
+        <Summary>
+          <h3>
+            <FaCheck />
+            Resumo do Agendamento
+          </h3>
+          
+          <div className="summary-item">
+            <span className="summary-label">Serviço:</span>
+            <span className="summary-value">{selectedService.name}</span>
+          </div>
+          
+          <div className="summary-item">
+            <span className="summary-label">Data:</span>
+            <span className="summary-value">{formatDate(selectedDate)}</span>
+          </div>
+          
+          <div className="summary-item">
+            <span className="summary-label">Horário:</span>
+            <span className="summary-value">{selectedTime}</span>
+          </div>
+          
+          <div className="summary-item">
+            <span className="summary-label">Duração:</span>
+            <span className="summary-value">{formatDuration(selectedService.duration_minutes)}</span>
+          </div>
+          
+          <div className="summary-item">
+            <span className="summary-label">Valor:</span>
+            <span className="summary-value">{formatCurrency(selectedService.price)}</span>
+          </div>
+        </Summary>
+      )}
+
+      <NavigationButtons>
+        {currentStep > 1 && (
+          <Button variant="ghost" onClick={handlePreviousStep}>
+            Voltar
+          </Button>
+        )}
+        
+        {currentStep < 4 ? (
+          <Button 
+            variant="primary" 
+            onClick={handleNextStep}
+            disabled={
+              (currentStep === 1 && !selectedService) ||
+              (currentStep === 2 && !selectedDate) ||
+              (currentStep === 3 && !selectedTime)
+            }
+          >
+            Próximo
+          </Button>
+        ) : (
+          <Button 
+            variant="primary" 
+            onClick={handleSubmit}
+            disabled={submitting}
+            fullWidth
+          >
+            {submitting ? 'Confirmando...' : 'Confirmar Agendamento'}
+          </Button>
+        )}
+      </NavigationButtons>
+
       <Footer />
     </Container>
   );
 };
 
 export default ClientStartAttendancePage;
-
