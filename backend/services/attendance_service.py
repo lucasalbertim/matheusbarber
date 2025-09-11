@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 from models import Attendance, Client, Service
 from schemas import AttendanceCreate, AttendanceUpdate
 from utils.date_utils import get_recife_datetime, get_recife_date
+from .config_service import ConfigService
 
 class AttendanceService:
     def create_attendance(self, db: Session, attendance: AttendanceCreate) -> Dict[str, Any]:
@@ -45,6 +46,26 @@ class AttendanceService:
             payload['attendance_type'] = 'presential'
         else:
             payload['attendance_type'] = 'appointment'
+        
+        # Verificar configurações do sistema
+        config = ConfigService.get_attendance_mode_config(db)
+        
+        # Validar se o modo de atendimento está habilitado
+        if payload['attendance_type'] == 'presential' and not config.get('presential_mode_enabled', False):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Modo de atendimento presencial está desabilitado"
+            )
+        
+        if payload['attendance_type'] == 'appointment' and not config.get('appointment_mode_enabled', False):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Modo de agendamento está desabilitado"
+            )
+        
+        # Validar agendamento se for do tipo appointment
+        if payload['attendance_type'] == 'appointment':
+            self.validate_appointment_schedule(db, attendance_date)
         
         db_attendance = Attendance(**payload)
         db_attendance.services = services
@@ -95,13 +116,23 @@ class AttendanceService:
             )
         return attendance
     
-    def get_today_attendance(self, db: Session) -> List[Attendance]:
+    def get_today_attendance(self, db: Session, attendance_type: str = "all") -> List[Attendance]:
         today = get_recife_date()
         
-        # Buscar atendimentos de hoje
-        attendances = db.query(Attendance).filter(
+        # Construir query base
+        query = db.query(Attendance).filter(
             func.date(Attendance.appointment_date) == today
-        ).order_by(Attendance.appointment_date.desc()).all()
+        )
+        
+        # Aplicar filtro por tipo se especificado
+        if attendance_type == "presential":
+            query = query.filter(Attendance.attendance_type == "presential")
+        elif attendance_type == "appointment":
+            query = query.filter(Attendance.attendance_type == "appointment")
+        # Se attendance_type == "all", não aplica filtro adicional
+        
+        # Buscar atendimentos de hoje
+        attendances = query.order_by(Attendance.appointment_date.desc()).all()
         
         return attendances
     
@@ -133,6 +164,85 @@ class AttendanceService:
         db_attendance = self.get_attendance(db, attendance_id)
         db.delete(db_attendance)
         db.commit()
+    
+    def validate_appointment_schedule(self, db: Session, appointment_date: datetime) -> Dict[str, Any]:
+        """Validar se um agendamento pode ser feito baseado nas configurações do sistema"""
+        config = ConfigService.get_attendance_mode_config(db)
+        
+        # Verificar se o modo de agendamento está habilitado
+        if not config.get('appointment_mode_enabled', False):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Modo de agendamento está desabilitado"
+            )
+        
+        # Verificar se é um dia válido para agendamento
+        appointment_weekday = appointment_date.weekday()
+        scheduled_days = config.get('appointment_scheduled_days', [])
+        
+        if not config.get('appointment_always_scheduled', False) and appointment_weekday not in scheduled_days:
+            weekday_names = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Agendamentos não são permitidos aos {weekday_names[appointment_weekday]}s"
+            )
+        
+        # Verificar horário de funcionamento
+        working_hours = config.get('appointment_working_hours', '08:00-18:00')
+        start_time, end_time = working_hours.split('-')
+        
+        appointment_time = appointment_date.time()
+        start_hour, start_minute = map(int, start_time.split(':'))
+        end_hour, end_minute = map(int, end_time.split(':'))
+        
+        start_datetime = appointment_date.replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+        end_datetime = appointment_date.replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+        
+        if appointment_time < start_datetime.time() or appointment_time >= end_datetime.time():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Agendamentos só são permitidos entre {start_time} e {end_time}"
+            )
+        
+        # Verificar horário de descanso
+        break_hours = config.get('appointment_break_hours', '12:00-13:00')
+        break_start, break_end = break_hours.split('-')
+        
+        break_start_hour, break_start_minute = map(int, break_start.split(':'))
+        break_end_hour, break_end_minute = map(int, break_end.split(':'))
+        
+        break_start_datetime = appointment_date.replace(hour=break_start_hour, minute=break_start_minute, second=0, microsecond=0)
+        break_end_datetime = appointment_date.replace(hour=break_end_hour, minute=break_end_minute, second=0, microsecond=0)
+        
+        if break_start_datetime.time() <= appointment_time < break_end_datetime.time():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Agendamentos não são permitidos durante o horário de descanso ({break_hours})"
+            )
+        
+        # Verificar intervalo entre agendamentos
+        interval_minutes = config.get('appointment_interval_minutes', 30)
+        
+        # Verificar se já existe um agendamento no mesmo horário
+        existing_attendance = db.query(Attendance).filter(
+            and_(
+                Attendance.attendance_type == 'appointment',
+                Attendance.status.in_(['waiting', 'progress']),
+                func.date(Attendance.appointment_date) == appointment_date.date(),
+                func.abs(func.extract('epoch', Attendance.appointment_date - appointment_date)) < (interval_minutes * 60)
+            )
+        ).first()
+        
+        if existing_attendance:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Já existe um agendamento neste horário. Intervalo mínimo: {interval_minutes} minutos"
+            )
+        
+        return {
+            "valid": True,
+            "message": "Agendamento válido"
+        }
     
     def get_reports_summary(self, db: Session) -> Dict[str, Any]:
         """Obter resumo de relatórios para dashboard administrativo"""

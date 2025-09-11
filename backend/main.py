@@ -499,9 +499,12 @@ def create_attendance(
     return attendance_service.create_attendance(db, attendance)
 
 @app.get("/attendance/today", response_model=List[AttendanceResponse])
-def get_today_attendance(db: Session = Depends(get_db)):
+def get_today_attendance(
+    attendance_type: str = Query("all", description="Tipo de atendimento: all, presential, appointment"),
+    db: Session = Depends(get_db)
+):
     """Obter atendimentos do dia"""
-    return attendance_service.get_today_attendance(db)
+    return attendance_service.get_today_attendance(db, attendance_type)
 
 @app.put("/attendance/{attendance_id}", response_model=AttendanceResponse)
 def update_attendance(
@@ -640,3 +643,19 @@ def get_public_attendance_mode_config(db: Session = Depends(get_db)):
         "presential_mode_enabled": config["presential_mode_enabled"],
         "appointment_mode_enabled": config["appointment_mode_enabled"]
     }
+
+@app.post("/attendance/validate-appointment")
+def validate_appointment_schedule(
+    appointment_date: str,
+    db: Session = Depends(get_db)
+):
+    """Validar se um agendamento pode ser feito"""
+    try:
+        appointment_datetime = datetime.fromisoformat(appointment_date.replace('Z', '+00:00'))
+        result = attendance_service.validate_appointment_schedule(db, appointment_datetime)
+        return result
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de data inválido"
+        )

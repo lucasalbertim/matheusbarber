@@ -312,7 +312,21 @@ const ClientPresentialAttendancePage = () => {
     }
     
     fetchServices();
+    checkAttendanceMode();
   }, [client, navigate]);
+
+  const checkAttendanceMode = async () => {
+    try {
+      const response = await api.get('/config/attendance-mode');
+      if (!response.data.presential_mode_enabled) {
+        toast.error('Modo de atendimento presencial está desabilitado');
+        navigate('/cliente/dashboard');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar configurações:', error);
+      toast.error('Erro ao verificar configurações do sistema');
+    }
+  };
 
   const fetchServices = async () => {
     try {

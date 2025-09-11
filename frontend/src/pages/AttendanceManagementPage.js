@@ -179,7 +179,7 @@ const AttendancesContainer = styled.div`
 
 const AttendanceHeader = styled.div`
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr 140px 220px;
+  grid-template-columns: 80px 1fr 1fr 1fr 100px 140px 220px;
   gap: 20px;
   padding: 20px;
   background: var(--background);
@@ -215,7 +215,7 @@ const SortableHeader = styled.div`
 
 const AttendanceRow = styled.div`
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr 140px 220px;
+  grid-template-columns: 80px 1fr 1fr 1fr 100px 140px 220px;
   gap: 20px;
   padding: 20px;
   border-bottom: 1px solid var(--border);
@@ -481,6 +481,7 @@ const AttendanceManagementPage = () => {
   const [attendances, setAttendances] = useState([]);
   const [filteredAttendances, setFilteredAttendances] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [attendanceTypeFilter, setAttendanceTypeFilter] = useState('all');
   const [sortField, setSortField] = useState('id');
   const [sortDirection, setSortDirection] = useState('desc');
   const [isLoading, setIsLoading] = useState(true);
@@ -489,7 +490,9 @@ const AttendanceManagementPage = () => {
     waiting: 0,
     progress: 0,
     finished: 0,
-    cancelled: 0
+    cancelled: 0,
+    presential: 0,
+    appointment: 0
   });
 
   useEffect(() => {
@@ -500,7 +503,7 @@ const AttendanceManagementPage = () => {
     
     const fetchAttendances = async () => {
       try {
-        const response = await api.get('/attendance/today');
+        const response = await api.get(`/attendance/today?attendance_type=${attendanceTypeFilter}`);
         setAttendances(response.data);
         calculateStats(response.data);
       } catch (error) {
@@ -514,7 +517,7 @@ const AttendanceManagementPage = () => {
     fetchAttendances();
     const id = setInterval(fetchAttendances, 5000);
     return () => clearInterval(id);
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, attendanceTypeFilter]);
 
   useEffect(() => {
     const filterAttendances = () => {
@@ -543,8 +546,10 @@ const AttendanceManagementPage = () => {
     const progress = data.filter(a => a.status === 'progress').length;
     const finished = data.filter(a => a.status === 'finished').length;
     const cancelled = data.filter(a => a.status === 'cancelled').length;
+    const presential = data.filter(a => a.attendance_type === 'presential').length;
+    const appointment = data.filter(a => a.attendance_type === 'appointment').length;
 
-    setStats({ total, waiting, progress, finished, cancelled });
+    setStats({ total, waiting, progress, finished, cancelled, presential, appointment });
   };
 
   const sortAttendances = (data, field, direction) => {
@@ -750,6 +755,27 @@ const AttendanceManagementPage = () => {
 
       <FilterBar>
         <FilterButton
+          className={attendanceTypeFilter === 'all' ? 'active' : ''}
+          onClick={() => setAttendanceTypeFilter('all')}
+        >
+          Todos os Tipos
+        </FilterButton>
+        <FilterButton
+          className={attendanceTypeFilter === 'presential' ? 'active' : ''}
+          onClick={() => setAttendanceTypeFilter('presential')}
+        >
+          Presenciais ({stats.presential})
+        </FilterButton>
+        <FilterButton
+          className={attendanceTypeFilter === 'appointment' ? 'active' : ''}
+          onClick={() => setAttendanceTypeFilter('appointment')}
+        >
+          Agendados ({stats.appointment})
+        </FilterButton>
+      </FilterBar>
+
+      <FilterBar>
+        <FilterButton
           className={activeFilter === 'all' ? 'active' : ''}
           onClick={() => setActiveFilter('all')}
         >
@@ -808,6 +834,7 @@ const AttendanceManagementPage = () => {
           >
             Status {getSortIcon('status')}
           </SortableHeader>
+          <div>Tipo</div>
           <SortableHeader 
             className={sortField === 'payment' ? 'active' : ''}
             onClick={() => handleSort('payment')}
@@ -843,6 +870,19 @@ const AttendanceManagementPage = () => {
               <StatusBadge className={attendance.status}>
                 {getStatusLabel(attendance.status)}
               </StatusBadge>
+              
+              <div style={{ textAlign: 'center' }}>
+                <span style={{
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  backgroundColor: attendance.attendance_type === 'presential' ? 'rgba(32, 172, 159, 0.1)' : 'rgba(255, 193, 7, 0.1)',
+                  color: attendance.attendance_type === 'presential' ? '#20AC9F' : '#ffc107'
+                }}>
+                  {attendance.attendance_type === 'presential' ? 'Presencial' : 'Agendado'}
+                </span>
+              </div>
               
               <PaymentBadge className={attendance.payment_status}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
