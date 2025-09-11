@@ -17,11 +17,12 @@ from schemas import (
     AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
     ServiceCreate, ServiceResponse,
     AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
-    AttendanceUpdate, AttendanceCancel
+    AttendanceUpdate, AttendanceCancel,
+    AttendanceModeConfig, AttendanceModeConfigUpdate
 )
 from services import (
     client_service, admin_service, service_service,
-    attendance_service, whatsapp_service
+    attendance_service, whatsapp_service, ConfigService
 )
 from auth import get_current_admin
 
@@ -175,6 +176,29 @@ def ensure_default_services():
 
 # Executar verificação dos serviços padrão
 ensure_default_services()
+
+# Função para inicializar configurações padrão
+def ensure_default_configs():
+    """Inicializar configurações padrão do sistema"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se existem configurações
+            result = conn.execute(text("SELECT COUNT(*) FROM system_config"))
+            config_count = result.fetchone()[0]
+            
+            if config_count == 0:
+                print("🔄 Inicializando configurações padrão...")
+                ConfigService.initialize_default_configs(conn)
+                conn.commit()
+                print("✅ Configurações padrão inicializadas com sucesso!")
+            else:
+                print("✅ Configurações já existem no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/inicializar configurações: {e}")
+
+# Executar verificação das configurações padrão
+ensure_default_configs()
 
 app = FastAPI(
     title="Metheus Barber API",
@@ -584,3 +608,35 @@ def send_whatsapp_message(
 ):
     """Enviar mensagem via WhatsApp (apenas admin)"""
     return whatsapp_service.send_message(phone, message)
+
+# Rotas de Configuração
+@app.get("/admin/config/attendance-mode", response_model=AttendanceModeConfig)
+def get_attendance_mode_config(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter configurações do modo de atendimento (apenas admin)"""
+    config = ConfigService.get_attendance_mode_config(db)
+    return AttendanceModeConfig(**config)
+
+@app.put("/admin/config/attendance-mode", response_model=AttendanceModeConfig)
+def update_attendance_mode_config(
+    config_update: AttendanceModeConfigUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Atualizar configurações do modo de atendimento (apenas admin)"""
+    # Converter para dict e filtrar valores None
+    config_data = {k: v for k, v in config_update.dict().items() if v is not None}
+    updated_config = ConfigService.update_attendance_mode_config(db, config_data)
+    return AttendanceModeConfig(**updated_config)
+
+@app.get("/config/attendance-mode")
+def get_public_attendance_mode_config(db: Session = Depends(get_db)):
+    """Obter configurações públicas do modo de atendimento (para clientes)"""
+    config = ConfigService.get_attendance_mode_config(db)
+    # Retornar apenas as configurações necessárias para o cliente
+    return {
+        "presential_mode_enabled": config["presential_mode_enabled"],
+        "appointment_mode_enabled": config["appointment_mode_enabled"]
+    }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaCut, FaWhatsapp, FaUser, FaHistory, FaPlus } from 'react-icons/fa';
+import { FaCut, FaWhatsapp, FaUser, FaHistory, FaPlus, FaUsers, FaCalendarAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,6 +213,10 @@ const ClientDashboardPage = () => {
   
   const [recentAttendances, setRecentAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [attendanceConfig, setAttendanceConfig] = useState({
+    presential_mode_enabled: false,
+    appointment_mode_enabled: false
+  });
   const [stats, setStats] = useState({
     totalAttendances: 0,
     completedAttendances: 0,
@@ -236,6 +240,10 @@ const ClientDashboardPage = () => {
   const fetchClientData = async () => {
     try {
       setLoading(true);
+      
+      // Buscar configurações de atendimento
+      const configResponse = await api.get('/config/attendance-mode');
+      setAttendanceConfig(configResponse.data);
       
       // Buscar atendimentos do cliente
       const attendancesResponse = await api.get(`/clients/${client.id}/attendances`);
@@ -268,6 +276,25 @@ const ClientDashboardPage = () => {
   };
 
   const handleNewAttendance = () => {
+    // Verificar se há apenas um modo disponível
+    if (attendanceConfig.presential_mode_enabled && !attendanceConfig.appointment_mode_enabled) {
+      navigate('/cliente/atendimento/presencial');
+    } else if (!attendanceConfig.presential_mode_enabled && attendanceConfig.appointment_mode_enabled) {
+      navigate('/cliente/atendimento/iniciar');
+    } else if (attendanceConfig.presential_mode_enabled && attendanceConfig.appointment_mode_enabled) {
+      // Ambos os modos disponíveis - mostrar opção
+      // Por enquanto, redirecionar para presencial como padrão
+      navigate('/cliente/atendimento/presencial');
+    } else {
+      toast.error('Nenhum modo de atendimento está disponível no momento');
+    }
+  };
+
+  const handlePresentialAttendance = () => {
+    navigate('/cliente/atendimento/presencial');
+  };
+
+  const handleAppointmentAttendance = () => {
     navigate('/cliente/atendimento/iniciar');
   };
 
@@ -344,12 +371,40 @@ const ClientDashboardPage = () => {
           Ações Rápidas
         </h3>
         <div className="actions-grid">
-          <Button variant="primary" onClick={handleNewAttendance} fullWidth>
-            <FaCut />
-            Agendar Corte
-          </Button>
+          {attendanceConfig.presential_mode_enabled && attendanceConfig.appointment_mode_enabled ? (
+            // Ambos os modos disponíveis
+            <>
+              <Button variant="primary" onClick={handlePresentialAttendance} fullWidth>
+                <FaUsers />
+                Atendimento Presencial
+              </Button>
+              <Button variant="secondary" onClick={handleAppointmentAttendance} fullWidth>
+                <FaCalendarAlt />
+                Agendar Horário
+              </Button>
+            </>
+          ) : attendanceConfig.presential_mode_enabled ? (
+            // Apenas presencial
+            <Button variant="primary" onClick={handlePresentialAttendance} fullWidth>
+              <FaUsers />
+              Iniciar Atendimento
+            </Button>
+          ) : attendanceConfig.appointment_mode_enabled ? (
+            // Apenas agendamento
+            <Button variant="primary" onClick={handleAppointmentAttendance} fullWidth>
+              <FaCalendarAlt />
+              Agendar Atendimento
+            </Button>
+          ) : (
+            // Nenhum modo disponível
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
+              Nenhum modo de atendimento está disponível no momento.
+              <br />
+              Entre em contato conosco para mais informações.
+            </div>
+          )}
           
-          <Button variant="secondary" onClick={handleViewHistory} fullWidth>
+          <Button variant="outline" onClick={handleViewHistory} fullWidth>
             <FaHistory />
             Ver Histórico
           </Button>
