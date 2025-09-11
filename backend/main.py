@@ -620,6 +620,9 @@ def get_attendance_mode_config(
 ):
     """Obter configurações do modo de atendimento (apenas admin)"""
     config = ConfigService.get_attendance_mode_config(db)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
     return AttendanceModeConfig(**config)
 
 @app.put("/admin/config/attendance-mode", response_model=AttendanceModeConfig)

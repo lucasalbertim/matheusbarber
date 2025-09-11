@@ -378,6 +378,8 @@ const ClientStartAttendancePage = () => {
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast.error('Erro ao carregar serviços');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -402,6 +404,8 @@ const ClientStartAttendancePage = () => {
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       toast.error('Erro ao carregar configurações de agendamento');
+    } finally {
+      setLoading(false);
     }
   };
 

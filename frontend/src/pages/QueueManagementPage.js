@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaClock, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaRefresh, FaPlay, FaPause } from 'react-icons/fa';
+import { FaUsers, FaClock, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaSync, FaPlay, FaPause } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -429,7 +429,7 @@ const QueueManagementPage = () => {
               onClick={fetchQueueData}
               disabled={refreshing}
             >
-              <FaRefresh className={refreshing ? 'spinning' : ''} />
+              <FaSync className={refreshing ? 'spinning' : ''} />
               {refreshing ? 'Atualizando...' : 'Atualizar Fila'}
             </Button>
             
