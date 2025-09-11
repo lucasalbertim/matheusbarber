@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaSave, FaEdit } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
-import { formatCPF, formatPhoneBR, isValidCPF, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
+import { formatPhoneBR, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
 
@@ -152,10 +152,10 @@ const EditClientPage = () => {
   const { clientId } = useParams();
   const { isAdmin } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    phone: '',
-    email: ''
+  name: '',
+  data_nascimento: '',
+  phone: '',
+  email: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -167,7 +167,7 @@ const EditClientPage = () => {
       const clientData = response.data;
       setFormData({
         name: clientData.name || '',
-        cpf: formatCPF(clientData.cpf) || '',
+        data_nascimento: clientData.data_nascimento ? clientData.data_nascimento.slice(0, 10) : '',
         phone: formatPhoneBR(clientData.phone) || '',
         email: clientData.email || ''
       });
@@ -193,8 +193,8 @@ const EditClientPage = () => {
     let formattedValue = value;
 
     // Aplicar máscaras
-    if (name === 'cpf') {
-      formattedValue = formatCPF(value);
+    if (name === 'data_nascimento') {
+      formattedValue = value.replace(/[^\d-]/g, '').slice(0, 10);
     } else if (name === 'phone') {
       formattedValue = formatPhoneBR(value);
     }
@@ -223,14 +223,14 @@ const EditClientPage = () => {
       newErrors.name = 'Nome deve ter pelo menos 2 caracteres';
     }
 
-    // Validar CPF
-    const cpfDigits = onlyDigits(formData.cpf);
-    if (!cpfDigits) {
-      newErrors.cpf = 'CPF é obrigatório';
-    } else if (cpfDigits.length !== 11) {
-      newErrors.cpf = 'CPF deve ter 11 dígitos';
-    } else if (!isValidCPF(cpfDigits)) {
-      newErrors.cpf = 'CPF inválido';
+    // Validar data de nascimento
+    if (!formData.data_nascimento) {
+      newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(formData.data_nascimento)) {
+        newErrors.data_nascimento = 'Formato de data inválido (YYYY-MM-DD)';
+      }
     }
 
     // Validar telefone
@@ -264,7 +264,7 @@ const EditClientPage = () => {
     try {
       const payload = {
         name: formData.name.trim(),
-        cpf: onlyDigits(formData.cpf),
+        data_nascimento: formData.data_nascimento,
         phone: onlyDigits(formData.phone),
         email: normalizeEmail(formData.email)
       };
@@ -331,18 +331,17 @@ const EditClientPage = () => {
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="cpf">CPF *</Label>
+          <Label htmlFor="data_nascimento">Data de Nascimento *</Label>
           <Input
-            type="text"
-            id="cpf"
-            name="cpf"
-            value={formData.cpf}
+            type="date"
+            id="data_nascimento"
+            name="data_nascimento"
+            value={formData.data_nascimento}
             onChange={handleInputChange}
-            className={errors.cpf ? 'error' : ''}
-            placeholder="000.000.000-00"
-            maxLength="14"
+            required
+            className={errors.data_nascimento ? 'error' : ''}
           />
-          {errors.cpf && <ErrorMessage>{errors.cpf}</ErrorMessage>}
+          {errors.data_nascimento && <ErrorMessage>{errors.data_nascimento}</ErrorMessage>}
         </FormGroup>
 
         <FormGroup>

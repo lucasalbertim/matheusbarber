@@ -35,7 +35,7 @@ def upgrade() -> None:
     op.create_table('clients',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('cpf', sa.String(length=14), nullable=False),
+    sa.Column('data_nascimento', sa.DateTime(), nullable=False),
     sa.Column('phone', sa.String(length=15), nullable=False),
     sa.Column('email', sa.String(length=100), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -43,7 +43,7 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_clients_cpf'), 'clients', ['cpf'], unique=True)
+    op.create_index(op.f('ix_clients_data_nascimento'), 'clients', ['data_nascimento'], unique=False)
     op.create_index(op.f('ix_clients_id'), 'clients', ['id'], unique=False)
     op.create_index(op.f('ix_clients_phone'), 'clients', ['phone'], unique=True)
 
@@ -86,7 +86,7 @@ def downgrade() -> None:
     op.drop_table('services')
     op.drop_index(op.f('ix_clients_phone'), table_name='clients')
     op.drop_index(op.f('ix_clients_id'), table_name='clients')
-    op.drop_index(op.f('ix_clients_cpf'), table_name='clients')
+    op.drop_index(op.f('ix_clients_data_nascimento'), table_name='clients')
     op.drop_table('clients')
     op.drop_index(op.f('ix_admins_username'), table_name='admins')
     op.drop_index(op.f('ix_admins_id'), table_name='admins')

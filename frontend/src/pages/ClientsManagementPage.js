@@ -7,7 +7,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
 import { Button, Card, Input, Loading, Modal, ConfirmationModal, FilterBar, Pagination, Table, Th, Td, Tr } from '../components';
-import { formatCPF, formatPhone, formatDate } from '../utils';
+import { formatPhone, formatDate } from '../utils';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -226,10 +226,10 @@ const ClientsManagementPage = () => {
       }
 
       const filtered = clients.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.cpf.includes(searchTerm) ||
-        client.phone.includes(searchTerm) ||
-        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.data_nascimento && formatDate(client.data_nascimento).includes(searchTerm)) ||
+    client.phone.includes(searchTerm) ||
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredClients(filtered);
     };
@@ -258,7 +258,7 @@ const ClientsManagementPage = () => {
     if (client) {
       const details = `
 Nome: ${client.name}
-CPF: ${formatCPF(client.cpf)}
+  Data de Nascimento: ${formatDate(client.data_nascimento)}
 Telefone: ${formatPhone(client.phone)}
 Email: ${client.email || 'Não informado'}
 Status: ${client.is_active ? 'Ativo' : 'Inativo'}
@@ -415,7 +415,7 @@ Data de Cadastro: ${formatDate(client.created_at)}
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
-        searchPlaceholder="Buscar por nome, CPF, telefone ou email..."
+  searchPlaceholder="Buscar por nome, data de nascimento, telefone ou email..."
       />
 
       <ActionsRow>
@@ -450,7 +450,7 @@ Data de Cadastro: ${formatDate(client.created_at)}
           <thead>
             <tr>
               <Th>Nome</Th>
-              <Th>CPF</Th>
+              <Th>Data de Nascimento</Th>
               <Th>Telefone</Th>
               <Th>Email</Th>
               <Th>Status</Th>
@@ -467,7 +467,7 @@ Data de Cadastro: ${formatDate(client.created_at)}
                     <small>ID: {client.id}</small>
                   </div>
                 </Td>
-                <Td>{formatCPF(client.cpf)}</Td>
+                <Td>{formatDate(client.data_nascimento)}</Td>
                 <Td>{formatPhone(client.phone)}</Td>
                 <Td>{client.email || 'Não informado'}</Td>
                 <Td>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaIdCard, FaPhone, FaUser, FaEnvelope } from 'react-icons/fa';
+import { FaArrowLeft, FaPhone, FaUser, FaEnvelope } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
-import { formatCPF, formatPhoneBR, isValidCPF, isValidPhoneBR, isValidEmail, onlyDigits, normalizeEmail } from '../utils/formatters';
+import { formatPhoneBR, isValidPhoneBR, isValidEmail, onlyDigits, normalizeEmail } from '../utils/formatters';
 import Footer from '../components/Footer';
 
 const Container = styled.div`
@@ -114,10 +114,10 @@ const ErrorMessage = styled.div`
 const ClientRegisterPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    phone: '',
-    email: ''
+  name: '',
+  data_nascimento: '',
+  phone: '',
+  email: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -126,8 +126,9 @@ const ClientRegisterPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
-    if (name === 'cpf') {
-      formattedValue = formatCPF(value);
+    if (name === 'data_nascimento') {
+      // Aceita apenas formato YYYY-MM-DD
+      formattedValue = value.replace(/[^\d-]/g, '').slice(0, 10);
     } else if (name === 'phone') {
       formattedValue = formatPhoneBR(value);
     } else if (name === 'email') {
@@ -155,11 +156,14 @@ const ClientRegisterPage = () => {
       newErrors.name = 'Nome é obrigatório';
     }
 
-    const cpfDigits = onlyDigits(formData.cpf);
-    if (!cpfDigits) {
-      newErrors.cpf = 'CPF é obrigatório';
-    } else if (!isValidCPF(cpfDigits)) {
-      newErrors.cpf = 'CPF inválido';
+    // Validar data de nascimento
+    if (!formData.data_nascimento || formData.data_nascimento === '1900-01-01') {
+      newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(formData.data_nascimento)) {
+        newErrors.data_nascimento = 'Formato de data inválido (YYYY-MM-DD)';
+      }
     }
 
     const phoneDigits = onlyDigits(formData.phone);
@@ -189,7 +193,7 @@ const ClientRegisterPage = () => {
     try {
       await api.post('/clients/', {
         name: formData.name.trim(),
-        cpf: onlyDigits(formData.cpf),
+        data_nascimento: formData.data_nascimento,
         phone: onlyDigits(formData.phone),
         email: formData.email ? normalizeEmail(formData.email) : null
       });
@@ -231,20 +235,17 @@ const ClientRegisterPage = () => {
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="cpf">
-            <FaIdCard /> CPF
-          </Label>
+          <Label htmlFor="data_nascimento">Data de Nascimento</Label>
           <Input
-            type="text"
-            id="cpf"
-            name="cpf"
-            value={formData.cpf}
+            type="date"
+            id="data_nascimento"
+            name="data_nascimento"
+            value={formData.data_nascimento}
             onChange={handleInputChange}
-            placeholder="000.000.000-00"
-            maxLength="14"
             required
+            className={errors.data_nascimento ? 'error' : ''}
           />
-          {errors.cpf && <ErrorMessage>{errors.cpf}</ErrorMessage>}
+          {errors.data_nascimento && <ErrorMessage>{errors.data_nascimento}</ErrorMessage>}
         </FormGroup>
 
         <FormGroup>

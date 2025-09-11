@@ -14,6 +14,7 @@ import HomePage from './pages/HomePage';
 import ClientLoginPage from './pages/ClientLoginPage';
 import ClientRegisterPage from './pages/ClientRegisterPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
+import ClientAddBirthdateRoute from './pages/ClientAddBirthdateRoute';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminSetupPage from './pages/AdminSetupPage';
@@ -69,7 +70,8 @@ function App() {
               <Route path="/admin/login" element={<AdminLoginPage />} />
               
               {/* Rotas do cliente */}
-              <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
+                <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
+                <Route path="/cliente/add-birthdate" element={<ClientAddBirthdateRoute />} />
               <Route path="/cliente/atendimento/iniciar" element={<ClientStartAttendancePage />} />
               <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
               <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />

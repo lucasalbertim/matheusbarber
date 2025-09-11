@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import Footer from '../components/Footer';
-import { formatCPF, formatPhoneBR, isValidCPF, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
+import { formatPhoneBR, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -144,7 +144,7 @@ const LoadingSpinner = styled.div`
 const ClientLoginPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', cpf: '', phone: '', email: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', data_nascimento: '' });
   const [errors, setErrors] = useState({});
 
   const { loginClient } = useAuth();
@@ -153,13 +153,8 @@ const ClientLoginPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formatted = value;
-    if (name === 'cpf') {
-      if (activeTab === 'login') {
-        const digits = onlyDigits(value);
-        if (digits.length <= 11) formatted = formatCPF(value); else formatted = formatPhoneBR(value);
-      } else {
-        formatted = formatCPF(value);
-      }
+    if (name === 'data_nascimento') {
+      formatted = value.replace(/[^\d-]/g, '').slice(0, 10);
     } else if (name === 'phone') {
       formatted = formatPhoneBR(value);
     } else if (name === 'email') {
@@ -174,18 +169,23 @@ const ClientLoginPage = () => {
     const newErrors = {};
     if (activeTab === 'register') {
       if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
-      const cpfDigits = onlyDigits(formData.cpf);
-      if (!cpfDigits) newErrors.cpf = 'CPF é obrigatório';
-      else if (!isValidCPF(cpfDigits)) newErrors.cpf = 'CPF inválido';
+      // Data de nascimento obrigatória e não pode ser default
+      if (!formData.data_nascimento || formData.data_nascimento === '1900-01-01') {
+        newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+      } else {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(formData.data_nascimento)) {
+          newErrors.data_nascimento = 'Formato de data inválido (YYYY-MM-DD)';
+        }
+      }
       const phoneDigits = onlyDigits(formData.phone);
       if (!phoneDigits) newErrors.phone = 'Telefone é obrigatório';
       else if (!isValidPhoneBR(phoneDigits)) newErrors.phone = 'Telefone inválido';
       if (formData.email && !isValidEmail(formData.email)) newErrors.email = 'Email inválido';
     } else {
-      const idDigits = onlyDigits(formData.cpf || formData.phone);
-      if (!idDigits) newErrors.cpf = 'Informe CPF ou telefone';
-      else if (idDigits.length === 11) { if (!isValidCPF(idDigits)) newErrors.cpf = 'CPF inválido'; }
-      else if (!(idDigits.length === 10 || idDigits.length === 11)) newErrors.cpf = 'Informe um CPF (11) ou telefone válido (10-11)';
+      const phoneDigits = onlyDigits(formData.phone);
+      if (!phoneDigits) newErrors.phone = 'Informe o telefone';
+      else if (!(phoneDigits.length === 10 || phoneDigits.length === 11)) newErrors.phone = 'Informe um telefone válido (10-11 dígitos)';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -196,8 +196,8 @@ const ClientLoginPage = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const idDigits = onlyDigits(formData.cpf || formData.phone);
-      const response = await api.post('/clients/login', { identifier: idDigits });
+  const phoneDigits = onlyDigits(formData.phone);
+  const response = await api.post('/clients/login', { identifier: phoneDigits });
       loginClient(response.data);
       navigate('/cliente/dashboard');
     } catch (error) {
@@ -213,7 +213,7 @@ const ClientLoginPage = () => {
     try {
       const response = await api.post('/clients/', {
         name: formData.name.trim(),
-        cpf: onlyDigits(formData.cpf),
+        data_nascimento: formData.data_nascimento,
         phone: onlyDigits(formData.phone),
         email: formData.email ? normalizeEmail(formData.email) : null,
       });
@@ -262,19 +262,19 @@ const ClientLoginPage = () => {
               </div>
             )}
 
-            <div className="form-group">
-              <label className="form-label">{activeTab === 'login' ? 'CPF ou Telefone' : 'CPF'}</label>
-              <input type="text" name="cpf" className={`form-input ${errors.cpf ? 'error' : ''}`} value={formData.cpf} onChange={handleInputChange} placeholder={activeTab === 'login' ? 'CPF ou telefone' : 'Digite seu CPF'} />
-              {errors.cpf && <div className="form-error">{errors.cpf}</div>}
-            </div>
-
             {activeTab === 'register' && (
               <div className="form-group">
-                <label className="form-label">Telefone</label>
-                <input type="tel" name="phone" className={`form-input ${errors.phone ? 'error' : ''}`} value={formData.phone} onChange={handleInputChange} placeholder="Digite seu telefone" />
-                {errors.phone && <div className="form-error">{errors.phone}</div>}
+                <label className="form-label">Data de Nascimento</label>
+                <input type="date" name="data_nascimento" className={`form-input ${errors.data_nascimento ? 'error' : ''}`} value={formData.data_nascimento} onChange={handleInputChange} required />
+                {errors.data_nascimento && <div className="form-error">{errors.data_nascimento}</div>}
               </div>
             )}
+
+            <div className="form-group">
+              <label className="form-label">Telefone</label>
+              <input type="tel" name="phone" className={`form-input ${errors.phone ? 'error' : ''}`} value={formData.phone} onChange={handleInputChange} placeholder="Digite seu telefone" />
+              {errors.phone && <div className="form-error">{errors.phone}</div>}
+            </div>
 
             {activeTab === 'register' && (
               <div className="form-group">

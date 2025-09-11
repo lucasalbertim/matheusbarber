@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaSave, FaUserPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
-import { formatCPF, formatPhoneBR, isValidCPF, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
+import { formatPhoneBR, isValidEmail, isValidPhoneBR, onlyDigits, normalizeEmail } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
 
@@ -166,10 +166,10 @@ const AddClientPage = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    phone: '',
-    email: ''
+  name: '',
+  phone: '',
+  email: '',
+  data_nascimento: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -179,9 +179,7 @@ const AddClientPage = () => {
     let formattedValue = value;
 
     // Aplicar máscaras
-    if (name === 'cpf') {
-      formattedValue = formatCPF(value);
-    } else if (name === 'phone') {
+    if (name === 'phone') {
       formattedValue = formatPhoneBR(value);
     }
 
@@ -209,14 +207,14 @@ const AddClientPage = () => {
       newErrors.name = 'Nome deve ter pelo menos 2 caracteres';
     }
 
-    // Validar CPF
-    const cpfDigits = onlyDigits(formData.cpf);
-    if (!cpfDigits) {
-      newErrors.cpf = 'CPF é obrigatório';
-    } else if (cpfDigits.length !== 11) {
-      newErrors.cpf = 'CPF deve ter 11 dígitos';
-    } else if (!isValidCPF(cpfDigits)) {
-      newErrors.cpf = 'CPF inválido';
+    // Validar data de nascimento
+    if (!formData.data_nascimento || formData.data_nascimento === '1900-01-01') {
+      newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(formData.data_nascimento)) {
+        newErrors.data_nascimento = 'Formato de data inválido (YYYY-MM-DD)';
+      }
     }
 
     // Validar telefone
@@ -247,14 +245,13 @@ const AddClientPage = () => {
 
     setIsSubmitting(true);
 
+    const payload = {
+      name: formData.name.trim(),
+      phone: onlyDigits(formData.phone),
+      email: normalizeEmail(formData.email),
+      data_nascimento: formData.data_nascimento
+    };
     try {
-      const payload = {
-        name: formData.name.trim(),
-        cpf: onlyDigits(formData.cpf),
-        phone: onlyDigits(formData.phone),
-        email: normalizeEmail(formData.email)
-      };
-
       await api.post('/admin/clients/', payload);
       toast.success('Cliente cadastrado com sucesso!');
       navigate('/admin/clientes');
@@ -288,9 +285,9 @@ const AddClientPage = () => {
         </Title>
         <BackButton onClick={handleBackClick}>
           <FaArrowLeft />
-          Voltar
         </BackButton>
       </Header>
+        data_nascimento: formData.data_nascimento,
 
       <Form onSubmit={handleSubmit}>
         <FormGroup>
@@ -308,18 +305,17 @@ const AddClientPage = () => {
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="cpf">CPF *</Label>
+          <Label htmlFor="data_nascimento">Data de Nascimento *</Label>
           <Input
-            type="text"
-            id="cpf"
-            name="cpf"
-            value={formData.cpf}
+            type="date"
+            id="data_nascimento"
+            name="data_nascimento"
+            value={formData.data_nascimento}
             onChange={handleInputChange}
-            className={errors.cpf ? 'error' : ''}
-            placeholder="000.000.000-00"
-            maxLength="14"
+            required
+            className={errors.data_nascimento ? 'error' : ''}
           />
-          {errors.cpf && <ErrorMessage>{errors.cpf}</ErrorMessage>}
+          {errors.data_nascimento && <ErrorMessage>{errors.data_nascimento}</ErrorMessage>}
         </FormGroup>
 
         <FormGroup>
@@ -338,7 +334,7 @@ const AddClientPage = () => {
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email (opcional)</Label>
           <Input
             type="email"
             id="email"
@@ -346,7 +342,7 @@ const AddClientPage = () => {
             value={formData.email}
             onChange={handleInputChange}
             className={errors.email ? 'error' : ''}
-            placeholder="email@exemplo.com"
+            placeholder="Digite o email do cliente"
           />
           {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
         </FormGroup>

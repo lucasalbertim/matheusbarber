@@ -8,12 +8,7 @@ export const validationRules = {
     pattern: "Nome deve conter apenas letras e espaços",
   },
   
-  // CPF
-  cpf: {
-    required: "CPF é obrigatório",
-    invalid: "CPF inválido",
-    pattern: "CPF deve conter apenas números",
-  },
+  // ...removido bloco de CPF...
   
   // Telefone
   phone: {
@@ -109,28 +104,6 @@ export const validators = {
     return null; // CPF válido
   },
   
-  // Validação de telefone
-  validatePhone: (phone) => {
-    if (!phone) return validationRules.phone.required;
-    
-    const cleanPhone = phone.replace(/[^\d]/g, "");
-    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-      return validationRules.phone.invalid;
-    }
-    
-    return null; // Telefone válido
-  },
-  
-  // Validação de email
-  validateEmail: (email) => {
-    if (!email) return validationRules.email.required;
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return validationRules.email.invalid;
-    
-    return null; // Email válido
-  },
-  
   // Validação de senha
   validatePassword: (password) => {
     if (!password) return validationRules.password.required;
@@ -143,14 +116,6 @@ export const validators = {
     if (!hasLetter || !hasNumber) return validationRules.password.pattern;
     
     return null; // Senha válida
-  },
-  
-  // Validação de confirmação de senha
-  validateConfirmPassword: (password, confirmPassword) => {
-    if (!confirmPassword) return validationRules.confirmPassword.required;
-    if (password !== confirmPassword) return validationRules.confirmPassword.mismatch;
-    
-    return null; // Confirmação válida
   },
   
   // Validação de preço

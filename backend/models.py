@@ -17,7 +17,7 @@ class Client(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    cpf = Column(String(14), unique=True, nullable=False, index=True)
+    data_nascimento = Column(DateTime, nullable=False, index=True)
     phone = Column(String(15), unique=True, nullable=False, index=True)
     email = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

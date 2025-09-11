@@ -319,7 +319,6 @@ const FeatureCard = styled.div`
 
 const HomePage = () => {
   const { admin, logoutAdmin } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Se admin estiver logado, fazer logout automático
@@ -362,8 +361,7 @@ const HomePage = () => {
             </div>
             <div className="card-content">
               <p>
-                Faça login com seu CPF ou telefone para acessar seu perfil, 
-                histórico de atendimentos e agendar novos serviços.
+                Faça login com seu telefone para acessar seu perfil, histórico de atendimentos e agendar novos serviços.
               </p>
               <div className="action">
                 Acessar <FaArrowRight />

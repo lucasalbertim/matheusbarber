@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaCut, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPhone, FaWhatsapp, FaUser, FaHistory, FaPlus } from 'react-icons/fa';
+import { FaCut, FaWhatsapp, FaUser, FaHistory, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
 import { Button, Card, Loading } from '../components';
-import { formatDate, formatDateTime, formatCurrency } from '../utils';
+import { formatDateTime, formatCurrency } from '../utils';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -225,7 +225,11 @@ const ClientDashboardPage = () => {
       navigate('/cliente/login');
       return;
     }
-    
+    // Se não tem data de nascimento, redireciona para tela de adicionar
+    if (!client.data_nascimento) {
+      navigate('/cliente/add-birthdate');
+      return;
+    }
     fetchClientData();
   }, [client, navigate]);
 
@@ -332,11 +336,6 @@ const ClientDashboardPage = () => {
           <div className="stat-label">Agendamentos Pendentes</div>
         </StatCard>
         
-        <StatCard>
-          <div className="stat-icon">💰</div>
-          <div className="stat-number">{formatCurrency(stats.totalSpent)}</div>
-          <div className="stat-label">Total Investido</div>
-        </StatCard>
       </StatsGrid>
 
       <QuickActions>
@@ -385,7 +384,7 @@ const ClientDashboardPage = () => {
                 </div>
               </div>
               
-              <div className="attendance-status" className={`attendance-status ${attendance.status}`}>
+              <div className={`attendance-status ${attendance.status}`}>
                 {getStatusText(attendance.status)}
               </div>
               

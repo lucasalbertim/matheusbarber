@@ -5,7 +5,7 @@ from datetime import datetime
 # Schemas de Cliente
 class ClientBase(BaseModel):
     name: str
-    cpf: str
+    data_nascimento: datetime
     phone: str
     email: Optional[str] = None
 
@@ -22,7 +22,7 @@ class ClientResponse(ClientBase):
         from_attributes = True
 
 class ClientLogin(BaseModel):
-    identifier: str  # CPF ou telefone
+    identifier: str  # telefone
 
 # Schemas de Administrador
 class AdminBase(BaseModel):

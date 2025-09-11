@@ -1,3 +1,7 @@
+export const isValidPhoneBR = (phone) => {
+  const digits = onlyDigits(phone);
+  return digits.length === 10 || digits.length === 11;
+};
 export const formatCurrency = (value) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -50,27 +54,6 @@ export const formatDuration = (minutes) => {
 
 export const onlyDigits = (value) => value.replace(/\D/g, "");
 
-export const isValidCPF = (cpf) => {
-  cpf = onlyDigits(cpf);
-  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-  let resto = (soma * 10) % 11;
-  if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== parseInt(cpf.charAt(9))) return false;
-
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-  resto = (soma * 10) % 11;
-  if (resto === 10 || resto === 11) resto = 0;
-  return resto === parseInt(cpf.charAt(10));
-};
-
-export const isValidPhoneBR = (phone) => {
-  const digits = onlyDigits(phone);
-  return /^\d{10,11}$/.test(digits); // aceita fixo (10 dígitos) e celular (11 dígitos)
-};
 
 export const isValidEmail = (email) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

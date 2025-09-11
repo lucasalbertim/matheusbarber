@@ -239,7 +239,7 @@ def create_client(client: ClientCreate, db: Session = Depends(get_db)):
 
 @app.post("/clients/login", response_model=ClientResponse)
 def client_login(login_data: ClientLogin, db: Session = Depends(get_db)):
-    """Login do cliente via CPF ou telefone"""
+    """Login do cliente via telefone"""
     return client_service.login_client(db, login_data)
 
 @app.get("/clients/{client_id}", response_model=ClientResponse)
@@ -377,11 +377,12 @@ def export_clients_excel(
     clients = client_service.get_all_clients(db)
     
     # Criar dados CSV (simulando Excel)
-    csv_data = "Nome,CPF,Telefone,Email,Status,Data de Cadastro\n"
+    csv_data = "Nome,Data de Nascimento,Telefone,Email,Status,Data de Cadastro\n"
     for client in clients:
         status = "Ativo" if client.is_active else "Inativo"
         created_date = client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
-        csv_data += f'"{client.name}","{client.cpf}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
+        nascimento = client.data_nascimento.strftime("%d/%m/%Y") if client.data_nascimento else ""
+        csv_data += f'"{client.name}","{nascimento}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
     
     # Criar arquivo em memória
     output = io.StringIO()
@@ -413,7 +414,7 @@ def export_clients_pdf(
     for client in clients:
         pdf_data["clients"].append({
             "name": client.name,
-            "cpf": client.cpf,
+            "data_nascimento": client.data_nascimento.strftime("%d/%m/%Y") if client.data_nascimento else "",
             "phone": client.phone,
             "email": client.email or "Não informado",
             "status": "Ativo" if client.is_active else "Inativo",
