@@ -347,6 +347,12 @@ const ClientStartAttendancePage = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [appointmentConfig, setAppointmentConfig] = useState({
+    working_hours: '08:00-18:00',
+    interval_minutes: 30,
+    break_hours: '12:00-13:00',
+    scheduled_days: [1, 2, 3, 4, 5]
+  });
 
   const steps = [
     { id: 1, name: 'Serviço', icon: FaCut },
@@ -362,32 +368,72 @@ const ClientStartAttendancePage = () => {
     }
     
     fetchServices();
+    fetchAppointmentConfig();
   }, [client, navigate]);
 
   const fetchServices = async () => {
     try {
-      setLoading(true);
       const response = await api.get('/services/');
       setServices(response.data.filter(service => service.is_active));
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
       toast.error('Erro ao carregar serviços');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchAppointmentConfig = async () => {
+    try {
+      const response = await api.get('/config/attendance-mode');
+      const config = response.data;
+      
+      if (config.appointment_mode_enabled) {
+        // Buscar configurações completas (apenas admin tem acesso)
+        // Por enquanto, usar valores padrão
+        setAppointmentConfig({
+          working_hours: '08:00-18:00',
+          interval_minutes: 30,
+          break_hours: '12:00-13:00',
+          scheduled_days: [1, 2, 3, 4, 5]
+        });
+      } else {
+        toast.error('Sistema de agendamento não está disponível no momento');
+        navigate('/cliente/dashboard');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      toast.error('Erro ao carregar configurações de agendamento');
     }
   };
 
   const generateAvailableSlots = (date) => {
     const slots = [];
-    const startHour = 8; // 8:00
-    const endHour = 20; // 20:00
-    const slotDuration = 30; // 30 minutos
+    const { working_hours, interval_minutes, break_hours } = appointmentConfig;
     
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(time);
+    // Parse working hours
+    const [startTime, endTime] = working_hours.split('-');
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    // Parse break hours
+    const [breakStart, breakEnd] = break_hours.split('-');
+    const [breakStartHour, breakStartMinute] = breakStart.split(':').map(Number);
+    const [breakEndHour, breakEndMinute] = breakEnd.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+    const breakStartMinutes = breakStartHour * 60 + breakStartMinute;
+    const breakEndMinutes = breakEndHour * 60 + breakEndMinute;
+    
+    for (let minutes = startMinutes; minutes < endMinutes; minutes += interval_minutes) {
+      // Skip break time
+      if (minutes >= breakStartMinutes && minutes < breakEndMinutes) {
+        continue;
       }
+      
+      const hour = Math.floor(minutes / 60);
+      const minute = minutes % 60;
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(time);
     }
     
     setAvailableSlots(slots);
@@ -436,9 +482,9 @@ const ClientStartAttendancePage = () => {
       
       const attendanceData = {
         client_id: client.id,
-        service_id: selectedService.id,
+        service_ids: [selectedService.id],
         appointment_date: appointmentDate.toISOString(),
-        status: 'waiting'
+        attendance_type: 'appointment'
       };
       
       const response = await api.post('/attendance/', attendanceData);
@@ -461,6 +507,7 @@ const ClientStartAttendancePage = () => {
     const today = new Date();
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const { scheduled_days } = appointmentConfig;
     
     // Dias da semana
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -478,13 +525,16 @@ const ClientStartAttendancePage = () => {
       const date = new Date(today.getFullYear(), today.getMonth(), day);
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < today;
+      const dayOfWeek = date.getDay();
+      const isScheduledDay = scheduled_days.includes(dayOfWeek);
       
       days.push({
         type: 'day',
         day,
         date,
         isToday,
-        isPast
+        isPast,
+        isScheduledDay
       });
     }
     
@@ -575,8 +625,8 @@ const ClientStartAttendancePage = () => {
               return (
                 <div
                   key={index}
-                  className={`calendar-day ${day.isToday ? 'today' : ''} ${day.isPast ? 'disabled' : ''}`}
-                  onClick={() => !day.isPast && handleDateSelect(day.date)}
+                  className={`calendar-day ${day.isToday ? 'today' : ''} ${day.isPast ? 'disabled' : ''} ${!day.isScheduledDay ? 'disabled' : ''}`}
+                  onClick={() => !day.isPast && day.isScheduledDay && handleDateSelect(day.date)}
                 >
                   {day.day}
                 </div>

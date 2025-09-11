@@ -24,9 +24,13 @@ import EditClientPage from './pages/EditClientPage';
 import AttendanceManagementPage from './pages/AttendanceManagementPage';
 import ReportsPage from './pages/ReportsPage';
 import ClientStartAttendancePage from './pages/ClientStartAttendancePage';
+import ClientPresentialAttendancePage from './pages/ClientPresentialAttendancePage';
+import ClientQueuePage from './pages/ClientQueuePage';
 import ClientAttendanceSummaryPage from './pages/ClientAttendanceSummaryPage';
 import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
 import ServicesManagementPage from './pages/ServicesManagementPage';
+import ConfigPage from './pages/ConfigPage';
+import QueueManagementPage from './pages/QueueManagementPage';
 
 // Contextos
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -73,6 +77,8 @@ function App() {
                 <Route path="/cliente/dashboard" element={<ClientDashboardPage />} />
                 <Route path="/cliente/add-birthdate" element={<ClientAddBirthdateRoute />} />
               <Route path="/cliente/atendimento/iniciar" element={<ClientStartAttendancePage />} />
+              <Route path="/cliente/atendimento/presencial" element={<ClientPresentialAttendancePage />} />
+              <Route path="/cliente/atendimento/fila" element={<ClientQueuePage />} />
               <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
               <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />
               
@@ -85,6 +91,8 @@ function App() {
               <Route path="/admin/atendimentos" element={<AttendanceManagementPage />} />
               <Route path="/admin/relatorios" element={<ReportsPage />} />
               <Route path="/admin/servicos" element={<ServicesManagementPage />} />
+              <Route path="/admin/configuracoes" element={<ConfigPage />} />
+              <Route path="/admin/fila" element={<QueueManagementPage />} />
               
               {/* Rota padrão */}
               <Route path="*" element={<Navigate to="/" replace />} />

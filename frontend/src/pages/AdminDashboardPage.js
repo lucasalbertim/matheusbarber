@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
+import { FaUsers, FaCut, FaDollarSign, FaClock, FaChartBar, FaExclamationCircle, FaCheckCircle, FaCog, FaList } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -491,8 +491,11 @@ const AdminDashboardPage = () => {
               >
                 Ver Atendimentos
               </button>
-              <button className="btn btn-secondary">
-                Novo Atendimento
+              <button 
+                className="btn btn-secondary"
+                onClick={() => navigate('/admin/fila')}
+              >
+                Gestão de Fila
               </button>
             </div>
           </QuickActionCard>
@@ -529,6 +532,24 @@ const AdminDashboardPage = () => {
               </button>
               <button className="btn btn-secondary">
                 Exportar Dados
+              </button>
+            </div>
+          </QuickActionCard>
+
+          <QuickActionCard>
+            <h3>
+              <FaCog className="icon" />
+              Configurações
+            </h3>
+            <div className="action-buttons">
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/admin/configuracoes')}
+              >
+                Configurar Sistema
+              </button>
+              <button className="btn btn-secondary">
+                Modos de Atendimento
               </button>
             </div>
           </QuickActionCard>

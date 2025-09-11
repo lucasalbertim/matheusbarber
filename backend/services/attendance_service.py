@@ -36,6 +36,16 @@ class AttendanceService:
         payload = attendance.dict()
         payload.pop('service_ids', None)
         
+        # Definir tipo de atendimento baseado na data
+        attendance_date = datetime.fromisoformat(payload['appointment_date'].replace('Z', '+00:00'))
+        now = get_recife_datetime()
+        
+        # Se a data é muito próxima do momento atual (menos de 1 hora), é presencial
+        if abs((attendance_date - now).total_seconds()) < 3600:
+            payload['attendance_type'] = 'presential'
+        else:
+            payload['attendance_type'] = 'appointment'
+        
         db_attendance = Attendance(**payload)
         db_attendance.services = services
         # Definir status inicial explicitamente
@@ -46,13 +56,30 @@ class AttendanceService:
         db.commit()
         db.refresh(db_attendance)
         
-        # Calcular posição na fila (quantos estão aguardando antes deste atendimento)
-        queue_position = db.query(Attendance).filter(
-            and_(
-                Attendance.status == "waiting",
-                Attendance.appointment_date < db_attendance.appointment_date
-            )
-        ).count() + 1
+        # Calcular posição na fila baseada no tipo de atendimento
+        if payload['attendance_type'] == 'presential':
+            # Para atendimentos presenciais, contar apenas outros presenciais aguardando
+            queue_position = db.query(Attendance).filter(
+                and_(
+                    Attendance.status == "waiting",
+                    Attendance.attendance_type == "presential",
+                    Attendance.appointment_date < db_attendance.appointment_date
+                )
+            ).count() + 1
+        else:
+            # Para agendamentos, usar a data/hora do agendamento
+            queue_position = db.query(Attendance).filter(
+                and_(
+                    Attendance.status == "waiting",
+                    Attendance.attendance_type == "appointment",
+                    Attendance.appointment_date < db_attendance.appointment_date
+                )
+            ).count() + 1
+        
+        # Atualizar posição na fila no banco
+        db_attendance.queue_position = queue_position
+        db.commit()
+        db.refresh(db_attendance)
         
         return {
             "attendance": db_attendance,
