@@ -24,6 +24,7 @@ from services import (
     client_service, admin_service, service_service,
     attendance_service, whatsapp_service, ConfigService
 )
+from routes.scheduled_attendance import router as scheduled_attendance_router
 from auth import get_current_admin
 
 import time
@@ -601,6 +602,7 @@ def export_reports(
     """Exportar relatórios (apenas admin)"""
     return attendance_service.export_reports(db)
 
+app.include_router(scheduled_attendance_router)
 # Rotas de WhatsApp
 @app.post("/whatsapp/send-message")
 def send_whatsapp_message(
@@ -644,10 +646,17 @@ def update_attendance_mode_config(
 def get_public_attendance_mode_config(db: Session = Depends(get_db)):
     """Obter configurações públicas do modo de atendimento (para clientes)"""
     config = ConfigService.get_attendance_mode_config(db)
-    # Retornar apenas as configurações necessárias para o cliente
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
     return {
         "presential_mode_enabled": config["presential_mode_enabled"],
-        "appointment_mode_enabled": config["appointment_mode_enabled"]
+        "appointment_mode_enabled": config["appointment_mode_enabled"],
+        "appointment_working_hours": config["appointment_working_hours"],
+        "appointment_interval_minutes": config["appointment_interval_minutes"],
+        "appointment_break_hours": config["appointment_break_hours"],
+        "appointment_scheduled_days": config["appointment_scheduled_days"],
+        "appointment_always_scheduled": config["appointment_always_scheduled"]
     }
 
 @app.post("/attendance/validate-appointment")

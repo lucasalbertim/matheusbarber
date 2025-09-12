@@ -132,6 +132,8 @@ const FilterInput = styled.input`
   }
 `;
 
+export { FilterInput };
+
 const FilterSelect = styled.select`
   padding: 10px;
   border: 2px solid var(--border);

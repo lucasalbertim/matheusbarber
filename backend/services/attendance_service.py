@@ -34,13 +34,13 @@ class AttendanceService:
                 detail="Um ou mais serviços inválidos/inativos"
             )
         
+
         payload = attendance.dict()
         payload.pop('service_ids', None)
-        
+
         # Definir tipo de atendimento baseado na data
         appointment_date = payload['appointment_date']
         if isinstance(appointment_date, str):
-            # Aceita formato ISO com ou sem 'Z'
             appointment_date = appointment_date.replace('Z', '+00:00')
             attendance_date = datetime.fromisoformat(appointment_date)
         elif isinstance(appointment_date, datetime):
@@ -50,13 +50,27 @@ class AttendanceService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Formato de data de agendamento inválido."
             )
+
+        # NÃO converter para UTC-3, assume que já está correto
+        payload['appointment_date'] = attendance_date
+
         now = get_recife_datetime()
-        
-        # Se a data é muito próxima do momento atual (menos de 1 hora), é presencial
-        if abs((attendance_date - now).total_seconds()) < 3600:
-            payload['attendance_type'] = 'presential'
-        else:
-            payload['attendance_type'] = 'appointment'
+
+        # Garantir que ambos os datetimes sejam offset-aware
+        if attendance_date.tzinfo is None:
+            from datetime import timezone
+            attendance_date = attendance_date.replace(tzinfo=timezone.utc)
+        if now.tzinfo is None:
+            from datetime import timezone
+            now = now.replace(tzinfo=timezone.utc)
+
+        # Se o tipo não foi especificado, determinar automaticamente baseado na data
+        if 'attendance_type' not in payload or payload['attendance_type'] is None:
+            # Se a data é muito próxima do momento atual (menos de 1 hora), é presencial
+            if abs((attendance_date - now).total_seconds()) < 3600:
+                payload['attendance_type'] = 'presential'
+            else:
+                payload['attendance_type'] = 'appointment'
         
         # Verificar configurações do sistema
         config = ConfigService.get_attendance_mode_config(db)
@@ -83,7 +97,9 @@ class AttendanceService:
         # Definir status inicial explicitamente
         db_attendance.status = "waiting"
         db_attendance.payment_status = "pending"
-        
+        # Garantir que updated_at seja definido
+        db_attendance.updated_at = get_recife_datetime()
+
         db.add(db_attendance)
         db.commit()
         db.refresh(db_attendance)
@@ -129,11 +145,25 @@ class AttendanceService:
     
     def get_today_attendance(self, db: Session, attendance_type: str = "all") -> List[Attendance]:
         today = get_recife_date()
-        
-        # Construir query base
-        query = db.query(Attendance).filter(
-            func.date(Attendance.appointment_date) == today
-        )
+
+        # Busca todos os atendimentos e filtra pela data local de Recife
+        all_attendances = db.query(Attendance).all()
+        attendances_today = []
+        from utils.date_utils import utc_to_recife
+        for att in all_attendances:
+            recife_date = utc_to_recife(att.appointment_date).date()
+            if recife_date == today:
+                attendances_today.append(att)
+
+        # Aplicar filtro por tipo se especificado
+        if attendance_type == "presential":
+            attendances_today = [a for a in attendances_today if a.attendance_type == "presential"]
+        elif attendance_type == "appointment":
+            attendances_today = [a for a in attendances_today if a.attendance_type == "appointment"]
+
+        # Ordenar por data/hora decrescente
+        attendances_today.sort(key=lambda a: a.appointment_date, reverse=True)
+        return attendances_today
         
         # Aplicar filtro por tipo se especificado
         if attendance_type == "presential":
@@ -178,6 +208,8 @@ class AttendanceService:
     
     def validate_appointment_schedule(self, db: Session, appointment_date: datetime) -> Dict[str, Any]:
         """Validar se um agendamento pode ser feito baseado nas configurações do sistema"""
+        from utils.date_utils import utc_to_recife
+    # NÃO converter para UTC-3, assume que já está correto
         config = ConfigService.get_attendance_mode_config(db)
         
         # Verificar se o modo de agendamento está habilitado
@@ -188,14 +220,16 @@ class AttendanceService:
             )
         
         # Verificar se é um dia válido para agendamento
-        appointment_weekday = appointment_date.weekday()
+        # Corrigir: frontend usa getDay() (0=domingo, 1=segunda, ..., 6=sábado), Python weekday() (0=segunda, ..., 6=domingo)
+        py_weekday = appointment_date.weekday() # 0=segunda, ..., 6=domingo
+        js_weekday = (py_weekday + 1) % 7 # 0=domingo, 1=segunda, ..., 6=sábado
         scheduled_days = config.get('appointment_scheduled_days', [])
-        
-        if not config.get('appointment_always_scheduled', False) and appointment_weekday not in scheduled_days:
+
+        if not config.get('appointment_always_scheduled', False) and js_weekday not in scheduled_days:
             weekday_names = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Agendamentos não são permitidos aos {weekday_names[appointment_weekday]}s"
+                detail=f"Agendamentos não são permitidos aos {weekday_names[js_weekday]}s"
             )
         
         # Verificar horário de funcionamento
@@ -232,23 +266,21 @@ class AttendanceService:
             )
         
         # Verificar intervalo entre agendamentos
-        interval_minutes = config.get('appointment_interval_minutes', 30)
-        
-        # Verificar se já existe um agendamento no mesmo horário
-        existing_attendance = db.query(Attendance).filter(
-            and_(
-                Attendance.attendance_type == 'appointment',
-                Attendance.status.in_(['waiting', 'progress']),
-                func.date(Attendance.appointment_date) == appointment_date.date(),
-                func.abs(func.extract('epoch', Attendance.appointment_date - appointment_date)) < (interval_minutes * 60)
-            )
-        ).first()
-        
-        if existing_attendance:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Já existe um agendamento neste horário. Intervalo mínimo: {interval_minutes} minutos"
-            )
+        # Removido o bloqueio por intervalo mínimo
+        # existing_attendance = db.query(Attendance).filter(
+        #     and_(
+        #         Attendance.attendance_type == 'appointment',
+        #         Attendance.status.in_(['waiting', 'progress']),
+        #         func.date(Attendance.appointment_date) == appointment_date.date(),
+        #         func.abs(func.extract('epoch', Attendance.appointment_date - appointment_date)) < (interval_minutes * 60)
+        #     )
+        # ).first()
+        #
+        # if existing_attendance:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail=f"Já existe um agendamento neste horário. Intervalo mínimo: {interval_minutes} minutos"
+        #     )
         
         return {
             "valid": True,

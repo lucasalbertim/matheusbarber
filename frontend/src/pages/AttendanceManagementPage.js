@@ -1,11 +1,23 @@
+// ...existing code...
+// Importa o FilterInput do ReportsPage para reutilizar o estilo
+import { FilterInput } from './ReportsPage';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaEye, FaEdit, FaWhatsapp, FaSort, FaSortUp, FaSortDown, FaMoneyBillWave, FaCreditCard, FaQrcode, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
+
+const SectionTitle = styled.h2`
+  margin: 32px 0 16px 0;
+  font-size: 1.4rem;
+  color: var(--primary-dark);
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 6px;
+`;
 
 const Container = styled.div`
   max-width: 1200px;
@@ -55,26 +67,10 @@ const TodayIndicator = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   .date {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 5px;
+    font-size: 1rem;
   }
-
   .description {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-
-  @media (max-width: 768px) {
-    padding: 12px 15px;
-    
-    .date {
-      font-size: 1rem;
-    }
-    
-    .description {
-      font-size: 0.8rem;
-    }
+    font-size: 0.8rem;
   }
 `;
 
@@ -494,6 +490,8 @@ const AttendanceManagementPage = () => {
     presential: 0,
     appointment: 0
   });
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [dateSelected, setDateSelected] = useState(false);
 
   useEffect(() => {
     if (!isAdmin()) {
@@ -503,7 +501,20 @@ const AttendanceManagementPage = () => {
     
     const fetchAttendances = async () => {
       try {
-        const response = await api.get(`/attendance/today?attendance_type=${attendanceTypeFilter}`);
+        let response;
+        if (attendanceTypeFilter === 'appointment') {
+          if (dateSelected) {
+            // Se o usuário selecionou uma data, filtra pelo dia
+            const startDate = `${selectedDate}T00:00:00`;
+            const endDate = `${selectedDate}T23:59:59`;
+            response = await api.get(`/admin/attendance/scheduled?start_date=${startDate}&end_date=${endDate}`);
+          } else {
+            // Se não selecionou data, busca todos os agendados futuros
+            response = await api.get(`/admin/attendance/scheduled`);
+          }
+        } else {
+          response = await api.get(`/attendance/today?attendance_type=${attendanceTypeFilter}`);
+        }
         setAttendances(response.data);
         calculateStats(response.data);
       } catch (error) {
@@ -513,19 +524,19 @@ const AttendanceManagementPage = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchAttendances();
     const id = setInterval(fetchAttendances, 5000);
     return () => clearInterval(id);
-  }, [isAdmin, navigate, attendanceTypeFilter]);
+  }, [isAdmin, navigate, attendanceTypeFilter, selectedDate, dateSelected]);
 
   useEffect(() => {
     const filterAttendances = () => {
-      let filtered;
-      if (activeFilter === 'all') {
-        filtered = attendances;
-      } else {
-        filtered = attendances.filter(attendance => 
+      let filtered = attendances;
+      
+      // Aplicar filtro de status
+      if (activeFilter !== 'all') {
+        filtered = filtered.filter(attendance => 
           attendance.status === activeFilter
         );
       }
@@ -755,12 +766,6 @@ const AttendanceManagementPage = () => {
 
       <FilterBar>
         <FilterButton
-          className={attendanceTypeFilter === 'all' ? 'active' : ''}
-          onClick={() => setAttendanceTypeFilter('all')}
-        >
-          Todos os Tipos
-        </FilterButton>
-        <FilterButton
           className={attendanceTypeFilter === 'presential' ? 'active' : ''}
           onClick={() => setAttendanceTypeFilter('presential')}
         >
@@ -772,6 +777,20 @@ const AttendanceManagementPage = () => {
         >
           Agendados ({stats.appointment})
         </FilterButton>
+        {attendanceTypeFilter === 'appointment' && (
+          <>
+            <label style={{ fontWeight: 600, marginLeft: '20px' }}>Dia:</label>
+            <input
+              as={FilterInput}
+              type="date"
+              value={selectedDate}
+              onChange={e => {
+                setSelectedDate(e.target.value);
+                setDateSelected(true);
+              }}
+            />
+          </>
+        )}
       </FilterBar>
 
       <FilterBar>
@@ -882,6 +901,12 @@ const AttendanceManagementPage = () => {
                 }}>
                   {attendance.attendance_type === 'presential' ? 'Presencial' : 'Agendado'}
                 </span>
+                {attendance.attendance_type === 'appointment' && attendance.appointment_date && (
+                  <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
+                    <strong>Data:</strong> {dayjs(attendance.appointment_date).format('DD/MM/YYYY')}<br />
+                    <strong>Horário:</strong> {dayjs(attendance.appointment_date).format('HH:mm')}
+                  </div>
+                )}
               </div>
               
               <PaymentBadge className={attendance.payment_status}>

@@ -351,7 +351,8 @@ const ClientStartAttendancePage = () => {
     working_hours: '08:00-18:00',
     interval_minutes: 30,
     break_hours: '12:00-13:00',
-    scheduled_days: [1, 2, 3, 4, 5]
+    scheduled_days: [1, 2, 3, 4, 5],
+    always_scheduled: false
   });
 
   const steps = [
@@ -387,15 +388,23 @@ const ClientStartAttendancePage = () => {
     try {
       const response = await api.get('/config/attendance-mode');
       const config = response.data;
-      
+
       if (config.appointment_mode_enabled) {
-        // Buscar configurações completas (apenas admin tem acesso)
-        // Por enquanto, usar valores padrão
+        // Conversão dos valores vindos do backend
+        let interval = config.appointment_interval_minutes;
+        if (typeof interval === 'string') interval = parseInt(interval);
+
+        let scheduledDays = config.appointment_scheduled_days;
+        if (typeof scheduledDays === 'string') {
+          scheduledDays = scheduledDays.split(',').map(x => parseInt(x));
+        }
+
         setAppointmentConfig({
-          working_hours: '08:00-18:00',
-          interval_minutes: 30,
-          break_hours: '12:00-13:00',
-          scheduled_days: [1, 2, 3, 4, 5]
+          working_hours: config.appointment_working_hours || '08:00-18:00',
+          interval_minutes: interval || 30,
+          break_hours: config.appointment_break_hours || '12:00-13:00',
+          scheduled_days: scheduledDays || [1, 2, 3, 4, 5],
+          always_scheduled: config.appointment_always_scheduled || false
         });
       } else {
         toast.error('Sistema de agendamento não está disponível no momento');
@@ -404,12 +413,21 @@ const ClientStartAttendancePage = () => {
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       toast.error('Erro ao carregar configurações de agendamento');
+      // Usar valores padrão em caso de erro
+      setAppointmentConfig({
+        working_hours: '08:00-18:00',
+        interval_minutes: 30,
+        break_hours: '12:00-13:00',
+        scheduled_days: [1, 2, 3, 4, 5],
+        always_scheduled: false
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const generateAvailableSlots = (date) => {
+  // Substitui a função para buscar horários ocupados e marcar slots como busy
+  const generateAvailableSlots = async (date) => {
     const slots = [];
     const { working_hours, interval_minutes, break_hours } = appointmentConfig;
     
@@ -427,19 +445,36 @@ const ClientStartAttendancePage = () => {
     const endMinutes = endHour * 60 + endMinute;
     const breakStartMinutes = breakStartHour * 60 + breakStartMinute;
     const breakEndMinutes = breakEndHour * 60 + breakEndMinute;
-    
-    for (let minutes = startMinutes; minutes < endMinutes; minutes += interval_minutes) {
-      // Skip break time
+
+    // Buscar horários ocupados do backend
+    let busySlots = [];
+    try {
+      const startDate = new Date(date);
+      startDate.setHours(0,0,0,0);
+      const endDate = new Date(date);
+      endDate.setHours(23,59,59,999);
+      const startIso = startDate.toISOString();
+      const endIso = endDate.toISOString();
+      const response = await api.get(`/admin/attendance/scheduled?start_date=${startIso}&end_date=${endIso}`);
+      busySlots = response.data
+        .filter(a => a.status === 'waiting' || a.status === 'progress')
+        .map(a => {
+          const d = new Date(a.appointment_date);
+          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        });
+    } catch (err) {
+      busySlots = [];
+    }
+
+    for (let minutes = startMinutes; minutes + interval_minutes <= endMinutes; minutes += interval_minutes) {
       if (minutes >= breakStartMinutes && minutes < breakEndMinutes) {
         continue;
       }
-      
       const hour = Math.floor(minutes / 60);
       const minute = minutes % 60;
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(time);
+      slots.push({ time, busy: busySlots.includes(time) });
     }
-    
     setAvailableSlots(slots);
   };
 
@@ -448,9 +483,10 @@ const ClientStartAttendancePage = () => {
     setCurrentStep(2);
   };
 
-  const handleDateSelect = (date) => {
+  // Atualiza handleDateSelect para usar a função assíncrona
+  const handleDateSelect = async (date) => {
     setSelectedDate(date);
-    generateAvailableSlots(date);
+    await generateAvailableSlots(date);
     setCurrentStep(3);
   };
 
@@ -479,28 +515,34 @@ const ClientStartAttendancePage = () => {
 
     try {
       setSubmitting(true);
-      
+
       const appointmentDate = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(':');
       appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
+
+      // Envia o horário local no formato 'YYYY-MM-DDTHH:mm:00'
+      const pad = (n) => n.toString().padStart(2, '0');
+      const localDateStr = `${appointmentDate.getFullYear()}-${pad(appointmentDate.getMonth()+1)}-${pad(appointmentDate.getDate())}T${pad(appointmentDate.getHours())}:${pad(appointmentDate.getMinutes())}:00`;
+
       const attendanceData = {
         client_id: client.id,
         service_ids: [selectedService.id],
-        appointment_date: appointmentDate.toISOString(),
+        appointment_date: localDateStr,
         attendance_type: 'appointment'
       };
-      
+
+      console.log('Enviando agendamento para:', localDateStr);
       const response = await api.post('/attendance/', attendanceData);
-      
+
       toast.success('Agendamento realizado com sucesso!');
-      navigate('/cliente/atendimento/resumo', { 
-        state: { attendance: response.data } 
+      navigate('/cliente/atendimento/resumo', {
+        state: { attendance: response.data }
       });
-      
+
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
-      toast.error('Erro ao realizar agendamento');
+      const errorMsg = error.response?.data?.detail || 'Erro ao realizar agendamento';
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -511,7 +553,7 @@ const ClientStartAttendancePage = () => {
     const today = new Date();
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const { scheduled_days } = appointmentConfig;
+    const { scheduled_days, always_scheduled } = appointmentConfig;
     
     // Dias da semana
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -529,16 +571,19 @@ const ClientStartAttendancePage = () => {
       const date = new Date(today.getFullYear(), today.getMonth(), day);
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < today;
+      // Corrigir para garantir que o dia da semana está correto (0=domingo, 1=segunda, ...)
       const dayOfWeek = date.getDay();
-      const isScheduledDay = scheduled_days.includes(dayOfWeek);
-      
+      // scheduled_days deve ser array de inteiros compatível com getDay()
+      const isScheduledDay = always_scheduled || scheduled_days.includes(dayOfWeek);
+
       days.push({
         type: 'day',
         day,
         date,
         isToday,
         isPast,
-        isScheduledDay
+        isScheduledDay,
+        dayOfWeek // para debug
       });
     }
     
@@ -647,13 +692,14 @@ const ClientStartAttendancePage = () => {
             Escolha o Horário
           </h3>
           <div className="time-slots">
-            {availableSlots.map(time => (
+            {availableSlots.map(slot => (
               <div
-                key={time}
-                className={`time-slot ${selectedTime === time ? 'selected' : ''}`}
-                onClick={() => handleTimeSelect(time)}
+                key={slot.time}
+                className={`time-slot ${selectedTime === slot.time ? 'selected' : ''} ${slot.busy ? 'disabled' : ''}`}
+                onClick={() => !slot.busy && handleTimeSelect(slot.time)}
+                style={slot.busy ? { pointerEvents: 'none', opacity: 0.5, background: '#eee', color: '#aaa' } : {}}
               >
-                {time}
+                {slot.time}
               </div>
             ))}
           </div>
