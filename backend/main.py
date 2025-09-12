@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
@@ -635,6 +635,9 @@ def update_attendance_mode_config(
     # Converter para dict e filtrar valores None
     config_data = {k: v for k, v in config_update.dict().items() if v is not None}
     updated_config = ConfigService.update_attendance_mode_config(db, config_data)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(updated_config.get("appointment_scheduled_days"), str):
+        updated_config["appointment_scheduled_days"] = [int(x) for x in updated_config["appointment_scheduled_days"].split(",")]
     return AttendanceModeConfig(**updated_config)
 
 @app.get("/config/attendance-mode")

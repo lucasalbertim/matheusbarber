@@ -38,7 +38,18 @@ class AttendanceService:
         payload.pop('service_ids', None)
         
         # Definir tipo de atendimento baseado na data
-        attendance_date = datetime.fromisoformat(payload['appointment_date'].replace('Z', '+00:00'))
+        appointment_date = payload['appointment_date']
+        if isinstance(appointment_date, str):
+            # Aceita formato ISO com ou sem 'Z'
+            appointment_date = appointment_date.replace('Z', '+00:00')
+            attendance_date = datetime.fromisoformat(appointment_date)
+        elif isinstance(appointment_date, datetime):
+            attendance_date = appointment_date
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato de data de agendamento inválido."
+            )
         now = get_recife_datetime()
         
         # Se a data é muito próxima do momento atual (menos de 1 hora), é presencial
