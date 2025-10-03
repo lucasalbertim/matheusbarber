@@ -770,7 +770,7 @@ const AttendanceManagementPage = () => {
           onClick={() => setAttendanceTypeFilter('presential')}
         >
           Presenciais ({stats.presential})
-        </FilterButton>
+          </FilterButton>
         <FilterButton
           className={attendanceTypeFilter === 'appointment' ? 'active' : ''}
           onClick={() => setAttendanceTypeFilter('appointment')}
