@@ -552,7 +552,8 @@ const ClientStartAttendancePage = () => {
     const days = [];
     const today = new Date();
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0); 
+  // Permitir selecionar o dia atual, mas não dias anteriores
     const { scheduled_days, always_scheduled } = appointmentConfig;
     
     // Dias da semana
@@ -569,8 +570,9 @@ const ClientStartAttendancePage = () => {
     // Dias do mês
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const date = new Date(today.getFullYear(), today.getMonth(), day);
-      const isToday = date.toDateString() === today.toDateString();
-      const isPast = date < today;
+  const isToday = date.toDateString() === today.toDateString();
+  // Permitir selecionar o dia atual, mesmo se for antes do expediente
+  const isPast = date < today && !isToday;
       // Corrigir para garantir que o dia da semana está correto (0=domingo, 1=segunda, ...)
       const dayOfWeek = date.getDay();
       // scheduled_days deve ser array de inteiros compatível com getDay()

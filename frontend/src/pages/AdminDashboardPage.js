@@ -315,41 +315,57 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [attendanceModes, setAttendanceModes] = useState({
+    presential_mode_enabled: true,
+    appointment_mode_enabled: true
+  });
 
   useEffect(() => {
     if (!admin) {
       navigate('/admin/login');
       return;
     }
-    
     fetchMetrics();
     fetchRecentActivities();
+    fetchAttendanceModes();
   }, [admin, navigate]);
 
-  const fetchMetrics = async () => {
-    try {
-      const response = await api.get('/admin/reports/summary');
-      setMetrics(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar métricas:', error);
-      toast.error('Erro ao carregar métricas');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchMetrics = async () => {
+      try {
+        const response = await api.get('/admin/reports/summary');
+        setMetrics(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar métricas:', error);
+        toast.error('Erro ao carregar métricas');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchRecentActivities = async () => {
-    setLoadingActivities(true);
-    try {
-      const response = await api.get('/admin/reports/recent-activities?limit=5');
-      setRecentActivities(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar atividades recentes:', error);
-      toast.error('Erro ao carregar atividades recentes');
-    } finally {
-      setLoadingActivities(false);
-    }
-  };
+    const fetchAttendanceModes = async () => {
+      try {
+        const response = await api.get('/admin/config/attendance-mode');
+        setAttendanceModes({
+          presential_mode_enabled: response.data.presential_mode_enabled,
+          appointment_mode_enabled: response.data.appointment_mode_enabled
+        });
+      } catch (error) {
+        setAttendanceModes({ presential_mode_enabled: true, appointment_mode_enabled: true });
+      }
+    };
+
+    const fetchRecentActivities = async () => {
+      setLoadingActivities(true);
+      try {
+        const response = await api.get('/admin/reports/recent-activities?limit=5');
+        setRecentActivities(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar atividades recentes:', error);
+        toast.error('Erro ao carregar atividades recentes');
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
 
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
@@ -359,12 +375,14 @@ const AdminDashboardPage = () => {
     if (diffInMinutes < 1) return 'Agora mesmo';
     if (diffInMinutes < 60) return `Há ${diffInMinutes} min`;
     
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Há ${diffInHours}h`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `Há ${diffInDays} dias`;
-    
+              {attendanceModes.presential_mode_enabled && (
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => navigate('/admin/fila')}
+                >
+                  Fila de Presencial
+                </button>
+              )}
     return activityTime.toLocaleDateString('pt-BR');
   };
 
@@ -491,12 +509,22 @@ const AdminDashboardPage = () => {
               >
                 Ver Atendimentos
               </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => navigate('/admin/fila')}
-              >
-                Gestão de Fila
-              </button>
+              {attendanceModes.presential_mode_enabled && (
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => navigate('/admin/fila')}
+                >
+                  Fila de Presencial
+                </button>
+              )}
+              {attendanceModes.appointment_mode_enabled && (
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => navigate('/admin/scheduled-queue')}
+                >
+                  Fila de Agendamentos
+                </button>
+              )}
             </div>
           </QuickActionCard>
 

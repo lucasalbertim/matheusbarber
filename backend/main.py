@@ -20,6 +20,33 @@ from schemas import (
     AttendanceUpdate, AttendanceCancel,
     AttendanceModeConfig, AttendanceModeConfigUpdate
 )
+
+app = FastAPI()
+
+# ...existing code...
+
+from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.orm import Session
+from typing import List
+import os
+from datetime import datetime
+import io
+import json
+
+from database import get_db, engine
+from models import Base, Admin
+from sqlalchemy import text
+from schemas import (
+    ClientCreate, ClientResponse, ClientLogin,
+    AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
+    ServiceCreate, ServiceResponse,
+    AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
+    AttendanceUpdate, AttendanceCancel,
+    AttendanceModeConfig, AttendanceModeConfigUpdate
+)
 from services import (
     client_service, admin_service, service_service,
     attendance_service, whatsapp_service, ConfigService
