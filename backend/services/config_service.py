@@ -71,6 +71,9 @@ class ConfigService:
         if configs['appointment_scheduled_days'] is None:
             configs['appointment_scheduled_days'] = '1,2,3,4,5'  # Segunda a sexta
         
+        # Garantir que appointment_scheduled_days seja lista de inteiros
+        if isinstance(configs['appointment_scheduled_days'], str):
+            configs['appointment_scheduled_days'] = [int(x) for x in configs['appointment_scheduled_days'].split(',')]
         return configs
     
     @staticmethod
@@ -139,7 +142,7 @@ class ConfigService:
     def initialize_default_configs(db: Session):
         """Inicializar configurações padrão do sistema"""
         default_configs = [
-            ('presential_mode_enabled', 'false', 'Habilita o modo de atendimento presencial'),
+            ('presential_mode_enabled', 'true', 'Habilita o modo de atendimento presencial'),
             ('appointment_mode_enabled', 'false', 'Habilita o modo de agendamento'),
             ('appointment_working_hours', '08:00-18:00', 'Horário de funcionamento para agendamentos'),
             ('appointment_interval_minutes', '30', 'Intervalo entre agendamentos em minutos'),

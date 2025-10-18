@@ -344,26 +344,6 @@ const ClientDashboardPage = () => {
         <p>Estamos felizes em vê-lo novamente. Agende seu próximo corte ou acompanhe seus atendimentos.</p>
       </WelcomeSection>
 
-      <StatsGrid>
-        <StatCard>
-          <div className="stat-icon">📊</div>
-          <div className="stat-number">{stats.totalAttendances}</div>
-          <div className="stat-label">Total de Visitas</div>
-        </StatCard>
-        
-        <StatCard>
-          <div className="stat-icon">✅</div>
-          <div className="stat-number">{stats.completedAttendances}</div>
-          <div className="stat-label">Cortes Realizados</div>
-        </StatCard>
-        
-        <StatCard>
-          <div className="stat-icon">⏳</div>
-          <div className="stat-number">{stats.pendingAttendances}</div>
-          <div className="stat-label">Agendamentos Pendentes</div>
-        </StatCard>
-        
-      </StatsGrid>
 
       <QuickActions>
         <h3>
@@ -374,11 +354,11 @@ const ClientDashboardPage = () => {
           {attendanceConfig.presential_mode_enabled && attendanceConfig.appointment_mode_enabled ? (
             // Ambos os modos disponíveis
             <>
-              <Button variant="primary" onClick={handlePresentialAttendance} fullWidth>
+              <Button variant="warning" onClick={handlePresentialAttendance} fullWidth>
                 <FaUsers />
                 Atendimento Presencial
               </Button>
-              <Button variant="secondary" onClick={handleAppointmentAttendance} fullWidth>
+              <Button variant="warning" onClick={handleAppointmentAttendance} fullWidth>
                 <FaCalendarAlt />
                 Agendar Horário
               </Button>
@@ -404,17 +384,13 @@ const ClientDashboardPage = () => {
             </div>
           )}
           
-          <Button variant="outline" onClick={handleViewHistory} fullWidth>
-            <FaHistory />
-            Ver Histórico
-          </Button>
           
           <Button variant="outline" onClick={handleContact} fullWidth>
             <FaWhatsapp />
             Falar Conosco
           </Button>
           
-          <Button variant="ghost" onClick={handleLogout} fullWidth>
+          <Button variant="error" onClick={handleLogout} fullWidth>
             <FaUser />
             Sair
           </Button>
@@ -428,26 +404,21 @@ const ClientDashboardPage = () => {
         </h3>
         
         {recentAttendances.length > 0 ? (
-          recentAttendances.map(attendance => (
-            <AttendanceItem key={attendance.id}>
-              <div className="attendance-info">
-                <div className="service-name">
-                  {attendance.service?.name || 'Serviço não especificado'}
+          recentAttendances.map(attendance => {
+            // Mostrar todos os serviços do atendimento
+            const serviceNames = attendance.services && attendance.services.length > 0
+              ? attendance.services.map(s => s.name).join(', ')
+              : 'Serviço não especificado';
+            return (
+              <AttendanceItem key={attendance.id}>
+                <div className="attendance-info">
+                  <div className="service-name">{serviceNames}</div>
+                  <div className="attendance-date">{formatDateTime(attendance.appointment_date)}</div>
                 </div>
-                <div className="attendance-date">
-                  {formatDateTime(attendance.appointment_date)}
-                </div>
-              </div>
-              
-              <div className={`attendance-status ${attendance.status}`}>
-                {getStatusText(attendance.status)}
-              </div>
-              
-              <div className="attendance-price">
-                {attendance.service?.price ? formatCurrency(attendance.service.price) : 'N/A'}
-              </div>
-            </AttendanceItem>
-          ))
+                <div className={`attendance-status ${attendance.status}`}>{getStatusText(attendance.status)}</div>
+              </AttendanceItem>
+            );
+          })
         ) : (
           <EmptyState>
             <div className="empty-icon">✂️</div>

@@ -158,13 +158,13 @@ const OptionCard = styled(Link)`
     .icon {
       width: 64px;
       height: 64px;
-      background: linear-gradient(135deg, var(--secondary) 0%, #e6c200 100%);
+      background: linear-gradient(135deg, #0d635aff 0%, #20AC9F 100%);
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 28px;
-      color: var(--primary);
+      color: var(--secondary);
     }
     
     .title {
@@ -193,7 +193,7 @@ const OptionCard = styled(Link)`
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--secondary);
+      color: var(--primary);
       font-weight: 600;
       font-size: 1.1rem;
     }
@@ -208,11 +208,18 @@ const OptionCard = styled(Link)`
       gap: 15px;
       margin-bottom: 20px;
       
-      .icon {
-        width: 56px;
-        height: 56px;
-        font-size: 24px;
-      }
+     
+    .icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #0d635aff 0%, #20AC9F 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: var(--secondary);
+    }
       
       .title h3 {
         font-size: 1.3rem;
@@ -274,13 +281,13 @@ const FeatureCard = styled.div`
   .icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #20AC9F 0%, #A3E4DB 100%);
+      background: linear-gradient(135deg, #0d635aff 0%, #20AC9F 100%);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: var(--primary);
+    color: var(--secondary);
     margin: 0 auto 20px;
   }
   
@@ -352,7 +359,7 @@ const HomePage = () => {
           <OptionCard to="/cliente/login">
             <div className="card-header">
               <div className="icon">
-                <FaUser />
+                <FaUser  />
               </div>
               <div className="title">
                 <h3>Sou Cliente</h3>

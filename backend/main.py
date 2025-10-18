@@ -1,4 +1,31 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.orm import Session
+from typing import List
+import os
+from datetime import datetime
+import io
+import json
+
+from database import get_db, engine
+from models import Base, Admin
+from sqlalchemy import text
+from schemas import (
+    ClientCreate, ClientResponse, ClientLogin,
+    AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
+    ServiceCreate, ServiceResponse,
+    AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
+    AttendanceUpdate, AttendanceCancel,
+    AttendanceModeConfig, AttendanceModeConfigUpdate
+)
+
+app = FastAPI()
+
+# ...existing code...
+
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
@@ -24,6 +51,7 @@ from services import (
     client_service, admin_service, service_service,
     attendance_service, whatsapp_service, ConfigService
 )
+from routes.scheduled_attendance import router as scheduled_attendance_router
 from auth import get_current_admin
 
 import time
@@ -499,9 +527,12 @@ def create_attendance(
     return attendance_service.create_attendance(db, attendance)
 
 @app.get("/attendance/today", response_model=List[AttendanceResponse])
-def get_today_attendance(db: Session = Depends(get_db)):
+def get_today_attendance(
+    attendance_type: str = Query("all", description="Tipo de atendimento: all, presential, appointment"),
+    db: Session = Depends(get_db)
+):
     """Obter atendimentos do dia"""
-    return attendance_service.get_today_attendance(db)
+    return attendance_service.get_today_attendance(db, attendance_type)
 
 @app.put("/attendance/{attendance_id}", response_model=AttendanceResponse)
 def update_attendance(
@@ -598,6 +629,7 @@ def export_reports(
     """Exportar relatórios (apenas admin)"""
     return attendance_service.export_reports(db)
 
+app.include_router(scheduled_attendance_router)
 # Rotas de WhatsApp
 @app.post("/whatsapp/send-message")
 def send_whatsapp_message(
@@ -617,6 +649,9 @@ def get_attendance_mode_config(
 ):
     """Obter configurações do modo de atendimento (apenas admin)"""
     config = ConfigService.get_attendance_mode_config(db)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
     return AttendanceModeConfig(**config)
 
 @app.put("/admin/config/attendance-mode", response_model=AttendanceModeConfig)
@@ -629,14 +664,40 @@ def update_attendance_mode_config(
     # Converter para dict e filtrar valores None
     config_data = {k: v for k, v in config_update.dict().items() if v is not None}
     updated_config = ConfigService.update_attendance_mode_config(db, config_data)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(updated_config.get("appointment_scheduled_days"), str):
+        updated_config["appointment_scheduled_days"] = [int(x) for x in updated_config["appointment_scheduled_days"].split(",")]
     return AttendanceModeConfig(**updated_config)
 
 @app.get("/config/attendance-mode")
 def get_public_attendance_mode_config(db: Session = Depends(get_db)):
     """Obter configurações públicas do modo de atendimento (para clientes)"""
     config = ConfigService.get_attendance_mode_config(db)
-    # Retornar apenas as configurações necessárias para o cliente
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
     return {
         "presential_mode_enabled": config["presential_mode_enabled"],
-        "appointment_mode_enabled": config["appointment_mode_enabled"]
+        "appointment_mode_enabled": config["appointment_mode_enabled"],
+        "appointment_working_hours": config["appointment_working_hours"],
+        "appointment_interval_minutes": config["appointment_interval_minutes"],
+        "appointment_break_hours": config["appointment_break_hours"],
+        "appointment_scheduled_days": config["appointment_scheduled_days"],
+        "appointment_always_scheduled": config["appointment_always_scheduled"]
     }
+
+@app.post("/attendance/validate-appointment")
+def validate_appointment_schedule(
+    appointment_date: str,
+    db: Session = Depends(get_db)
+):
+    """Validar se um agendamento pode ser feito"""
+    try:
+        appointment_datetime = datetime.fromisoformat(appointment_date.replace('Z', '+00:00'))
+        result = attendance_service.validate_appointment_schedule(db, appointment_datetime)
+        return result
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de data inválido"
+        )

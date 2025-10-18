@@ -17,6 +17,8 @@ import { FaArrowLeft, FaDownload, FaChartBar, FaUsers, FaMoneyBillWave, FaCalend
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { exportMetricsPDF } from '../utils/pdfExport';
+import { exportMetricsXLSX } from '../utils/xlsxExport';
 import Footer from '../components/Footer';
 
 // Registrar componentes do Chart.js
@@ -32,7 +34,13 @@ ChartJS.register(
 );
 
 const Container = styled.div`
-  max-width: 1200px;
+
+  .container2 {
+    overflow-x: scroll;
+    max-height: 500px;
+}
+  max-width: 100vw;
+  overflow-x: hidden;
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
@@ -131,6 +139,8 @@ const FilterInput = styled.input`
     border-color: var(--primary);
   }
 `;
+
+export { FilterInput };
 
 const FilterSelect = styled.select`
   padding: 10px;
@@ -284,10 +294,13 @@ const ChartPlaceholder = styled.div`
 `;
 
 const TableSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  width: 200%;
   background: white;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
 const TableHeader = styled.div`
@@ -336,6 +349,24 @@ const LoadingState = styled.div`
 `;
 
 const ReportsPage = () => {
+  // Exportação PDF estruturada
+  const handleExportPDF = async () => {
+    try {
+      // Carregar logo como base64
+      const logoUrl = await fetch('/public/logo.jpeg')
+        .then(res => res.blob())
+        .then(blob => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        }));
+      exportMetricsPDF({ metrics, filters, logoUrl });
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
+  };
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -360,8 +391,8 @@ const ReportsPage = () => {
       };
       
       if (filters.startDate && filters.endDate) {
-        params.start_date = filters.startDate;
-        params.end_date = filters.endDate;
+  params.start_date = filters.startDate;
+  params.end_date = filters.endDate;
       }
 
       const [metricsResponse, clientsResponse, revenueResponse] = await Promise.all([
@@ -402,25 +433,30 @@ const ReportsPage = () => {
   };
 
   const handleExportData = async () => {
+  // Exportação PDF estruturada
+  const handleExportPDF = async () => {
     try {
-      const response = await api.get('/admin/reports/export', {
-        params: filters,
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `relatorio-${new Date().toISOString().split('T')[0]}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      toast.success('Relatório exportado com sucesso!');
+      // Carregar logo como base64
+      const logoUrl = await fetch('/public/logo.jpeg')
+        .then(res => res.blob())
+        .then(blob => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        }));
+      exportMetricsPDF({ metrics, filters, logoUrl });
+      toast.success('PDF exportado com sucesso!');
     } catch (error) {
-      console.error('Erro ao exportar relatório:', error);
-      toast.error('Erro ao exportar relatório');
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
+  };
+    try {
+      exportMetricsXLSX({ metrics, filters });
+      toast.success('Relatório XLSX exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar XLSX:', error);
+      toast.error('Erro ao exportar XLSX');
     }
   };
 
@@ -509,7 +545,11 @@ const ReportsPage = () => {
           
           <ExportButton onClick={handleExportData}>
             <FaDownload />
-            Exportar Relatório
+            Exportar XLSX
+          </ExportButton>
+          <ExportButton onClick={handleExportPDF} style={{ background: '#555' }}>
+            <FaDownload />
+            Exportar PDF
           </ExportButton>
         </FilterActions>
       </FilterSection>
@@ -578,7 +618,8 @@ const ReportsPage = () => {
         )}
       </ChartsSection>
 
-      <TableSection>
+      <div className="container2">
+        <TableSection>
         <TableHeader>
           <div>Cliente</div>
           <div>Total de Visitas</div>
@@ -619,6 +660,7 @@ const ReportsPage = () => {
           ))
         )}
       </TableSection>
+      </div>
       <Footer />
     </Container>
   );

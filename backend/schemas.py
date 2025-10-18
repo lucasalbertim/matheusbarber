@@ -105,6 +105,7 @@ class AttendanceResponse(AttendanceBase):
     updated_at: datetime
     client: ClientResponse
     services: List[ServiceResponse]
+    attendance_type: str
     
     class Config:
         from_attributes = True

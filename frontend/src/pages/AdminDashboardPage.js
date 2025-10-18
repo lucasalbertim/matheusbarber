@@ -97,8 +97,8 @@ const MetricCard = styled.div`
       align-items: center;
       justify-content: center;
       font-size: 20px;
-      background: rgba(32, 172, 159, 0.1); // Alterado para a nova cor
-      color: #20AC9F; // Alterado para a nova cor
+      background-color: #52ecda21; // Alterado para a nova cor
+      color: #186d62ff; // Alterado para a nova cor
     }
     
     .trend {
@@ -315,15 +315,19 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [attendanceModes, setAttendanceModes] = useState({
+    presential_mode_enabled: true,
+    appointment_mode_enabled: true
+  });
 
   useEffect(() => {
     if (!admin) {
       navigate('/admin/login');
       return;
     }
-    
     fetchMetrics();
     fetchRecentActivities();
+    fetchAttendanceModes();
   }, [admin, navigate]);
 
   const fetchMetrics = async () => {
@@ -335,6 +339,18 @@ const AdminDashboardPage = () => {
       toast.error('Erro ao carregar métricas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAttendanceModes = async () => {
+    try {
+      const response = await api.get('/admin/config/attendance-mode');
+      setAttendanceModes({
+        presential_mode_enabled: response.data.presential_mode_enabled,
+        appointment_mode_enabled: response.data.appointment_mode_enabled
+      });
+    } catch (error) {
+      setAttendanceModes({ presential_mode_enabled: true, appointment_mode_enabled: true });
     }
   };
 
@@ -355,16 +371,20 @@ const AdminDashboardPage = () => {
     const now = new Date();
     const activityTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now - activityTime) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Agora mesmo';
     if (diffInMinutes < 60) return `Há ${diffInMinutes} min`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Há ${diffInHours}h`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `Há ${diffInDays} dias`;
-    
+
+    {
+      attendanceModes.presential_mode_enabled && (
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate('/admin/fila')}
+        >
+          Fila de Presencial
+        </button>
+      )
+    }
     return activityTime.toLocaleDateString('pt-BR');
   };
 
@@ -401,15 +421,23 @@ const AdminDashboardPage = () => {
   return (
     <PageContainer>
       <Container>
+        <style>{`
+          /* Ajuste da cor de hover para o botão .btn-secondary */
+          .btn.btn-secondary:hover {
+            background: #b8870a; /* nova cor de hover */
+            transform: translateY(-1px);
+          }
+        `}</style>
+
         <PageHeader>
           <h1>Dashboard Administrativo</h1>
-          <p>Bem-vindo, {admin.name}! Aqui está o resumo da sua barbearia.</p>
+          <p>Bem-vindo, {admin.name?.split(' ')[0]}! Aqui está o resumo da sua barbearia.</p>
         </PageHeader>
-        
+
         <MetricsGrid>
           <MetricCard>
             <div className="metric-header">
-              <div className="icon" style={{ background: 'rgba(26, 26, 26, 0.1)', color: 'var(--primary)' }}>
+              <div className="icon" >
                 <FaUsers />
               </div>
               <div className={`trend ${(metrics.growthPercentages?.clientsGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
@@ -419,10 +447,10 @@ const AdminDashboardPage = () => {
             <div className="metric-value">{metrics.totalClients}</div>
             <div className="metric-label">Total de Clientes</div>
           </MetricCard>
-          
+
           <MetricCard>
             <div className="metric-header">
-              <div className="icon" style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--secondary)' }}>
+              <div className="icon" >
                 <FaCut />
               </div>
               <div className={`trend ${(metrics.growthPercentages?.attendancesGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
@@ -432,10 +460,10 @@ const AdminDashboardPage = () => {
             <div className="metric-value">{metrics.totalAttendances}</div>
             <div className="metric-label">Total de Atendimentos</div>
           </MetricCard>
-          
+
           <MetricCard>
             <div className="metric-header">
-              <div className="icon" style={{ background: 'rgba(40, 167, 69, 0.1)', color: 'var(--success)' }}>
+              <div className="icon" >
                 <FaDollarSign />
               </div>
               <div className={`trend ${(metrics.growthPercentages?.revenueGrowth || 0) >= 0 ? 'positive' : 'negative'}`}>
@@ -445,10 +473,10 @@ const AdminDashboardPage = () => {
             <div className="metric-value">R$ {(metrics.totalRevenue || 0).toFixed(2)}</div>
             <div className="metric-label">Receita Total</div>
           </MetricCard>
-          
+
           <MetricCard>
             <div className="metric-header">
-              <div className="icon" style={{ background: 'rgba(220, 53, 69, 0.1)', color: 'var(--error)' }}>
+              <div className="icon" style={{ color: 'var(--error)' }}>
                 <FaExclamationCircle />
               </div>
               <div className="trend neutral">
@@ -459,7 +487,7 @@ const AdminDashboardPage = () => {
             <div className="metric-label">Clientes Inativos</div>
           </MetricCard>
         </MetricsGrid>
-        
+
         <QuickActionsGrid>
           <QuickActionCard>
             <h3>
@@ -467,36 +495,44 @@ const AdminDashboardPage = () => {
               Gestão de Clientes
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => navigate('/admin/clientes')}
               >
                 Ver Clientes
               </button>
-              <button className="btn btn-secondary">
-                Adicionar Cliente
-              </button>
+             
             </div>
           </QuickActionCard>
-          
+
           <QuickActionCard>
             <h3>
               <FaCut className="icon" />
               Gestão de Atendimentos
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => navigate('/admin/atendimentos')}
               >
                 Ver Atendimentos
               </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => navigate('/admin/fila')}
-              >
-                Gestão de Fila
-              </button>
+              {attendanceModes.presential_mode_enabled && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate('/admin/fila')}
+                >
+                  Fila de Presencial
+                </button>
+              )}
+              {attendanceModes.appointment_mode_enabled && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate('/admin/scheduled-queue')}
+                >
+                  Fila de Agendamentos
+                </button>
+              )}
             </div>
           </QuickActionCard>
 
@@ -506,33 +542,29 @@ const AdminDashboardPage = () => {
               Gestão de Serviços
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => navigate('/admin/servicos')}
               >
                 Ver Serviços
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/admin/servicos')}>
-                Novo Serviço
-              </button>
+              
             </div>
           </QuickActionCard>
-          
+
           <QuickActionCard>
             <h3>
               <FaChartBar className="icon" />
               Relatórios
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => navigate('/admin/relatorios')}
               >
                 Ver Relatórios
               </button>
-              <button className="btn btn-secondary">
-                Exportar Dados
-              </button>
+             
             </div>
           </QuickActionCard>
 
@@ -542,19 +574,17 @@ const AdminDashboardPage = () => {
               Configurações
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => navigate('/admin/configuracoes')}
               >
                 Configurar Sistema
               </button>
-              <button className="btn btn-secondary">
-                Modos de Atendimento
-              </button>
+             
             </div>
           </QuickActionCard>
         </QuickActionsGrid>
-        
+
         <RecentActivityCard>
           <h3>
             <FaClock className="icon" />

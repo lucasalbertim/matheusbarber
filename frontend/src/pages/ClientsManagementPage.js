@@ -460,11 +460,17 @@ Data de Cadastro: ${formatDate(client.created_at)}
           <tbody>
             {currentClients.map(client => (
               <Tr key={client.id}>
+                {/* Mobile: Card com labels */}
                 <Td>
-                  <div>
-                    <strong>{client.name}</strong>
-                    <br />
-                    <small>ID: {client.id}</small>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <strong style={{ fontSize: '1.1em' }}>{client.name}</strong>
+                    <small style={{ color: '#888' }}>ID: {client.id}</small>
+                    <div className="client-details-mobile" style={{ display: 'none' }}>
+                      <div><b>Data de Nascimento:</b> {formatDate(client.data_nascimento)}</div>
+                      <div><b>Telefone:</b> {formatPhone(client.phone)}</div>
+                      <div><b>Email:</b> {client.email || 'Não informado'}</div>
+                      <div><b>Status:</b> <StatusBadge className={client.is_active ? 'active' : 'inactive'}>{client.is_active ? 'Ativo' : 'Inativo'}</StatusBadge></div>
+                    </div>
                   </div>
                 </Td>
                 <Td>{formatDate(client.data_nascimento)}</Td>
@@ -476,7 +482,7 @@ Data de Cadastro: ${formatDate(client.created_at)}
                   </StatusBadge>
                 </Td>
                 <Td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <ActionButton
                       className="view"
                       title="Visualizar"
@@ -484,7 +490,6 @@ Data de Cadastro: ${formatDate(client.created_at)}
                     >
                       <FaEye />
                     </ActionButton>
-                    
                     <ActionButton
                       className="edit"
                       title="Editar"
@@ -492,15 +497,13 @@ Data de Cadastro: ${formatDate(client.created_at)}
                     >
                       <FaEdit />
                     </ActionButton>
-                    
                     <ActionButton
                       className="whatsapp"
                       title="WhatsApp"
                       onClick={() => handleWhatsApp(client.phone)}
-                      >
+                    >
                       <FaWhatsapp />
                     </ActionButton>
-                    
                     {!client.is_active && (
                       <ActionButton
                         className="reactivate"
@@ -510,7 +513,6 @@ Data de Cadastro: ${formatDate(client.created_at)}
                         <FaUserCheck />
                       </ActionButton>
                     )}
-                    
                     <ActionButton
                       className="delete"
                       title="Excluir"
@@ -524,7 +526,20 @@ Data de Cadastro: ${formatDate(client.created_at)}
             ))}
           </tbody>
         </Table>
-
+        {/* Mobile: Cards com labels e conteúdo organizado */}
+        <style>{`
+          @media (max-width: 768px) {
+            .client-details-mobile {
+              display: block !important;
+              margin-top: 8px;
+              font-size: 15px;
+              color: #444;
+            }
+            thead { display: none; }
+            td { display: block; width: 100%; border-bottom: none; }
+            tr { margin-bottom: 18px; background: var(--surface); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 10px; }
+          }
+        `}</style>
         {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}

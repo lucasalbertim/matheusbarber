@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUsers, FaClock, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaRefresh, FaPlay, FaPause } from 'react-icons/fa';
+import { FaUsers, FaClock, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaSync, FaPlay, FaPause } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -26,7 +26,26 @@ const Container = styled.div`
   margin: 0 auto;
   width: 100%;
   flex: 1;
+
+  .queue-lists {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: space-evenly;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    .queue-lists {
+    display: flex;
+      flex-direction: column;
+    }
+  }
 `;
+
+
 
 const PageHeader = styled.div`
   margin-bottom: 40px;
@@ -135,6 +154,7 @@ const QueueList = styled(Card)`
     color: var(--primary);
     margin-bottom: 20px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 10px;
   }
@@ -142,6 +162,8 @@ const QueueList = styled(Card)`
 
 const QueueItem = styled.div`
   display: flex;
+  flex-direction: column;
+
   align-items: center;
   justify-content: space-between;
   padding: 20px;
@@ -255,6 +277,7 @@ const QueueManagementPage = () => {
   const navigate = useNavigate();
   
   const [queue, setQueue] = useState([]);
+  const [attending, setAttending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
@@ -289,16 +312,20 @@ const QueueManagementPage = () => {
         attendance => attendance.attendance_type === 'presential'
       );
       
-      // Ordenar por posição na fila
-      const sortedQueue = presentialAttendances
+      // Separar atendimentos aguardando e em andamento
+      const waitingQueue = presentialAttendances
         .filter(attendance => attendance.status === 'waiting')
-        .sort((a, b) => (a.queue_position || 0) - (b.queue_position || 0));
+        .sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
+      const attendingQueue = presentialAttendances
+        .filter(attendance => attendance.status === 'progress')
+        .sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
       
-      setQueue(sortedQueue);
+      setQueue(waitingQueue);
+      setAttending(attendingQueue);
       
       // Calcular estatísticas
-      const totalWaiting = sortedQueue.length;
-      const currentAttending = presentialAttendances.filter(a => a.status === 'progress').length;
+      const totalWaiting = waitingQueue.length;
+      const currentAttending = attendingQueue.length;
       const completedToday = presentialAttendances.filter(a => a.status === 'finished').length;
       
       setStats({
@@ -429,7 +456,7 @@ const QueueManagementPage = () => {
               onClick={fetchQueueData}
               disabled={refreshing}
             >
-              <FaRefresh className={refreshing ? 'spinning' : ''} />
+              <FaSync className={refreshing ? 'spinning' : ''} />
               {refreshing ? 'Atualizando...' : 'Atualizar Fila'}
             </Button>
             
@@ -439,71 +466,122 @@ const QueueManagementPage = () => {
           </div>
         </QueueControls>
 
-        <QueueList>
-          <h3>
-            <FaUsers />
-            Fila de Atendimento
-          </h3>
-          
-          {queue.length > 0 ? (
-            queue.map((attendance, index) => (
-              <QueueItem 
-                key={attendance.id}
-                className={index === 0 ? 'current' : 'waiting'}
-              >
-                <div className="queue-info">
-                  <div className="position">
-                    #{attendance.queue_position || index + 1}
+        <div className="queue-lists">
+          <QueueList>
+            <h3>
+              <FaUsers />
+              Aguardando Atendimento
+            </h3>
+            {queue.length > 0 ? (
+              queue.map((attendance, index) => (
+                <QueueItem 
+                  key={attendance.id}
+                  className={index === 0 ? 'current' : 'waiting'}
+                >
+                  <div className="queue-info">
+                    <div className="position">
+                      #{attendance.queue_position || index + 1}
+                    </div>
+                    <div className="client-name">
+                      {attendance.client?.name || 'Cliente não encontrado'}
+                    </div>
+                    <div className="services">
+                      {getServicesText(attendance.services)}
+                      {attendance.services && attendance.services.length > 0 && (
+                        <span> - {formatCurrency(getTotalPrice(attendance.services))}</span>
+                      )}
+                      {/* Informação de pagamento */}
+                      <span style={{ marginLeft: 8 }}>
+                        {attendance.payment_method === 'cash' && '💵'}
+                        {attendance.payment_method === 'card' && '💳'}
+                        {attendance.payment_method === 'pix' && '📱'}
+                        {!attendance.payment_method && '❓'}
+                      </span>
+                    </div>
+                    <div className="arrival-time">
+                      Chegou às {formatDateTime(attendance.appointment_date).split(' ')[1]}
+                    </div>
                   </div>
-                  <div className="client-name">
-                    {attendance.client?.name || 'Cliente não encontrado'}
+                  <div className="queue-actions">
+                    <div className="status-badge current">
+                      {index === 0 ? 'Próximo' : 'Aguardando'}
+                    </div>
+                    {index === 0 && (
+                      <Button 
+                        variant="success" 
+                        size="sm"
+                        onClick={() => handleStartAttendance(attendance.id)}
+                      >
+                        <FaPlay />
+                        Iniciar
+                      </Button>
+                    )}                                                    
+                    <Button 
+                      variant="danger" 
+                      size="sm"
+                      onClick={() => handleCancelAttendance(attendance.id)}
+                    >
+                      <FaTimesCircle />
+                      Cancelar
+                    </Button>
                   </div>
-                  <div className="services">
-                    {getServicesText(attendance.services)}
-                    {attendance.services && attendance.services.length > 0 && (
-                      <span> - {formatCurrency(getTotalPrice(attendance.services))}</span>
-                    )}
+                </QueueItem>
+              ))
+            ) : (
+              <EmptyState>
+                <div className="empty-icon">👥</div>
+                <h3>Fila Vazia</h3>
+                <p>Não há clientes aguardando atendimento no momento.</p>
+              </EmptyState>
+            )}
+          </QueueList>
+          <QueueList>
+            <h3>
+              <FaCheckCircle />
+              Em Atendimento
+            </h3>
+            {attending.length > 0 ? (
+              attending.map((attendance) => (
+                <QueueItem key={attendance.id} className="current">
+                  <div className="queue-info">
+                    <div className="position">
+                      #{attendance.queue_position}
+                    </div>
+                    <div className="client-name">
+                      {attendance.client?.name || 'Cliente não encontrado'}
+                    </div>
+                    <div className="services">
+                      {getServicesText(attendance.services)}
+                      {attendance.services && attendance.services.length > 0 && (
+                        <span> - {formatCurrency(getTotalPrice(attendance.services))}</span>
+                      )}
+                    </div>
+                    <div className="arrival-time">
+                      Chegou às {formatDateTime(attendance.appointment_date).split(' ')[1]}
+                    </div>
                   </div>
-                  <div className="arrival-time">
-                    Chegou às {formatDateTime(attendance.appointment_date).split(' ')[1]}
-                  </div>
-                </div>
-                
-                <div className="queue-actions">
-                  <div className="status-badge current">
-                    {index === 0 ? 'Próximo' : 'Aguardando'}
-                  </div>
-                  
-                  {index === 0 && (
+                  <div className="queue-actions">
+                    <div className="status-badge current">Em Atendimento</div>
                     <Button 
                       variant="success" 
                       size="sm"
-                      onClick={() => handleStartAttendance(attendance.id)}
+                      onClick={() => handleCompleteAttendance(attendance.id)}
                     >
-                      <FaPlay />
-                      Iniciar
+                      <FaCheckCircle />
+                      Finalizar
                     </Button>
-                  )}
-                  
-                  <Button 
-                    variant="danger" 
-                    size="sm"
-                    onClick={() => handleCancelAttendance(attendance.id)}
-                  >
-                    <FaTimesCircle />
-                    Cancelar
-                  </Button>
-                </div>
-              </QueueItem>
-            ))
-          ) : (
-            <EmptyState>
-              <div className="empty-icon">👥</div>
-              <h3>Fila Vazia</h3>
-              <p>Não há clientes aguardando atendimento no momento.</p>
-            </EmptyState>
-          )}
-        </QueueList>
+                  </div>
+                </QueueItem>
+              ))
+            ) : (
+              <EmptyState>
+                <div className="empty-icon">✂️</div>
+                <h3>Ninguém em atendimento</h3>
+                <p>Não há clientes sendo atendidos no momento.</p>
+              </EmptyState>
+            )}
+          </QueueList>
+        </div>
       </Container>
       <Footer />
     </PageContainer>

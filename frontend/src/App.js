@@ -8,6 +8,8 @@ import 'react-toastify/dist/ReactToastify.css';
 // Estilos globais
 import { GlobalStyles, theme } from './styles';
 
+
+
 // Componentes
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
@@ -31,7 +33,7 @@ import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
 import ServicesManagementPage from './pages/ServicesManagementPage';
 import ConfigPage from './pages/ConfigPage';
 import QueueManagementPage from './pages/QueueManagementPage';
-
+import ScheduledQueuePage from './pages/ScheduledQueuePage';
 // Contextos
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -93,6 +95,7 @@ function App() {
               <Route path="/admin/servicos" element={<ServicesManagementPage />} />
               <Route path="/admin/configuracoes" element={<ConfigPage />} />
               <Route path="/admin/fila" element={<QueueManagementPage />} />
+              <Route path="/admin/scheduled-queue" element={<ScheduledQueuePage />} />
               
               {/* Rota padrão */}
               <Route path="*" element={<Navigate to="/" replace />} />

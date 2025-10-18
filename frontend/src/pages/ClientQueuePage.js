@@ -190,28 +190,38 @@ const ClientQueuePage = () => {
       navigate('/cliente/login');
       return;
     }
-    
-    // Verificar se os dados foram passados via state
-    if (location.state?.attendance && location.state?.queuePosition) {
-      setAttendance(location.state.attendance);
-      setQueuePosition(location.state.queuePosition);
-      setLoading(false);
-      
-      // Calcular tempo estimado (assumindo 30 minutos por atendimento)
-      setEstimatedTime(queuePosition * 30);
-      
-      // Simular redirecionamento após 7-10 segundos
-      setTimeout(() => {
-        setRedirecting(true);
-        setTimeout(() => {
-          navigate('/cliente/dashboard');
-        }, 2000);
-      }, 8000);
-    } else {
-      // Se não há dados, redirecionar para o dashboard
-      navigate('/cliente/dashboard');
+    async function fetchQueuePosition() {
+      if (location.state?.attendance) {
+        const attendance = location.state.attendance;
+        try {
+          const response = await api.get('/attendance/today');
+          const presentialQueue = response.data.filter(a =>
+            a.attendance_type === 'presential' &&
+            a.status === 'waiting' &&
+            new Date(a.appointment_date) < new Date(attendance.appointment_date)
+          );
+          setAttendance(attendance);
+          setQueuePosition(presentialQueue.length);
+          setLoading(false);
+          setEstimatedTime(presentialQueue.length * 30);
+          // Simular redirecionamento após 7-10 segundos
+          setTimeout(() => {
+            setRedirecting(true);
+            setTimeout(() => {
+              navigate('/cliente/dashboard');
+            }, 2000);
+          }, 8000);
+        } catch (err) {
+          setQueuePosition(0);
+          setLoading(false);
+        }
+      } else {
+        // Se não há dados, redirecionar para o dashboard
+        navigate('/cliente/dashboard');
+      }
     }
-  }, [client, navigate, location.state, queuePosition]);
+    fetchQueuePosition();
+  }, [client, navigate, location.state]);
 
   const formatTime = (minutes) => {
     if (minutes < 60) {
@@ -277,10 +287,6 @@ const ClientQueuePage = () => {
           {queuePosition === 1 ? 'Você é o próximo!' : `Pessoas na sua frente`}
         </div>
         
-        <div className="estimated-time">
-          <FaClock style={{ marginRight: '8px' }} />
-          Tempo estimado: {formatTime(estimatedTime)}
-        </div>
         
         <div className="queue-info">
           <div className="info-item">

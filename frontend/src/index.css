@@ -60,22 +60,14 @@ code {
   color: var(--accent);
 }
 
-.btn-primary:hover {
-  background-color: #000000;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.3);
-}
+
 
 .btn-secondary {
   background-color: var(--secondary);
   color: var(--primary);
 }
 
-.btn-secondary:hover {
-  background-color: #c19b2e;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-}
+
 
 .btn-outline {
   background-color: transparent;
@@ -83,10 +75,7 @@ code {
   border: 2px solid var(--primary);
 }
 
-.btn-outline:hover {
-  background-color: var(--primary);
-  color: var(--accent);
-}
+
 
 .btn:disabled {
   opacity: 0.6;
