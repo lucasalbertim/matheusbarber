@@ -354,11 +354,11 @@ const ClientDashboardPage = () => {
           {attendanceConfig.presential_mode_enabled && attendanceConfig.appointment_mode_enabled ? (
             // Ambos os modos disponíveis
             <>
-              <Button variant="primary" onClick={handlePresentialAttendance} fullWidth>
+              <Button variant="warning" onClick={handlePresentialAttendance} fullWidth>
                 <FaUsers />
                 Atendimento Presencial
               </Button>
-              <Button variant="secondary" onClick={handleAppointmentAttendance} fullWidth>
+              <Button variant="warning" onClick={handleAppointmentAttendance} fullWidth>
                 <FaCalendarAlt />
                 Agendar Horário
               </Button>
@@ -390,7 +390,7 @@ const ClientDashboardPage = () => {
             Falar Conosco
           </Button>
           
-          <Button variant="ghost" onClick={handleLogout} fullWidth>
+          <Button variant="error" onClick={handleLogout} fullWidth>
             <FaUser />
             Sair
           </Button>

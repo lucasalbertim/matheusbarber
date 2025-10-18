@@ -206,8 +206,9 @@ const NavLink = styled(Link)`
   }
   
   &.active {
-    background-color: #20AC9F;
-    color: var(--primary);
+    background-color: #15cfbcff;
+    color: white;
+    font-weight: 800;
   }
 `;
 
@@ -319,15 +320,7 @@ const Header = () => {
               <NavLink to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>
                 Dashboard
               </NavLink>
-              <NavLink to="/admin/clientes" className={isActive('/admin/clientes') ? 'active' : ''}>
-                Clientes
-              </NavLink>
-              <NavLink to="/admin/atendimentos" className={isActive('/admin/atendimentos') ? 'active' : ''}>
-                Atendimentos
-              </NavLink>
-              <NavLink to="/admin/relatorios" className={isActive('/admin/relatorios') ? 'active' : ''}>
-                Relatórios
-              </NavLink>
+             
             </>
           )}
         </Navigation>
@@ -338,7 +331,7 @@ const Header = () => {
             <UserSection>
               <div className="user-info">
                 <FaUser className="user-icon" />
-                {client ? client.name : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name || 'Usuário')}
+                {client ? client.name?.split(' ')[0] : (admin?.is_first_login ? 'Configuração Inicial' : admin?.name?.split(' ')[0] || 'Usuário')}
               </div>
               <button className="logout-btn" onClick={handleLogout}>
                 <FaSignOutAlt />

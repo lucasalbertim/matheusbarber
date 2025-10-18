@@ -31,6 +31,24 @@ const Container = styled.div`
   margin: 0 auto;
   width: 100%;
   flex: 1;
+
+  .queue-lists {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: space-evenly;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    .queue-lists {
+    display: flex;
+      flex-direction: column;
+    }
+  }
+
 `;
 const BackButton = styled.button`
   display: inline-flex;
@@ -247,7 +265,7 @@ const PageHeader = styled.div`
                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '16px' }}
               />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '30px' }}>
+            <div className="queue-lists" >
               <QueueList>
                 <h3>
                   <FaUsers /> Aguardando Atendimento

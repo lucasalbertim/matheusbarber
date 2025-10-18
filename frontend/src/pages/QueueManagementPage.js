@@ -26,7 +26,26 @@ const Container = styled.div`
   margin: 0 auto;
   width: 100%;
   flex: 1;
+
+  .queue-lists {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: space-evenly;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    .queue-lists {
+    display: flex;
+      flex-direction: column;
+    }
+  }
 `;
+
+
 
 const PageHeader = styled.div`
   margin-bottom: 40px;
@@ -135,6 +154,7 @@ const QueueList = styled(Card)`
     color: var(--primary);
     margin-bottom: 20px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 10px;
   }
@@ -142,6 +162,8 @@ const QueueList = styled(Card)`
 
 const QueueItem = styled.div`
   display: flex;
+  flex-direction: column;
+
   align-items: center;
   justify-content: space-between;
   padding: 20px;
@@ -444,7 +466,7 @@ const QueueManagementPage = () => {
           </div>
         </QueueControls>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '30px' }}>
+        <div className="queue-lists">
           <QueueList>
             <h3>
               <FaUsers />
