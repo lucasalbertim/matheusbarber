@@ -17,7 +17,7 @@ class Client(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    cpf = Column(String(14), unique=True, nullable=False, index=True)
+    data_nascimento = Column(DateTime, nullable=False, index=True)
     phone = Column(String(15), unique=True, nullable=False, index=True)
     email = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -65,6 +65,8 @@ class Attendance(Base):
     cancellation_reason = Column(Text, nullable=True)
     cancelled_by = Column(String(20), nullable=True)  # admin, client
     cancelled_at = Column(DateTime, nullable=True)
+    attendance_type = Column(String(20), default="presential")  # presential, appointment
+    queue_position = Column(Integer, nullable=True)  # Posição na fila para atendimentos presenciais
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -72,3 +74,13 @@ class Attendance(Base):
     client = relationship("Client", back_populates="attendances")
     service = relationship("Service")
     services = relationship("Service", secondary=attendance_services)
+
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

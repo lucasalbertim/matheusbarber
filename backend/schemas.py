@@ -5,7 +5,7 @@ from datetime import datetime
 # Schemas de Cliente
 class ClientBase(BaseModel):
     name: str
-    cpf: str
+    data_nascimento: datetime
     phone: str
     email: Optional[str] = None
 
@@ -22,7 +22,7 @@ class ClientResponse(ClientBase):
         from_attributes = True
 
 class ClientLogin(BaseModel):
-    identifier: str  # CPF ou telefone
+    identifier: str  # telefone
 
 # Schemas de Administrador
 class AdminBase(BaseModel):
@@ -105,6 +105,7 @@ class AttendanceResponse(AttendanceBase):
     updated_at: datetime
     client: ClientResponse
     services: List[ServiceResponse]
+    attendance_type: str
     
     class Config:
         from_attributes = True
@@ -121,3 +122,22 @@ class ReportsSummary(BaseModel):
     inactive_clients: int
     today_attendances: int
     pending_payments: int
+
+# Schemas de Configuração
+class AttendanceModeConfig(BaseModel):
+    presential_mode_enabled: bool
+    appointment_mode_enabled: bool
+    appointment_working_hours: str
+    appointment_interval_minutes: int
+    appointment_break_hours: str
+    appointment_always_scheduled: bool
+    appointment_scheduled_days: List[int]
+
+class AttendanceModeConfigUpdate(BaseModel):
+    presential_mode_enabled: Optional[bool] = None
+    appointment_mode_enabled: Optional[bool] = None
+    appointment_working_hours: Optional[str] = None
+    appointment_interval_minutes: Optional[int] = None
+    appointment_break_hours: Optional[str] = None
+    appointment_always_scheduled: Optional[bool] = None
+    appointment_scheduled_days: Optional[List[int]] = None

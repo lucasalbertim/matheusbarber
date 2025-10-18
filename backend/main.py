@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
@@ -17,12 +17,41 @@ from schemas import (
     AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
     ServiceCreate, ServiceResponse,
     AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
-    AttendanceUpdate, AttendanceCancel
+    AttendanceUpdate, AttendanceCancel,
+    AttendanceModeConfig, AttendanceModeConfigUpdate
+)
+
+app = FastAPI()
+
+# ...existing code...
+
+from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.orm import Session
+from typing import List
+import os
+from datetime import datetime
+import io
+import json
+
+from database import get_db, engine
+from models import Base, Admin
+from sqlalchemy import text
+from schemas import (
+    ClientCreate, ClientResponse, ClientLogin,
+    AdminCreate, AdminLogin, AdminResponse, AdminUpdate,
+    ServiceCreate, ServiceResponse,
+    AttendanceCreate, AttendanceResponse, AttendanceCreatedResponse,
+    AttendanceUpdate, AttendanceCancel,
+    AttendanceModeConfig, AttendanceModeConfigUpdate
 )
 from services import (
     client_service, admin_service, service_service,
-    attendance_service, whatsapp_service
+    attendance_service, whatsapp_service, ConfigService
 )
+from routes.scheduled_attendance import router as scheduled_attendance_router
 from auth import get_current_admin
 
 import time
@@ -46,32 +75,20 @@ def wait_for_database(max_retries=30, delay=2):
     print("❌ Não foi possível conectar ao banco de dados após várias tentativas")
     return False
 
-# Função para inicializar banco de dados de forma segura
-def initialize_database_safely():
-    """Inicializar banco de dados de forma segura, aguardando estar pronto"""
-    print("🔄 Aguardando banco de dados estar disponível...")
-    
-    # Aguardar banco estar disponível
-    if not wait_for_database():
-        print("❌ Não foi possível conectar ao banco de dados. Tentando novamente em 10 segundos...")
-        time.sleep(10)
-        
-        # Segunda tentativa
-        if not wait_for_database():
-            print("❌ Falha definitiva ao conectar ao banco de dados. Abortando inicialização.")
-            return False
-    
-    print("✅ Banco de dados disponível! Iniciando configuração...")
-    
-    # Criar tabelas
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("✅ Tabelas criadas/verificadas com sucesso!")
-    except Exception as e:
-        print(f"❌ Erro ao criar tabelas: {e}")
-        return False
-    
-    # Verificar e adicionar coluna is_first_login
+# Aguardar banco estar disponível
+if not wait_for_database():
+    print("⚠️ Continuando sem verificação de coluna...")
+
+# Criar tabelas
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tabelas criadas/verificadas com sucesso!")
+except Exception as e:
+    print(f"⚠️ Erro ao criar tabelas: {e}")
+
+# Função para verificar e adicionar coluna is_first_login se necessário
+def ensure_first_login_column():
+    """Verificar se a coluna is_first_login existe e adicionar se necessário"""
     try:
         with engine.connect() as conn:
             # Verificar se a coluna existe
@@ -106,11 +123,16 @@ def initialize_database_safely():
                 print("✅ Coluna is_first_login adicionada com sucesso!")
             else:
                 print("✅ Coluna is_first_login já existe")
+                
     except Exception as e:
-        print(f"❌ Erro ao verificar/adicionar coluna is_first_login: {e}")
-        return False
-    
-    # Criar admin padrão se não existir
+        print(f"⚠️ Aviso: Não foi possível verificar/adicionar coluna is_first_login: {e}")
+
+# Executar verificação da coluna
+ensure_first_login_column()
+
+# Função para criar admin padrão se não existir
+def ensure_default_admin():
+    """Criar admin padrão se não existir"""
     try:
         from security import get_password_hash
         
@@ -122,41 +144,27 @@ def initialize_database_safely():
             if admin_count == 0:
                 print("🔄 Criando administrador padrão...")
                 # Criar admin padrão
-                
-                # Verificar se a coluna is_first_login existe antes de inserir
-                result = conn.execute(text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'admins' AND column_name = 'is_first_login'
-                """))
-                
-                if result.fetchone():
-                    # Coluna existe, usar INSERT completo
-                    conn.execute(text("""
-                        INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
-                        VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
-                    """), {"password_hash": get_password_hash("admin123")})
-                else:
-                    # Coluna não existe, usar INSERT sem is_first_login
-                    conn.execute(text("""
-                        INSERT INTO admins (username, name, email, password_hash, is_active, created_at)
-                        VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, NOW())
-                    """), {"password_hash": get_password_hash("admin123")})
+                conn.execute(text("""
+                    INSERT INTO admins (username, name, email, password_hash, is_active, is_first_login, created_at)
+                    VALUES ('admin', 'Administrador', 'admin@metheusbarber.com', :password_hash, true, true, NOW())
+                """), {"password_hash": get_password_hash("admin123")})
                 
                 conn.commit()
                 print("✅ Administrador padrão criado com sucesso!")
                 print("   Username: admin")
                 print("   Senha: admin123")
-                print("   ⚠️  IMPORTANTE: Altere a senha após o primeiro login!")
             else:
                 print("✅ Administrador já existe no banco")
+                
     except Exception as e:
-        print(f"❌ Erro ao verificar/criar admin padrão: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-    
-    # Criar serviços padrão se não existirem
+        print(f"⚠️ Aviso: Não foi possível verificar/criar admin padrão: {e}")
+
+# Executar verificação do admin padrão
+ensure_default_admin()
+
+# Função para criar serviços padrão se não existirem
+def ensure_default_services():
+    """Criar serviços padrão se não existirem"""
     try:
         with engine.connect() as conn:
             # Verificar se existem serviços
@@ -190,39 +198,40 @@ def initialize_database_safely():
                 print("✅ Serviços padrão criados com sucesso!")
             else:
                 print("✅ Serviços já existem no banco")
+                
     except Exception as e:
-        print(f"❌ Erro ao verificar/criar serviços padrão: {e}")
-        return False
-    
-    print("🎉 Inicialização do banco de dados concluída com sucesso!")
-    return True
+        print(f"⚠️ Aviso: Não foi possível verificar/criar serviços padrão: {e}")
 
-# Executar inicialização do banco de dados
-print("🚀 Iniciando aplicação Matheus Barber...")
+# Executar verificação dos serviços padrão
+ensure_default_services()
 
-# Tentar inicialização várias vezes se necessário
-max_attempts = 3
-for attempt in range(max_attempts):
-    print(f"🔄 Tentativa {attempt + 1}/{max_attempts} de inicialização...")
-    
-    if initialize_database_safely():
-        print("✅ Inicialização concluída com sucesso!")
-        break
-    else:
-        if attempt < max_attempts - 1:
-            print(f"⚠️  Tentativa {attempt + 1} falhou. Aguardando 10 segundos...")
-            time.sleep(10)
-        else:
-            print("❌ Todas as tentativas de inicialização falharam!")
-            print("⚠️  A aplicação continuará, mas pode haver problemas com o banco de dados")
+# Função para inicializar configurações padrão
+def ensure_default_configs():
+    """Inicializar configurações padrão do sistema"""
+    try:
+        with engine.connect() as conn:
+            # Verificar se existem configurações
+            result = conn.execute(text("SELECT COUNT(*) FROM system_config"))
+            config_count = result.fetchone()[0]
+            
+            if config_count == 0:
+                print("🔄 Inicializando configurações padrão...")
+                ConfigService.initialize_default_configs(conn)
+                conn.commit()
+                print("✅ Configurações padrão inicializadas com sucesso!")
+            else:
+                print("✅ Configurações já existem no banco")
+                
+    except Exception as e:
+        print(f"⚠️ Aviso: Não foi possível verificar/inicializar configurações: {e}")
 
-# A inicialização dos serviços agora é feita na função initialize_database_safely()
+# Executar verificação das configurações padrão
+ensure_default_configs()
 
 app = FastAPI(
     title="Metheus Barber API",
     description="API para sistema de barbearia",
-    version="2.1.0",
-    root_path="/api"
+    version="2.0.0"
 )
 
 # CORS
@@ -234,40 +243,40 @@ app.add_middleware(
         "http://localhost:3000"],  # manter para desenvolvimento local],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-## Configuração para servir arquivos estáticos do frontend
-#frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
-#if os.path.exists(frontend_path):
-#    app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
-#
-## Rota para servir o frontend
-#@app.get("/")
-#async def serve_frontend():
-#    """Servir o frontend React"""
-#    if os.path.exists(frontend_path):
-#        index_path = os.path.join(frontend_path, "index.html")
-#        if os.path.exists(index_path):
-#            return FileResponse(index_path)
-#    
-#    return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
-#
-## Rota para manifest.json
-#@app.get("/manifest.json")
-#async def serve_manifest():
-#    """Servir o manifest.json"""
-#    manifest_path = os.path.join(frontend_path, "manifest.json")
-#    if os.path.exists(manifest_path):
-#        return FileResponse(manifest_path)
-#    
-#    # Fallback para desenvolvimento
-#    dev_manifest_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "manifest.json")
-#    if os.path.exists(dev_manifest_path):
-#        return FileResponse(dev_manifest_path)
-#    
-#    raise HTTPException(status_code=404, detail="Manifest não encontrado")
-#
+# Configuração para servir arquivos estáticos do frontend
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=os.path.join(frontend_path, "static")), name="static")
+
+# Rota para servir o frontend
+@app.get("/")
+async def serve_frontend():
+    """Servir o frontend React"""
+    if os.path.exists(frontend_path):
+        index_path = os.path.join(frontend_path, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+    
+    return {"message": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."}
+
+# Rota para manifest.json
+@app.get("/manifest.json")
+async def serve_manifest():
+    """Servir o manifest.json"""
+    manifest_path = os.path.join(frontend_path, "manifest.json")
+    if os.path.exists(manifest_path):
+        return FileResponse(manifest_path)
+    
+    # Fallback para desenvolvimento
+    dev_manifest_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "manifest.json")
+    if os.path.exists(dev_manifest_path):
+        return FileResponse(dev_manifest_path)
+    
+    raise HTTPException(status_code=404, detail="Manifest não encontrado")
+
  #Health check
 @app.get("/health")
 async def health_check():
@@ -282,7 +291,7 @@ def create_client(client: ClientCreate, db: Session = Depends(get_db)):
 
 @app.post("/clients/login", response_model=ClientResponse)
 def client_login(login_data: ClientLogin, db: Session = Depends(get_db)):
-    """Login do cliente via CPF ou telefone"""
+    """Login do cliente via telefone"""
     return client_service.login_client(db, login_data)
 
 @app.get("/clients/{client_id}", response_model=ClientResponse)
@@ -420,11 +429,12 @@ def export_clients_excel(
     clients = client_service.get_all_clients(db)
     
     # Criar dados CSV (simulando Excel)
-    csv_data = "Nome,CPF,Telefone,Email,Status,Data de Cadastro\n"
+    csv_data = "Nome,Data de Nascimento,Telefone,Email,Status,Data de Cadastro\n"
     for client in clients:
         status = "Ativo" if client.is_active else "Inativo"
         created_date = client.created_at.strftime("%d/%m/%Y") if client.created_at else ""
-        csv_data += f'"{client.name}","{client.cpf}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
+        nascimento = client.data_nascimento.strftime("%d/%m/%Y") if client.data_nascimento else ""
+        csv_data += f'"{client.name}","{nascimento}","{client.phone}","{client.email or ""}","{status}","{created_date}"\n'
     
     # Criar arquivo em memória
     output = io.StringIO()
@@ -456,7 +466,7 @@ def export_clients_pdf(
     for client in clients:
         pdf_data["clients"].append({
             "name": client.name,
-            "cpf": client.cpf,
+            "data_nascimento": client.data_nascimento.strftime("%d/%m/%Y") if client.data_nascimento else "",
             "phone": client.phone,
             "email": client.email or "Não informado",
             "status": "Ativo" if client.is_active else "Inativo",
@@ -517,9 +527,12 @@ def create_attendance(
     return attendance_service.create_attendance(db, attendance)
 
 @app.get("/attendance/today", response_model=List[AttendanceResponse])
-def get_today_attendance(db: Session = Depends(get_db)):
+def get_today_attendance(
+    attendance_type: str = Query("all", description="Tipo de atendimento: all, presential, appointment"),
+    db: Session = Depends(get_db)
+):
     """Obter atendimentos do dia"""
-    return attendance_service.get_today_attendance(db)
+    return attendance_service.get_today_attendance(db, attendance_type)
 
 @app.put("/attendance/{attendance_id}", response_model=AttendanceResponse)
 def update_attendance(
@@ -616,6 +629,7 @@ def export_reports(
     """Exportar relatórios (apenas admin)"""
     return attendance_service.export_reports(db)
 
+app.include_router(scheduled_attendance_router)
 # Rotas de WhatsApp
 @app.post("/whatsapp/send-message")
 def send_whatsapp_message(
@@ -626,3 +640,64 @@ def send_whatsapp_message(
 ):
     """Enviar mensagem via WhatsApp (apenas admin)"""
     return whatsapp_service.send_message(phone, message)
+
+# Rotas de Configuração
+@app.get("/admin/config/attendance-mode", response_model=AttendanceModeConfig)
+def get_attendance_mode_config(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Obter configurações do modo de atendimento (apenas admin)"""
+    config = ConfigService.get_attendance_mode_config(db)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
+    return AttendanceModeConfig(**config)
+
+@app.put("/admin/config/attendance-mode", response_model=AttendanceModeConfig)
+def update_attendance_mode_config(
+    config_update: AttendanceModeConfigUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Atualizar configurações do modo de atendimento (apenas admin)"""
+    # Converter para dict e filtrar valores None
+    config_data = {k: v for k, v in config_update.dict().items() if v is not None}
+    updated_config = ConfigService.update_attendance_mode_config(db, config_data)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(updated_config.get("appointment_scheduled_days"), str):
+        updated_config["appointment_scheduled_days"] = [int(x) for x in updated_config["appointment_scheduled_days"].split(",")]
+    return AttendanceModeConfig(**updated_config)
+
+@app.get("/config/attendance-mode")
+def get_public_attendance_mode_config(db: Session = Depends(get_db)):
+    """Obter configurações públicas do modo de atendimento (para clientes)"""
+    config = ConfigService.get_attendance_mode_config(db)
+    # Corrigir tipo do campo se vier como string
+    if isinstance(config.get("appointment_scheduled_days"), str):
+        config["appointment_scheduled_days"] = [int(x) for x in config["appointment_scheduled_days"].split(",")]
+    return {
+        "presential_mode_enabled": config["presential_mode_enabled"],
+        "appointment_mode_enabled": config["appointment_mode_enabled"],
+        "appointment_working_hours": config["appointment_working_hours"],
+        "appointment_interval_minutes": config["appointment_interval_minutes"],
+        "appointment_break_hours": config["appointment_break_hours"],
+        "appointment_scheduled_days": config["appointment_scheduled_days"],
+        "appointment_always_scheduled": config["appointment_always_scheduled"]
+    }
+
+@app.post("/attendance/validate-appointment")
+def validate_appointment_schedule(
+    appointment_date: str,
+    db: Session = Depends(get_db)
+):
+    """Validar se um agendamento pode ser feito"""
+    try:
+        appointment_datetime = datetime.fromisoformat(appointment_date.replace('Z', '+00:00'))
+        result = attendance_service.validate_appointment_schedule(db, appointment_datetime)
+        return result
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de data inválido"
+        )
