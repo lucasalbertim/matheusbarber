@@ -244,6 +244,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    root_path="/api"
 )
 
 # Configuração para servir arquivos estáticos do frontend
