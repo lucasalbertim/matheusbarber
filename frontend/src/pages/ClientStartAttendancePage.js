@@ -455,13 +455,11 @@ const ClientStartAttendancePage = () => {
       endDate.setHours(23,59,59,999);
       const startIso = startDate.toISOString();
       const endIso = endDate.toISOString();
-      const response = await api.get(`/admin/attendance/scheduled?start_date=${startIso}&end_date=${endIso}`);
-      busySlots = response.data
-        .filter(a => a.status === 'waiting' || a.status === 'progress')
-        .map(a => {
-          const d = new Date(a.appointment_date);
-          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-        });
+      const response = await api.get(`/attendance/scheduled?start_date=${startIso}&end_date=${endIso}`);
+      busySlots = response.data.map(a => {
+        const d = new Date(a.appointment_date);
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      });
     } catch (err) {
       busySlots = [];
     }

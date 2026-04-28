@@ -5,7 +5,8 @@ export function exportMetricsPDF({ metrics, filters, logoUrl }) {
 
   // Cabeçalho com logo
   if (logoUrl) {
-    doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
+    const isPng = typeof logoUrl === 'string' && logoUrl.includes('image/png');
+    doc.addImage(logoUrl, isPng ? 'PNG' : 'JPEG', 15, 10, 30, 30);
   }
   doc.setFontSize(18);
   doc.text('Relatório de Métricas', 55, 20);

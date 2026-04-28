@@ -352,14 +352,18 @@ const ReportsPage = () => {
   // Exportação PDF estruturada
   const handleExportPDF = async () => {
     try {
-      // Carregar logo como base64
-      const logoUrl = await fetch('/public/logo.jpeg')
-        .then(res => res.blob())
-        .then(blob => new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        }));
+      let logoUrl = null;
+      const response = await fetch('/logo.svg');
+      if (response.ok) {
+        const blob = await response.blob();
+        if (["image/jpeg", "image/png", "image/jpg"].includes(blob.type)) {
+          logoUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
       exportMetricsPDF({ metrics, filters, logoUrl });
       toast.success('PDF exportado com sucesso!');
     } catch (error) {
@@ -433,24 +437,6 @@ const ReportsPage = () => {
   };
 
   const handleExportData = async () => {
-  // Exportação PDF estruturada
-  const handleExportPDF = async () => {
-    try {
-      // Carregar logo como base64
-      const logoUrl = await fetch('/public/logo.jpeg')
-        .then(res => res.blob())
-        .then(blob => new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        }));
-      exportMetricsPDF({ metrics, filters, logoUrl });
-      toast.success('PDF exportado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
-      toast.error('Erro ao exportar PDF');
-    }
-  };
     try {
       exportMetricsXLSX({ metrics, filters });
       toast.success('Relatório XLSX exportado com sucesso!');

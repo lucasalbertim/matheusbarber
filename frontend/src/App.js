@@ -2,8 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import styled from "styled-components";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 // Estilos globais
 import { GlobalStyles, theme } from './styles';
@@ -102,19 +100,6 @@ function App() {
             </Routes>
           </MainContent>
           
-          {/* Toast notifications */}
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-          />
         </AppContainer>
       </AuthProvider>
     </ThemeProvider>
