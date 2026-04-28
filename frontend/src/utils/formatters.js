@@ -21,12 +21,6 @@ export const formatDateTime = (date) => {
   return d.toLocaleString("pt-BR");
 };
 
-export const formatCPF = (cpf) => {
-  if (!cpf) return "";
-  const clean = cpf.replace(/[^\d]/g, "");
-  return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-};
-
 export const formatPhone = (phone) => {
   if (!phone) return "";
   const clean = phone.replace(/[^\d]/g, "");

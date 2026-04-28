@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FaUserCog, FaSave, FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { showError } from '../config/notifications';
 import api from '../services/api';
 import Footer from '../components/Footer';
 
@@ -241,29 +242,44 @@ function AdminSetupPage() {
       navigate('/admin/dashboard');
       return;
     }
+
+    setFormData(prev => ({
+      ...prev,
+      username: prev.username || admin.username || '',
+      name: prev.name || admin.name || '',
+      email: prev.email || admin.email || ''
+    }));
   }, [admin, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.username.trim()) {
+
+    const usernameValue = formData.username.trim();
+    const nameValue = formData.name.trim();
+    const emailValue = formData.email.trim();
+
+    if (!usernameValue) {
       newErrors.username = 'Username é obrigatório';
-    } else if (formData.username.length < 3) {
+    } else if (/\s/.test(formData.username)) {
+      newErrors.username = 'Username não pode conter espaços';
+    } else if (usernameValue.length < 3) {
       newErrors.username = 'Username deve ter pelo menos 3 caracteres';
     }
-    
-    if (!formData.name.trim()) {
+
+    if (!nameValue) {
       newErrors.name = 'Nome é obrigatório';
     }
-    
-    if (!formData.email.trim()) {
+
+    if (!emailValue) {
       newErrors.email = 'Email é obrigatório';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(emailValue)) {
       newErrors.email = 'Email inválido';
     }
     
     if (!formData.password) {
       newErrors.password = 'Senha é obrigatória';
+    } else if (/\s/.test(formData.password)) {
+      newErrors.password = 'Senha não pode conter espaços';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
     }
@@ -309,9 +325,9 @@ function AdminSetupPage() {
       console.error('Erro ao atualizar admin:', error);
       
       if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
+        showError(error.response.data.detail);
       } else {
-        toast.error('Erro ao salvar configurações. Tente novamente.');
+        showError('Erro ao salvar configurações. Tente novamente.');
       }
     } finally {
       setLoading(false);

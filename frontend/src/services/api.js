@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://matheusbarber.shop/api/',
+  baseURL: process.env.REACT_APP_API_URL || '/api',
   timeout: 10000,
 });
 
@@ -24,9 +24,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado ou inválido
-      localStorage.removeItem('metheus_admin');
-      window.location.href = '/admin/login';
+      const requestUrl = error.config?.url || '';
+      const admin = JSON.parse(localStorage.getItem('metheus_admin'));
+      const isAdminRequest = requestUrl.includes('/admin') || requestUrl.includes('/admins');
+      if (admin?.token || isAdminRequest) {
+        // Token expirado ou inválido
+        localStorage.removeItem('metheus_admin');
+        window.location.href = '/admin/login';
+      }
     }
     return Promise.reject(error);
   }

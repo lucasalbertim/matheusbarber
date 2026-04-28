@@ -1,14 +1,14 @@
-# Matheus Barber Backend - Versão 2.1.0
-fastapi
-uvicorn[standard]
+# Matheus Barber Backend - Versão 3.0.0
+flask
+flask-cors
+gunicorn
 sqlalchemy
 psycopg2-binary
 alembic
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
-python-multipart
 requests
 pydantic
+pydantic-settings
 email-validator
-aiofiles
