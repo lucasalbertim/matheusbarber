@@ -1,6 +1,6 @@
 # Matheus Barber
 
-Sistema de gerenciamento para barbearia com **backend Flask** e **frontend React**, pronto para VPS Ubuntu com **Gunicorn + Nginx + PostgreSQL**. Cadastro de clientes via **telefone + data de nascimento**, com **email opcional**.
+Sistema de gerenciamento para barbearia com **backend Flask** e **frontend React**. Suporta deploy em **VPS Ubuntu (Gunicorn + Nginx)** ou na nuvem com **Neon (PostgreSQL) + Render (Backend) + Vercel (Frontend)**. Cadastro de clientes via **telefone + data de nascimento**, com **email opcional**.
 
 ## Stack
 - **Backend**: Flask, SQLAlchemy, Alembic, JWT
@@ -103,7 +103,50 @@ sudo systemctl restart matheusbarber
 sudo systemctl restart nginx
 ```
 
-## Checklist de Produção
+## Deploy Neon + Render + Vercel
+
+### Backend (Render)
+1. Fork o repositório para sua conta GitHub
+2. Crie um novo **Web Service** no Render
+3. Conecte ao repositório
+4. Configure:
+   - **Build Command**: `pip install -r requirements.txt && cd backend && alembic upgrade head && python scripts/seed_db.py`
+   - **Start Command**: `gunicorn --chdir backend wsgi:app`
+   - **Environment Variables** (from .env.example):
+     - `DATABASE_URL`: URL completa do Neon
+     - `SECRET_KEY`: Chave segura
+     - `CORS_ORIGINS`: URL do seu frontend Vercel
+     - `ENVIRONMENT`: production
+5. Deploy automático no push
+
+### Banco (Neon)
+1. Crie projeto no [neon.tech](https://neon.tech)
+2. Copie a `CONNECTION_STRING` do Neon
+3. Use como `DATABASE_URL` no Render
+
+### Frontend (Vercel)
+1. Crie novo projeto no Vercel
+2. Conecte ao repositório
+3. Configure:
+   - **Framework**: Create React App
+   - **Root Directory**: frontend
+   - **Build Command**: `npm run build`
+   - **Output Directory**: build
+   - **Environment Variables**:
+     - `REACT_APP_API_URL`: URL do backend Render (ex: `https://seu-backend.onrender.com/api`)
+4. Deploy automático no push
+
+### Checklist
+- [ ] `render.yaml` presente (config da build)
+- [ ] `frontend/vercel.json` presente (rewrite SPA)
+- [ ] `backend/runtime.txt` com Python 3.11+
+- [ ] `.env.example` atualizado com variáveis deploy
+- [ ] Neon DB criado e testado
+- [ ] Render Web Service criado
+- [ ] Vercel projeto criado
+- [ ] Variáveis de ambiente configuradas em cada plataforma
+
+## Checklist de Produção (VPS Ubuntu)
 1. SECRET_KEY forte e única
 2. Banco com backup habilitado
 3. SSL ativo no Nginx
