@@ -8,8 +8,6 @@ export const validationRules = {
     pattern: "Nome deve conter apenas letras e espaços",
   },
   
-  // ...removido bloco de CPF...
-  
   // Telefone
   phone: {
     required: "Telefone é obrigatório",
@@ -73,37 +71,6 @@ export const validationRules = {
 
 // Funções de validação
 export const validators = {
-  // Validação de CPF
-  validateCPF: (cpf) => {
-    if (!cpf) return validationRules.cpf.required;
-    
-    const cleanCPF = cpf.replace(/[^\d]/g, "");
-    if (cleanCPF.length !== 11) return validationRules.cpf.invalid;
-    
-    // Verificar se todos os dígitos são iguais
-    if (/^(\d)\1{10}$/.test(cleanCPF)) return validationRules.cpf.invalid;
-    
-    // Validar primeiro dígito verificador
-    let sum = 0;
-    for (let i = 0; i < 9; i++) {
-      sum += parseInt(cleanCPF.charAt(i)) * (10 - i);
-    }
-    let remainder = 11 - (sum % 11);
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(cleanCPF.charAt(9))) return validationRules.cpf.invalid;
-    
-    // Validar segundo dígito verificador
-    sum = 0;
-    for (let i = 0; i < 10; i++) {
-      sum += parseInt(cleanCPF.charAt(i)) * (11 - i);
-    }
-    remainder = 11 - (sum % 11);
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(cleanCPF.charAt(10))) return validationRules.cpf.invalid;
-    
-    return null; // CPF válido
-  },
-  
   // Validação de senha
   validatePassword: (password) => {
     if (!password) return validationRules.password.required;

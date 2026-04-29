@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import api from '../services/api';
 import Footer from '../components/Footer';
 import { Button, Card, Loading } from '../components';
+import { useAuth } from '../contexts/AuthContext';
 import dayjs from 'dayjs';
 
 const EmptyState = styled.div`
@@ -125,6 +126,7 @@ const PageHeader = styled.div`
 
     const ScheduledQueuePage = () => {
       const navigate = useNavigate();
+      const { isAdmin } = useAuth();
       const [queue, setQueue] = useState([]);
       const [attending, setAttending] = useState([]);
       const [loading, setLoading] = useState(true);
@@ -133,10 +135,15 @@ const PageHeader = styled.div`
       const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
 
       useEffect(() => {
+        if (!isAdmin()) {
+          toast.error('Acesso não autorizado.');
+          navigate('/admin/login');
+          return;
+        }
         fetchQueueData();
         const interval = setInterval(fetchQueueData, 30000);
         return () => clearInterval(interval);
-      }, [selectedDate]);
+      }, [selectedDate, isAdmin, navigate]);
 
       const [finished, setFinished] = useState([]);
 

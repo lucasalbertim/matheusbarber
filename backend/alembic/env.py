@@ -8,8 +8,8 @@ import sys
 # Adicionar o diretório pai ao path para importar os modelos
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from models import Base
-from database import DATABASE_URL
+from app.models import Base
+from app.settings import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -30,7 +30,7 @@ target_metadata = Base.metadata
 # ... etc.
 
 def get_url():
-    return DATABASE_URL
+    return settings.database_url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

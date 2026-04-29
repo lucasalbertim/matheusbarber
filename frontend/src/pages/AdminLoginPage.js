@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
+import { showError } from '../config/notifications';
 import api from '../services/api';
 import Footer from '../components/Footer';
 
@@ -146,8 +146,16 @@ const AdminLoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.username.trim()) newErrors.username = 'Username é obrigatório';
-    if (!formData.password.trim()) newErrors.password = 'Senha é obrigatória';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username é obrigatório';
+    } else if (/\s/.test(formData.username)) {
+      newErrors.username = 'Username não pode conter espaços';
+    }
+    if (!formData.password) {
+      newErrors.password = 'Senha é obrigatória';
+    } else if (/\s/.test(formData.password)) {
+      newErrors.password = 'Senha não pode conter espaços';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -157,7 +165,10 @@ const AdminLoginPage = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const response = await api.post('/admins/login', formData);
+      const response = await api.post('/admins/login', {
+        username: formData.username.trim(),
+        password: formData.password
+      });
       const { access_token, admin, is_first_login } = response.data;
       loginAdmin(admin, access_token);
       
@@ -169,7 +180,7 @@ const AdminLoginPage = () => {
       }
     } catch (error) {
       const message = error.response?.data?.detail || 'Erro ao fazer login';
-      toast.error(message);
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -185,7 +196,7 @@ const AdminLoginPage = () => {
           </BackButton>
 
           <Header>
-            <img src="/logo.jpeg" alt="Matheus Barber Logo" />
+            <img src="/logo.svg" alt="Matheus Barber Logo" />
             <h1>Matheus Barber</h1>
             <p>Área Administrativa</p>
           </Header>

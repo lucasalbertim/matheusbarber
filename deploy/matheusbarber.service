@@ -1,0 +1,15 @@
+[Unit]
+Description=Matheus Barber API
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/matheusbarber/backend
+EnvironmentFile=/etc/matheusbarber/env
+ExecStart=/var/www/matheusbarber/venv/bin/gunicorn -c /var/www/matheusbarber/deploy/gunicorn.conf.py wsgi:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
