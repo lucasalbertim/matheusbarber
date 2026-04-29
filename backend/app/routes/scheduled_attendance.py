@@ -30,7 +30,10 @@ def get_public_scheduled_attendances():
 
         attendances = query.order_by(Attendance.appointment_date.asc()).all()
         return jsonify(
-            [{"appointment_date": att.appointment_date, "status": att.status} for att in attendances]
+            [
+                {"appointment_date": att.appointment_date.isoformat(), "status": att.status}
+                for att in attendances
+            ]
         )
 
 

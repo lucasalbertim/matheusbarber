@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaCalendarAlt, FaClock, FaCut, FaCheck, FaInfoCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaCalendarAlt, FaClock, FaCut, FaCheck, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from '../components/Footer';
-import { Button, Card, Input, Loading, Modal } from '../components';
-import { formatDate, formatTime, formatDuration, formatCurrency } from '../utils';
+import { Button, Card, Loading } from '../components';
+import { formatDate, formatDuration, formatCurrency } from '../utils';
 
 const Container = styled.div`
   max-width: 800px;
@@ -240,6 +240,26 @@ const DateSelection = styled(Card)`
   }
 `;
 
+const CalendarMonthHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .month-label {
+    font-weight: 700;
+    color: var(--text);
+    text-transform: capitalize;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
 const TimeSelection = styled(Card)`
   padding: 24px;
   margin-bottom: 24px;
@@ -341,9 +361,13 @@ const ClientStartAttendancePage = () => {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -352,6 +376,7 @@ const ClientStartAttendancePage = () => {
     interval_minutes: 30,
     break_hours: '12:00-13:00',
     scheduled_days: [1, 2, 3, 4, 5],
+    scheduled_month_days: [],
     always_scheduled: false
   });
 
@@ -398,12 +423,17 @@ const ClientStartAttendancePage = () => {
         if (typeof scheduledDays === 'string') {
           scheduledDays = scheduledDays.split(',').map(x => parseInt(x));
         }
+        let scheduledMonthDays = config.appointment_scheduled_month_days;
+        if (typeof scheduledMonthDays === 'string') {
+          scheduledMonthDays = scheduledMonthDays.split(',').filter(Boolean).map(x => parseInt(x));
+        }
 
         setAppointmentConfig({
           working_hours: config.appointment_working_hours || '08:00-18:00',
           interval_minutes: interval || 30,
           break_hours: config.appointment_break_hours || '12:00-13:00',
           scheduled_days: scheduledDays || [1, 2, 3, 4, 5],
+          scheduled_month_days: scheduledMonthDays || [],
           always_scheduled: config.appointment_always_scheduled || false
         });
       } else {
@@ -419,6 +449,7 @@ const ClientStartAttendancePage = () => {
         interval_minutes: 30,
         break_hours: '12:00-13:00',
         scheduled_days: [1, 2, 3, 4, 5],
+        scheduled_month_days: [],
         always_scheduled: false
       });
     } finally {
@@ -476,14 +507,23 @@ const ClientStartAttendancePage = () => {
     setAvailableSlots(slots);
   };
 
-  const handleServiceSelect = (service) => {
-    setSelectedService(service);
-    setCurrentStep(2);
+  const handleServiceToggle = (service) => {
+    setSelectedServices(prev => {
+      const isSelected = prev.some(s => s.id === service.id);
+      if (isSelected) {
+        return prev.filter(s => s.id !== service.id);
+      }
+      return [...prev, service];
+    });
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setAvailableSlots([]);
   };
 
   // Atualiza handleDateSelect para usar a função assíncrona
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
+    setSelectedTime(null);
     await generateAvailableSlots(date);
     setCurrentStep(3);
   };
@@ -506,7 +546,7 @@ const ClientStartAttendancePage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) {
+    if (selectedServices.length === 0 || !selectedDate || !selectedTime) {
       toast.error('Por favor, complete todas as etapas');
       return;
     }
@@ -524,7 +564,7 @@ const ClientStartAttendancePage = () => {
 
       const attendanceData = {
         client_id: client.id,
-        service_ids: [selectedService.id],
+        service_ids: selectedServices.map(service => service.id),
         appointment_date: localDateStr,
         attendance_type: 'appointment'
       };
@@ -533,8 +573,10 @@ const ClientStartAttendancePage = () => {
       const response = await api.post('/attendance/', attendanceData);
 
       toast.success('Agendamento realizado com sucesso!');
-      navigate('/cliente/atendimento/resumo', {
-        state: { attendance: response.data }
+      navigate('/cliente/atendimento/agendado/comprovante', {
+        state: {
+          appointment: response.data
+        }
       });
 
     } catch (error) {
@@ -546,13 +588,36 @@ const ClientStartAttendancePage = () => {
     }
   };
 
+  const calculateTotal = () => selectedServices.reduce((total, service) => total + service.price, 0);
+
+  const calculateTotalDuration = () => selectedServices.reduce((total, service) => total + service.duration_minutes, 0);
+
+  const goToPreviousMonth = () => {
+    const today = new Date();
+    const firstAllowedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const previousMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1);
+    if (previousMonth >= firstAllowedMonth) {
+      setCurrentCalendarMonth(previousMonth);
+      setSelectedDate(null);
+      setSelectedTime(null);
+      setAvailableSlots([]);
+    }
+  };
+
+  const goToNextMonth = () => {
+    const nextMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1);
+    setCurrentCalendarMonth(nextMonth);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setAvailableSlots([]);
+  };
+
   const generateCalendarDays = () => {
     const days = [];
     const today = new Date();
-    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0); 
-  // Permitir selecionar o dia atual, mas não dias anteriores
-    const { scheduled_days, always_scheduled } = appointmentConfig;
+    const currentMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth(), 1);
+    const lastDay = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 0);
+    const { scheduled_days, scheduled_month_days, always_scheduled } = appointmentConfig;
     
     // Dias da semana
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -567,14 +632,13 @@ const ClientStartAttendancePage = () => {
     
     // Dias do mês
     for (let day = 1; day <= lastDay.getDate(); day++) {
-      const date = new Date(today.getFullYear(), today.getMonth(), day);
-  const isToday = date.toDateString() === today.toDateString();
-  // Permitir selecionar o dia atual, mesmo se for antes do expediente
-  const isPast = date < today && !isToday;
-      // Corrigir para garantir que o dia da semana está correto (0=domingo, 1=segunda, ...)
+      const date = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth(), day);
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today && !isToday;
       const dayOfWeek = date.getDay();
-      // scheduled_days deve ser array de inteiros compatível com getDay()
-      const isScheduledDay = always_scheduled || scheduled_days.includes(dayOfWeek);
+      const isScheduledWeekDay = scheduled_days.includes(dayOfWeek);
+      const isScheduledMonthDay = scheduled_month_days.includes(day);
+      const isScheduledDay = always_scheduled || isScheduledWeekDay || isScheduledMonthDay;
 
       days.push({
         type: 'day',
@@ -582,8 +646,7 @@ const ClientStartAttendancePage = () => {
         date,
         isToday,
         isPast,
-        isScheduledDay,
-        dayOfWeek // para debug
+        isScheduledDay
       });
     }
     
@@ -597,6 +660,16 @@ const ClientStartAttendancePage = () => {
       </Container>
     );
   }
+
+  const monthLabel = currentCalendarMonth.toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric'
+  });
+  const canGoToPreviousMonth = (() => {
+    const today = new Date();
+    const firstAllowedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return currentCalendarMonth > firstAllowedMonth;
+  })();
 
   return (
     <Container>
@@ -628,13 +701,14 @@ const ClientStartAttendancePage = () => {
         <ServiceSelection>
           <h3>
             <FaCut />
-            Escolha o Serviço
+            Escolha os Serviços
           </h3>
           <div className="services-grid">
             {services.map(service => (
               <ServiceCard
                 key={service.id}
-                onClick={() => handleServiceSelect(service)}
+                className={selectedServices.some(s => s.id === service.id) ? 'selected' : ''}
+                onClick={() => handleServiceToggle(service)}
               >
                 <div className="service-header">
                   <div className="service-name">{service.name}</div>
@@ -651,12 +725,23 @@ const ClientStartAttendancePage = () => {
         </ServiceSelection>
       )}
 
-      {currentStep === 2 && selectedService && (
+      {currentStep === 2 && selectedServices.length > 0 && (
         <DateSelection>
           <h3>
             <FaCalendarAlt />
             Escolha a Data
           </h3>
+          <CalendarMonthHeader>
+            <div className="month-nav">
+              <Button variant="ghost" size="sm" onClick={goToPreviousMonth} disabled={!canGoToPreviousMonth}>
+                <FaChevronLeft />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={goToNextMonth}>
+                <FaChevronRight />
+              </Button>
+            </div>
+            <div className="month-label">{monthLabel}</div>
+          </CalendarMonthHeader>
           <div className="calendar-grid">
             {generateCalendarDays().map((day, index) => {
               if (day.type === 'header') {
@@ -674,7 +759,7 @@ const ClientStartAttendancePage = () => {
               return (
                 <div
                   key={index}
-                  className={`calendar-day ${day.isToday ? 'today' : ''} ${day.isPast ? 'disabled' : ''} ${!day.isScheduledDay ? 'disabled' : ''}`}
+                  className={`calendar-day ${day.isToday ? 'today' : ''} ${day.isPast ? 'disabled' : ''} ${!day.isScheduledDay ? 'disabled' : ''} ${selectedDate && day.date.toDateString() === selectedDate.toDateString() ? 'selected' : ''}`}
                   onClick={() => !day.isPast && day.isScheduledDay && handleDateSelect(day.date)}
                 >
                   {day.day}
@@ -685,7 +770,7 @@ const ClientStartAttendancePage = () => {
         </DateSelection>
       )}
 
-      {currentStep === 3 && selectedService && selectedDate && (
+      {currentStep === 3 && selectedServices.length > 0 && selectedDate && (
         <TimeSelection>
           <h3>
             <FaClock />
@@ -706,17 +791,19 @@ const ClientStartAttendancePage = () => {
         </TimeSelection>
       )}
 
-      {currentStep === 4 && selectedService && selectedDate && selectedTime && (
+      {currentStep === 4 && selectedServices.length > 0 && selectedDate && selectedTime && (
         <Summary>
           <h3>
             <FaCheck />
             Resumo do Agendamento
           </h3>
           
-          <div className="summary-item">
-            <span className="summary-label">Serviço:</span>
-            <span className="summary-value">{selectedService.name}</span>
-          </div>
+          {selectedServices.map(service => (
+            <div className="summary-item" key={service.id}>
+              <span className="summary-label">{service.name}</span>
+              <span className="summary-value">{formatCurrency(service.price)}</span>
+            </div>
+          ))}
           
           <div className="summary-item">
             <span className="summary-label">Data:</span>
@@ -730,12 +817,12 @@ const ClientStartAttendancePage = () => {
           
           <div className="summary-item">
             <span className="summary-label">Duração:</span>
-            <span className="summary-value">{formatDuration(selectedService.duration_minutes)}</span>
+            <span className="summary-value">{formatDuration(calculateTotalDuration())}</span>
           </div>
           
           <div className="summary-item">
-            <span className="summary-label">Valor:</span>
-            <span className="summary-value">{formatCurrency(selectedService.price)}</span>
+            <span className="summary-label">Total:</span>
+            <span className="summary-value">{formatCurrency(calculateTotal())}</span>
           </div>
         </Summary>
       )}
@@ -752,7 +839,7 @@ const ClientStartAttendancePage = () => {
             variant="primary" 
             onClick={handleNextStep}
             disabled={
-              (currentStep === 1 && !selectedService) ||
+              (currentStep === 1 && selectedServices.length === 0) ||
               (currentStep === 2 && !selectedDate) ||
               (currentStep === 3 && !selectedTime)
             }

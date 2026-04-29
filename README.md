@@ -110,13 +110,15 @@ sudo systemctl restart nginx
 2. Crie um novo **Web Service** no Render
 3. Conecte ao repositório
 4. Configure:
-   - **Build Command**: `pip install -r requirements.txt && cd backend && alembic upgrade head && python scripts/seed_db.py`
-   - **Start Command**: `gunicorn --chdir backend wsgi:app`
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn wsgi:app`
    - **Environment Variables** (from .env.example):
-     - `DATABASE_URL`: URL completa do Neon
-     - `SECRET_KEY`: Chave segura
-     - `CORS_ORIGINS`: URL do seu frontend Vercel
-     - `ENVIRONMENT`: production
+      - `DATABASE_URL`: URL completa do Neon
+      - `SECRET_KEY`: Chave segura
+      - `CORS_ORIGINS`: URL do seu frontend Vercel
+      - `CORS_ORIGIN_REGEX`: opcional (preview do Vercel), ex: `https://.*\.vercel\.app`
+      - `ENVIRONMENT`: production
 5. Deploy automático no push
 
 ### Banco (Neon)

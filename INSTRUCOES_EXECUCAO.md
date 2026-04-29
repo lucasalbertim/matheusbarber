@@ -43,9 +43,12 @@ REACT_APP_API_URL=/api
 1. Crie um Web Service no Render (https://render.com)
 2. Conecte seu repositório GitHub
 3. Configure:
-   - **Build Command**: `pip install -r requirements.txt && cd backend && alembic upgrade head && python scripts/seed_db.py`
-   - **Start Command**: `gunicorn --chdir backend wsgi:app`
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn wsgi:app`
 4. Defina variáveis de ambiente (copie de `.env.example`)
+   - `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ENVIRONMENT`
+   - opcional: `CORS_ORIGIN_REGEX=https://.*\.vercel\.app`
 5. Deploy automático quando fizer push
 
 #### Banco (Neon)

@@ -8,6 +8,17 @@ from ..models import SystemConfig
 
 class ConfigService:
     @staticmethod
+    def _parse_int_list(raw_value, default_value):
+        if raw_value is None:
+            return default_value
+        if isinstance(raw_value, list):
+            return [int(x) for x in raw_value]
+        if isinstance(raw_value, str):
+            values = [x.strip() for x in raw_value.split(",") if x.strip()]
+            return [int(x) for x in values]
+        return default_value
+
+    @staticmethod
     def get_config(db: Session, key: str) -> Optional[str]:
         config = db.query(SystemConfig).filter(SystemConfig.key == key).first()
         return config.value if config else None
@@ -48,6 +59,9 @@ class ConfigService:
             "appointment_break_hours": ConfigService.get_config(db, "appointment_break_hours"),
             "appointment_always_scheduled": ConfigService.get_config(db, "appointment_always_scheduled") == "true",
             "appointment_scheduled_days": ConfigService.get_config(db, "appointment_scheduled_days"),
+            "appointment_scheduled_month_days": ConfigService.get_config(
+                db, "appointment_scheduled_month_days"
+            ),
         }
 
         if configs["appointment_working_hours"] is None:
@@ -56,13 +70,12 @@ class ConfigService:
             configs["appointment_interval_minutes"] = "30"
         if configs["appointment_break_hours"] is None:
             configs["appointment_break_hours"] = "12:00-13:00"
-        if configs["appointment_scheduled_days"] is None:
-            configs["appointment_scheduled_days"] = "1,2,3,4,5"
-
-        if isinstance(configs["appointment_scheduled_days"], str):
-            configs["appointment_scheduled_days"] = [
-                int(x) for x in configs["appointment_scheduled_days"].split(",")
-            ]
+        configs["appointment_scheduled_days"] = ConfigService._parse_int_list(
+            configs["appointment_scheduled_days"], [1, 2, 3, 4, 5]
+        )
+        configs["appointment_scheduled_month_days"] = ConfigService._parse_int_list(
+            configs["appointment_scheduled_month_days"], []
+        )
 
         return configs
 
@@ -122,6 +135,15 @@ class ConfigService:
                 "Dias da semana para agendamento (0=domingo, 1=segunda, etc.)",
             )
 
+        if "appointment_scheduled_month_days" in config_data:
+            month_days_str = ",".join(map(str, config_data["appointment_scheduled_month_days"]))
+            ConfigService.set_config(
+                db,
+                "appointment_scheduled_month_days",
+                month_days_str,
+                "Dias do mês para agendamento (1 a 31)",
+            )
+
         return ConfigService.get_attendance_mode_config(db)
 
     @staticmethod
@@ -134,6 +156,7 @@ class ConfigService:
             ("appointment_break_hours", "12:00-13:00", "Horário de descanso"),
             ("appointment_always_scheduled", "false", "Se todos os dias devem ser agendados"),
             ("appointment_scheduled_days", "1,2,3,4,5", "Dias da semana para agendamento"),
+            ("appointment_scheduled_month_days", "", "Dias do mês para agendamento"),
         ]
 
         for key, value, description in default_configs:

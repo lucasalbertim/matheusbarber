@@ -278,6 +278,7 @@ const QueueManagementPage = () => {
   
   const [queue, setQueue] = useState([]);
   const [attending, setAttending] = useState([]);
+  const [finished, setFinished] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
@@ -312,21 +313,25 @@ const QueueManagementPage = () => {
         attendance => attendance.attendance_type === 'presential'
       );
       
-      // Separar atendimentos aguardando e em andamento
+      // Separar atendimentos aguardando, em andamento e concluídos
       const waitingQueue = presentialAttendances
         .filter(attendance => attendance.status === 'waiting')
         .sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
       const attendingQueue = presentialAttendances
         .filter(attendance => attendance.status === 'progress')
         .sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
+      const finishedQueue = presentialAttendances
+        .filter(attendance => attendance.status === 'finished')
+        .sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
       
       setQueue(waitingQueue);
       setAttending(attendingQueue);
+      setFinished(finishedQueue);
       
       // Calcular estatísticas
       const totalWaiting = waitingQueue.length;
       const currentAttending = attendingQueue.length;
-      const completedToday = presentialAttendances.filter(a => a.status === 'finished').length;
+      const completedToday = finishedQueue.length;
       
       setStats({
         totalWaiting,
@@ -337,6 +342,9 @@ const QueueManagementPage = () => {
     } catch (error) {
       console.error('Erro ao carregar fila:', error);
       toast.error('Erro ao carregar dados da fila');
+      setQueue([]);
+      setAttending([]);
+      setFinished([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -578,6 +586,47 @@ const QueueManagementPage = () => {
                 <div className="empty-icon">✂️</div>
                 <h3>Ninguém em atendimento</h3>
                 <p>Não há clientes sendo atendidos no momento.</p>
+              </EmptyState>
+            )}
+          </QueueList>
+        </div>
+
+        <div style={{ marginBottom: '30px' }}>
+          <QueueList>
+            <h3>
+              <FaCheckCircle />
+              Concluídos
+            </h3>
+            {finished.length > 0 ? (
+              finished.map((attendance) => (
+                <QueueItem key={attendance.id} className="current">
+                  <div className="queue-info">
+                    <div className="position">
+                      #{attendance.queue_position}
+                    </div>
+                    <div className="client-name">
+                      {attendance.client?.name || 'Cliente não encontrado'}
+                    </div>
+                    <div className="services">
+                      {getServicesText(attendance.services)}
+                      {attendance.services && attendance.services.length > 0 && (
+                        <span> - {formatCurrency(getTotalPrice(attendance.services))}</span>
+                      )}
+                    </div>
+                    <div className="arrival-time">
+                      Finalizado às {formatDateTime(attendance.updated_at || attendance.appointment_date).split(' ')[1]}
+                    </div>
+                  </div>
+                  <div className="queue-actions">
+                    <div className="status-badge current">Concluído</div>
+                  </div>
+                </QueueItem>
+              ))
+            ) : (
+              <EmptyState>
+                <div className="empty-icon">✅</div>
+                <h3>Nenhum atendimento concluído</h3>
+                <p>Não há atendimentos presenciais concluídos hoje.</p>
               </EmptyState>
             )}
           </QueueList>

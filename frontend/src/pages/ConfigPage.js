@@ -238,6 +238,7 @@ const ConfigPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [monthDayInput, setMonthDayInput] = useState('');
   const [config, setConfig] = useState({
     presential_mode_enabled: false,
     appointment_mode_enabled: false,
@@ -245,7 +246,8 @@ const ConfigPage = () => {
     appointment_interval_minutes: 30,
     appointment_break_hours: '12:00-13:00',
     appointment_always_scheduled: false,
-    appointment_scheduled_days: [1, 2, 3, 4, 5] // Segunda a sexta
+    appointment_scheduled_days: [1, 2, 3, 4, 5], // Segunda a sexta
+    appointment_scheduled_month_days: []
   });
 
   const weekDays = [
@@ -271,7 +273,11 @@ const ConfigPage = () => {
     try {
       setLoading(true);
       const response = await api.get('/admin/config/attendance-mode');
-      setConfig(response.data);
+      setConfig({
+        ...response.data,
+        appointment_scheduled_days: response.data.appointment_scheduled_days || [1, 2, 3, 4, 5],
+        appointment_scheduled_month_days: response.data.appointment_scheduled_month_days || []
+      });
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       toast.error('Erro ao carregar configurações');
@@ -306,6 +312,35 @@ const ConfigPage = () => {
         appointment_scheduled_days: newDays
       };
     });
+  };
+
+  const handleMonthDayToggle = (dayValue) => {
+    if (dayValue < 1 || dayValue > 31) {
+      toast.error('Informe um dia entre 1 e 31');
+      return;
+    }
+
+    setConfig(prev => {
+      const currentDays = prev.appointment_scheduled_month_days || [];
+      const newDays = currentDays.includes(dayValue)
+        ? currentDays.filter(d => d !== dayValue)
+        : [...currentDays, dayValue].sort((a, b) => a - b);
+
+      return {
+        ...prev,
+        appointment_scheduled_month_days: newDays
+      };
+    });
+  };
+
+  const handleAddMonthDay = () => {
+    const parsed = parseInt(monthDayInput, 10);
+    if (Number.isNaN(parsed)) {
+      toast.error('Digite um dia válido');
+      return;
+    }
+    handleMonthDayToggle(parsed);
+    setMonthDayInput('');
   };
 
   const handleSave = async () => {
@@ -482,6 +517,7 @@ const ConfigPage = () => {
                   {weekDays.map(day => (
                     <button
                       key={day.value}
+                      type="button"
                       className={`day-button ${config.appointment_scheduled_days?.includes(day.value) ? 'selected' : ''}`}
                       onClick={() => handleDayToggle(day.value)}
                     >
@@ -490,6 +526,38 @@ const ConfigPage = () => {
                   ))}
                 </DaysSelector>
                 <div className="form-help">Selecione os dias da semana em que os agendamentos estarão disponíveis</div>
+              </div>
+
+              <div className="form-group">
+                <label>Dias específicos do mês (1 a 31)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Ex.: 1"
+                    value={monthDayInput}
+                    onChange={(e) => setMonthDayInput(e.target.value)}
+                  />
+                  <Button type="button" variant="secondary" onClick={handleAddMonthDay}>
+                    Adicionar
+                  </Button>
+                </div>
+                <DaysSelector>
+                  {(config.appointment_scheduled_month_days || []).map(day => (
+                    <button
+                      key={day}
+                      type="button"
+                      className="day-button selected"
+                      onClick={() => handleMonthDayToggle(day)}
+                    >
+                      Dia {day}
+                    </button>
+                  ))}
+                </DaysSelector>
+                <div className="form-help">
+                  Esses dias ficam liberados em qualquer mês (ex.: dia 1 e 15), além dos dias da semana selecionados.
+                </div>
               </div>
             </ConfigForm>
           )}

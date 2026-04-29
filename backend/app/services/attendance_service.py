@@ -161,10 +161,23 @@ class AttendanceService:
         py_weekday = appointment_date.weekday()
         js_weekday = (py_weekday + 1) % 7
         scheduled_days = config.get("appointment_scheduled_days", [])
+        scheduled_month_days = config.get("appointment_scheduled_month_days", [])
+        is_allowed_weekday = js_weekday in scheduled_days
+        is_allowed_month_day = appointment_date.day in scheduled_month_days
 
-        if not config.get("appointment_always_scheduled", False) and js_weekday not in scheduled_days:
+        if (
+            not config.get("appointment_always_scheduled", False)
+            and not is_allowed_weekday
+            and not is_allowed_month_day
+        ):
             weekday_names = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
-            raise ApiError(f"Agendamentos não são permitidos aos {weekday_names[js_weekday]}s", 400)
+            raise ApiError(
+                (
+                    f"Agendamentos não são permitidos para {weekday_names[js_weekday]} "
+                    f"nem para o dia {appointment_date.day} deste mês"
+                ),
+                400,
+            )
 
         working_hours = config.get("appointment_working_hours", "08:00-18:00")
         start_time, end_time = working_hours.split("-")

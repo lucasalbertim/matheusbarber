@@ -148,6 +148,7 @@ class AttendanceModeConfig(BaseModel):
     appointment_break_hours: str
     appointment_always_scheduled: bool
     appointment_scheduled_days: List[int]
+    appointment_scheduled_month_days: List[int]
 
 
 class AttendanceModeConfigUpdate(BaseModel):
@@ -158,3 +159,4 @@ class AttendanceModeConfigUpdate(BaseModel):
     appointment_break_hours: Optional[str] = None
     appointment_always_scheduled: Optional[bool] = None
     appointment_scheduled_days: Optional[List[int]] = None
+    appointment_scheduled_month_days: Optional[List[int]] = None

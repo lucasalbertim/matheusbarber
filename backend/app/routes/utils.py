@@ -7,8 +7,8 @@ def parse_body(schema_cls):
 
 
 def serialize(schema_cls, obj):
-    return schema_cls.model_validate(obj).model_dump()
+    return schema_cls.model_validate(obj).model_dump(mode="json")
 
 
 def serialize_list(schema_cls, items):
-    return [schema_cls.model_validate(item).model_dump() for item in items]
+    return [schema_cls.model_validate(item).model_dump(mode="json") for item in items]

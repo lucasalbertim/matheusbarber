@@ -28,6 +28,7 @@ import ClientPresentialAttendancePage from './pages/ClientPresentialAttendancePa
 import ClientQueuePage from './pages/ClientQueuePage';
 import ClientAttendanceSummaryPage from './pages/ClientAttendanceSummaryPage';
 import ClientAttendancePaymentPage from './pages/ClientAttendancePaymentPage';
+import ClientAppointmentReceiptPage from './pages/ClientAppointmentReceiptPage';
 import ServicesManagementPage from './pages/ServicesManagementPage';
 import ConfigPage from './pages/ConfigPage';
 import QueueManagementPage from './pages/QueueManagementPage';
@@ -81,6 +82,7 @@ function App() {
               <Route path="/cliente/atendimento/fila" element={<ClientQueuePage />} />
               <Route path="/cliente/atendimento/resumo" element={<ClientAttendanceSummaryPage />} />
               <Route path="/cliente/atendimento/pagamento" element={<ClientAttendancePaymentPage />} />
+              <Route path="/cliente/atendimento/agendado/comprovante" element={<ClientAppointmentReceiptPage />} />
               
               {/* Rotas do administrador */}
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
