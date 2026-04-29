@@ -196,7 +196,7 @@ const AdminLoginPage = () => {
           </BackButton>
 
           <Header>
-            <img src="/logo.svg" alt="Matheus Barber Logo" />
+            <img src="/logo.png" alt="Matheus Barber Logo" />
             <h1>Matheus Barber</h1>
             <p>Área Administrativa</p>
           </Header>

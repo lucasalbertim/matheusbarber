@@ -299,7 +299,7 @@ const Header = () => {
     <HeaderContainer>
       <HeaderContent>
         <Logo>
-          <img src="/logo.svg" alt="Matheus Barber Logo" />
+          <img src="/logo.png" alt="Matheus Barber Logo" />
           <div className="logo-text">
             <h1>Matheus Barber</h1>
             <span>Desde 2018</span>

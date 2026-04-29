@@ -353,7 +353,7 @@ const ReportsPage = () => {
   const handleExportPDF = async () => {
     try {
       let logoUrl = null;
-      const response = await fetch('/logo.svg');
+      const response = await fetch('/logo.png');
       if (response.ok) {
         const blob = await response.blob();
         if (["image/jpeg", "image/png", "image/jpg"].includes(blob.type)) {
