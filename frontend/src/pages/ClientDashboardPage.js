@@ -423,10 +423,6 @@ const ClientDashboardPage = () => {
           <EmptyState>
             <div className="empty-icon">✂️</div>
             <p>Você ainda não tem atendimentos registrados.</p>
-            <Button variant="primary" onClick={handleNewAttendance}>
-              <FaPlus />
-              Agendar Primeiro Corte
-            </Button>
           </EmptyState>
         )}
       </RecentAttendances>
