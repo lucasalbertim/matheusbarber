@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import styled from "styled-components";
+import { Analytics } from '@vercel/analytics/react';
 
 // Estilos globais
 import { GlobalStyles, theme } from './styles';
@@ -101,7 +102,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </MainContent>
-          
+          <Analytics />
         </AppContainer>
       </AuthProvider>
     </ThemeProvider>
