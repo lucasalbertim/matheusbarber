@@ -186,6 +186,12 @@ const ClientLoginPage = () => {
       const phoneDigits = onlyDigits(formData.phone);
       if (!phoneDigits) newErrors.phone = 'Informe o telefone';
       else if (!(phoneDigits.length === 10 || phoneDigits.length === 11)) newErrors.phone = 'Informe um telefone válido (10-11 dígitos)';
+      // Segundo fator: so o telefone nao identifica ninguem com seguranca.
+      if (!formData.data_nascimento) {
+        newErrors.data_nascimento = 'Informe sua data de nascimento';
+      } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.data_nascimento)) {
+        newErrors.data_nascimento = 'Formato de data inválido (AAAA-MM-DD)';
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -197,7 +203,10 @@ const ClientLoginPage = () => {
     setLoading(true);
     try {
   const phoneDigits = onlyDigits(formData.phone);
-  const response = await api.post('/clients/login', { identifier: phoneDigits });
+  const response = await api.post('/clients/login', {
+    identifier: phoneDigits,
+    data_nascimento: formData.data_nascimento,
+  });
       loginClient(response.data);
       navigate('/cliente/dashboard');
     } catch (error) {
@@ -262,13 +271,13 @@ const ClientLoginPage = () => {
               </div>
             )}
 
-            {activeTab === 'register' && (
-              <div className="form-group">
-                <label className="form-label">Data de Nascimento</label>
-                <input type="date" name="data_nascimento" className={`form-input ${errors.data_nascimento ? 'error' : ''}`} value={formData.data_nascimento} onChange={handleInputChange} required />
-                {errors.data_nascimento && <div className="form-error">{errors.data_nascimento}</div>}
-              </div>
-            )}
+            {/* Data de nascimento em ambas as abas: no login ela é o segundo fator,
+                porque só o telefone não identifica ninguém com segurança. */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="data_nascimento">Data de Nascimento</label>
+              <input id="data_nascimento" type="date" name="data_nascimento" className={`form-input ${errors.data_nascimento ? 'error' : ''}`} value={formData.data_nascimento} onChange={handleInputChange} required />
+              {errors.data_nascimento && <div className="form-error">{errors.data_nascimento}</div>}
+            </div>
 
             <div className="form-group">
               <label className="form-label">Telefone</label>

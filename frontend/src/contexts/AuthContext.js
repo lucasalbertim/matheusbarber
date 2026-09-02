@@ -23,7 +23,14 @@ export const AuthProvider = ({ children }) => {
     
     if (savedClient) {
       try {
-        setClient(JSON.parse(savedClient));
+        const parsed = JSON.parse(savedClient);
+        // Sessoes gravadas antes da correcao de seguranca nao tem token.
+        // Descarta-las forca um novo login, agora com telefone + data de nascimento.
+        if (parsed?.access_token) {
+          setClient(parsed);
+        } else {
+          localStorage.removeItem('metheus_client');
+        }
       } catch (error) {
         localStorage.removeItem('metheus_client');
       }
@@ -86,8 +93,9 @@ export const AuthProvider = ({ children }) => {
     return !!admin && !!admin.token;
   };
 
+  // A area do cliente passou a exigir token: sem ele, nao ha sessao valida.
   const isClient = () => {
-    return !!client;
+    return !!client && !!client.access_token;
   };
 
   const isAuthenticated = () => {
@@ -114,7 +122,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     isAuthenticated,
     getCurrentUser,
-    isClientAuthenticated: !!client,
+    isClientAuthenticated: !!client && !!client.access_token,
     isAdminAuthenticated: !!admin,
   };
 
