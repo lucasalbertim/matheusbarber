@@ -49,13 +49,36 @@ class ClientService:
         return db_client
 
     def login_client(self, db: Session, login_data: ClientLogin) -> Client:
+        """
+        Autentica o cliente por telefone + data de nascimento.
+
+        Antes, bastava o telefone — quem soubesse o número de alguém assumia a
+        identidade da pessoa. A data de nascimento é um segundo fator fraco, mas é o
+        único dado que o sistema já coleta de forma obrigatória; a solução definitiva
+        (agendamento sem conta, com link assinado) está no Zivko.
+
+        A resposta é idêntica para telefone inexistente e data errada, para não
+        confirmar quais números estão cadastrados.
+        """
         identifier = _only_digits(login_data.identifier)
+
+        if login_data.data_nascimento is None:
+            raise ApiError("Informe o telefone e a data de nascimento", 400)
+
         client = db.query(Client).filter(
             and_(Client.is_active == True, Client.phone == identifier)
         ).first()
 
+        credenciais_invalidas = ApiError("Telefone ou data de nascimento incorretos", 401)
+
         if not client:
-            raise ApiError("Cliente não encontrado", 404)
+            raise credenciais_invalidas
+
+        if not client.data_nascimento:
+            raise credenciais_invalidas
+
+        if client.data_nascimento.date() != login_data.data_nascimento.date():
+            raise credenciais_invalidas
 
         is_returning = (
             db.query(Client)

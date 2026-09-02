@@ -29,7 +29,16 @@ class ClientProfileUpdate(BaseModel):
 
 
 class ClientLogin(BaseModel):
+    """
+    Login do cliente.
+
+    `data_nascimento` e um segundo fator obrigatorio. Antes, o login pedia apenas o
+    telefone: quem soubesse o numero de alguem assumia a identidade da pessoa, e
+    numeros de telefone nao sao segredo.
+    """
+
     identifier: str
+    data_nascimento: Optional[datetime] = None
 
 
 class AdminBase(BaseModel):
